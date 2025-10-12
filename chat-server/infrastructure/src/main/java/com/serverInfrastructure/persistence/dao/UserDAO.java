@@ -1,8 +1,8 @@
 package com.serverInfrastructure.persistence.dao;
 
-import com.serverDomain.entity.User;
-import com.serverDomain.valueObject.Email;
-import com.serverDomain.valueObject.Username;
+import com.serverDomain.entities.User;
+import com.serverDomain.valueObjects.Email;
+import com.serverDomain.valueObjects.Username;
 import com.serverInfrastructure.persistence.config.ConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,9 +34,9 @@ public class UserDAO {
         }
     }
 
-    public Optional<User> findByUsername(String username) {
+    public Optional<User> findByUsername(Username username) {
         String sql = "SELECT * FROM users WHERE username = ?";
-        return getUser(username, sql);
+        return getUser(username.value(), sql);
     }
 
     private Optional<User> getUser(String username, String sql) {
@@ -54,9 +54,9 @@ public class UserDAO {
         return Optional.empty();
     }
 
-    public Optional<User> findByEmail(String email) {
+    public Optional<User> findByEmail(Email email) {
         String sql = "SELECT * FROM users WHERE email = ?";
-        return getUser(email, sql);
+        return getUser(email.value(), sql);
     }
 
     public List<User> selectAll() {

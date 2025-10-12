@@ -1,7 +1,9 @@
 package com.serverInfrastructure.persistence.repository;
 
-import com.serverDomain.entity.User;
-import com.serverDomain.repository.UserRepository;
+import com.serverDomain.entities.User;
+import com.serverDomain.repositories.UserRepository;
+import com.serverDomain.valueObjects.Email;
+import com.serverDomain.valueObjects.Username;
 import com.serverInfrastructure.persistence.dao.UserDAO;
 
 import java.util.List;
@@ -17,12 +19,12 @@ public class MysqlUserRepository implements UserRepository {
     }
 
     @Override
-    public Optional<User> findByEmail(String email) {
+    public Optional<User> findByEmail(Email email) {
         return userDAO.findByEmail(email);
     }
 
     @Override
-    public Optional<User> findByUsername(String username) {
+    public Optional<User> findByUsername(Username username) {
         return userDAO.findByUsername(username);
     }
 

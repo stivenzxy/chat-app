@@ -15,5 +15,10 @@
     <modules>
         <module>chat-server</module>
         <module>chat-client</module>
+        <module>chat-client/client-domain</module>
+        <module>chat-client/client-application</module>
+        <module>chat-client/client-infrastructure</module>
+        <module>chat-client/client-presentation</module>
+        <module>Protocol</module>
     </modules>
 </project>
