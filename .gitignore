@@ -1,0 +1,16 @@
+# Intellij IDEA files
+.idea/
+*.iml
+
+# Project config
+*.iws
+*.ipr
+
+# Compilation files
+/out/
+build/
+target/
+
+# Tmp
+.DS_Store
+Thumbs.db

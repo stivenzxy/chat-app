@@ -1,7 +1,7 @@
 package com.serverPresentation.controller;
 
 import com.serverApplication.dto.CreateUserRequest;
-import com.serverApplication.useCase.CreateUserService;
+import com.serverApplication.useCase.Interface.CreateUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,13 +13,19 @@ public class UserController {
         this.createUserService = createUserService;
     }
 
-    public void onRegister(String username, String email, String password, String photoUrl, String ip) {
+    public void onRegister(CreateUserRequest createUserRequest) {
         try {
-            var request = new CreateUserRequest(username, email, password, photoUrl, ip);
+            var request = new CreateUserRequest(
+                    createUserRequest.getUsername(),
+                    createUserRequest.getEmail(),
+                    createUserRequest.getPassword(),
+                    createUserRequest.getPhotoUrl(),
+                    createUserRequest.getIpAddress()
+            );
             createUserService.execute(request);
             logger.info("Usuario creado exitosamente!");
         } catch (Exception e) {
-            System.err.println("Error inesperado al crear el usuario: " + e.getMessage());
+            logger.error("Error inesperado al crear el usuario: {}", e.getMessage());
         }
     }
 }
