@@ -77,6 +77,7 @@ public class RegisterUserPanelAction extends JPanel {
         add(createLabelWithField("Contraseña", passwordField), gbc);
 
         gbc.gridx = 1;
+        gbc.anchor = GridBagConstraints.SOUTH;
         registerButton = new JButton("Registrar usuario");
         registerButton.setBackground(new Color(46, 153, 85));
         registerButton.setForeground(Color.WHITE);
