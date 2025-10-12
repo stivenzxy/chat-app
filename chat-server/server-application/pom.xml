@@ -5,18 +5,17 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.app</groupId>
-        <artifactId>chat-client</artifactId>
+        <artifactId>chat-server</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>client-infrastructure</artifactId>
+    <artifactId>server-application</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>com.app</groupId>
-            <artifactId>client-application</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>compile</scope>
+            <artifactId>server-domain</artifactId>
+            <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>com.chatApp</groupId>

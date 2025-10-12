@@ -4,29 +4,28 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.chatApp</groupId>
-        <artifactId>chatApp</artifactId>
+        <groupId>com.app</groupId>
+        <artifactId>chat-client</artifactId>
         <version>1.0-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <artifactId>client-presentation</artifactId>
 
     <dependencies>
         <dependency>
-            <groupId>com.chatApp</groupId>
+            <groupId>com.app</groupId>
             <artifactId>client-application</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.chatApp</groupId>
-            <artifactId>protocol</artifactId>
+            <artifactId>chat-common</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.chatApp</groupId>
+            <groupId>com.app</groupId>
             <artifactId>client-infrastructure</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
