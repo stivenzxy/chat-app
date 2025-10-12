@@ -2,7 +2,6 @@ package com.serverPresentation.factories;
 
 import com.chatCommon.protocol.ProtocolParser;
 import com.serverApplication.commands.LoginCommand;
-import com.serverApplication.commands.contract.Command;
 import com.serverApplication.mappers.CreateUserMapper;
 import com.serverApplication.useCases.CreateNewUserService;
 import com.serverApplication.useCases.Interfaces.CreateUserService;
@@ -14,7 +13,7 @@ import com.serverInfrastructure.persistence.repository.MysqlUserRepository;
 import com.serverInfrastructure.services.BcryptPasswordHasher;
 import com.serverInfrastructure.services.CommandHandler;
 import com.serverPresentation.controllers.UserController;
-import com.serverPresentation.views.UserManagementView;
+import com.serverPresentation.views.MainServerView;
 
 public class ServerFactory {
     private final UserRepository userRepository;
@@ -47,8 +46,8 @@ public class ServerFactory {
         return new UserController(createUserUseCase());
     }
 
-    public UserManagementView createUserManagementView() {
-        return new UserManagementView(createUserController());
+    public MainServerView createUserManagementView() {
+        return new MainServerView(createUserController(), this);
     }
 
     public TcpServer createTcpServer(int port) {

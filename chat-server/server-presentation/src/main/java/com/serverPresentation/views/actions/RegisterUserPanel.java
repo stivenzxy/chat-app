@@ -1,5 +1,6 @@
 package com.serverPresentation.views.actions;
 
+import com.chatCommon.viewResources.UiBuilder;
 import com.serverApplication.dto.CreateUserRequest;
 import com.serverDomain.valueObjects.Email;
 import com.serverDomain.valueObjects.Username;
@@ -39,10 +40,7 @@ public class RegisterUserPanel extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
 
-        Border roundedBorder = BorderFactory.createCompoundBorder(
-                new RoundBorder(10, new Color(200, 200, 200)),
-                BorderFactory.createEmptyBorder(5, 10, 5, 10)
-        );
+        Border roundedBorder = UiBuilder.createRoundedBorder();
 
         usernameField = new JTextField(15);
         styleField(usernameField, roundedBorder);

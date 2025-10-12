@@ -1,17 +1,21 @@
 package com.serverPresentation.views;
 
 import com.serverPresentation.controllers.UserController;
+import com.serverPresentation.factories.ServerFactory;
+import com.serverPresentation.views.actions.ConnectionPanel;
 import com.serverPresentation.views.actions.RegisterUserPanel;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class UserManagementView extends JFrame {
+public class MainServerView extends JFrame {
 
     private final UserController userController;
+    private final ServerFactory factory;
 
-    public UserManagementView(UserController userController) {
+    public MainServerView(UserController userController, ServerFactory factory) {
         this.userController = userController;
+        this.factory = factory;
         initComponents();
     }
 
@@ -37,6 +41,7 @@ public class UserManagementView extends JFrame {
 
         JTabbedPane tabbedPane = new JTabbedPane();
 
+        tabbedPane.addTab("Gestión de Conexiones", new ConnectionPanel(this.factory));
         tabbedPane.addTab("Registrar", new RegisterUserPanel(userController));
         tabbedPane.addTab("Listado de usuarios", new JPanel());
 
