@@ -19,6 +19,6 @@
         <module>chat-client/client-application</module>
         <module>chat-client/client-infrastructure</module>
         <module>chat-client/client-presentation</module>
-        <module>Protocol</module>
+        <module>protocol</module>
     </modules>
 </project>
