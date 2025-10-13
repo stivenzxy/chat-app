@@ -3,6 +3,8 @@ package com.serverInfrastructure.network;
 import java.io.*;
 import java.net.*;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.chatCommon.protocol.ProtocolParser;
 import com.serverInfrastructure.services.CommandHandler;
@@ -11,7 +13,10 @@ public class TcpServer {
     private final int port;
     private final CommandHandler commandHandler;
     private final ProtocolParser protocolParser;
-    private volatile ServerSocket serverSocket; // Volatile para visibilidad entre hilos
+    private volatile ServerSocket serverSocket;
+    private final List<ConnectionObserver> listeners = new CopyOnWriteArrayList<>();
+    private static final AtomicInteger connectionCounter = new AtomicInteger(0);
+
 
     public TcpServer(int port, CommandHandler commandHandler) {
         this.port = port;
@@ -19,27 +24,40 @@ public class TcpServer {
         this.protocolParser = new ProtocolParser('|', '\\');
     }
 
+    public void addConnectionObserver(ConnectionObserver listener) {
+        this.listeners.add(listener);
+    }
+
     public void start() throws IOException {
-        // Asignamos el serverSocket a la variable de instancia
         this.serverSocket = new ServerSocket(port);
         System.out.println("Servidor TCP iniciado y escuchando en el puerto " + port);
 
-        // El bucle ahora depende de si el socket está cerrado
         while (!serverSocket.isClosed()) {
             try {
                 Socket socket = serverSocket.accept();
-                System.out.println("Cliente conectado desde " + socket.getInetAddress());
+                String clientId = "cliente-" + connectionCounter.incrementAndGet();
+                ClientConnection connection = new ClientConnection(clientId, socket.getInetAddress().getHostAddress(), socket);
+
+                fireClientConnected(connection);
                 new Thread(() -> handleClient(socket)).start();
             } catch (SocketException e) {
-                // Esto ocurre cuando llamamos a stop(). Es una forma limpia de salir del bucle.
                 System.out.println("ServerSocket cerrado, deteniendo el servidor.");
             }
         }
     }
 
-    /**
-     * Detiene el servidor de forma segura desde otro hilo.
-     */
+    private void fireClientConnected(ClientConnection connection) {
+        for (ConnectionObserver listener : listeners) {
+            listener.onClientConnected(connection);
+        }
+    }
+
+    private void fireClientDisconnected(ClientConnection connection) {
+        for (ConnectionObserver listener : listeners) {
+            listener.onClientDisconnected(connection);
+        }
+    }
+
     public void stop() {
         try {
             if (serverSocket != null && !serverSocket.isClosed()) {
@@ -50,7 +68,6 @@ public class TcpServer {
             e.printStackTrace();
         }
     }
-
 
     private void handleClient(Socket socket) {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));

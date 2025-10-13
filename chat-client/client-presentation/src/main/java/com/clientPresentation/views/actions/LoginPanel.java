@@ -42,18 +42,20 @@ public class LoginPanel extends JPanel {
         UiBuilder.styleField(passwordField, roundedBorder);
 
         loginButton = new JButton("Iniciar sesión");
-        UiBuilder.styleButton(loginButton,new Color(13, 149, 28));
+        UiBuilder.styleButton(loginButton, new Color(13, 149, 28));
 
         gbc.gridx = 0;
+        gbc.gridwidth = 2;
+
         gbc.gridy = 0;
         add(UiBuilder.createLabelWithField("Nombre de usuario", usernameField), gbc);
 
-        gbc.gridx = 1;
-        gbc.gridy = 1;
+        gbc.gridy++;
         add(UiBuilder.createLabelWithField("Contraseña", passwordField), gbc);
 
-        gbc.gridx = 1;
-        gbc.anchor = GridBagConstraints.SOUTH;
+        gbc.gridy++;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.CENTER;
         add(loginButton, gbc);
 
         loginButton.addActionListener(e -> onLogin());

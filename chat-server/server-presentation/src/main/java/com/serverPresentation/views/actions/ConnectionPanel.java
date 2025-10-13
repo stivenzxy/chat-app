@@ -1,8 +1,11 @@
 package com.serverPresentation.views.actions;
 
 import com.chatCommon.viewResources.UiBuilder;
+import com.serverInfrastructure.network.ClientConnection;
+import com.serverInfrastructure.network.ConnectionObserver;
 import com.serverInfrastructure.network.TcpServer;
 import com.serverPresentation.factories.ServerFactory;
+import com.serverPresentation.views.models.ConnectionTableModel;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -11,13 +14,15 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-public class ConnectionPanel extends JPanel {
+public class ConnectionPanel extends JPanel implements ConnectionObserver {
 
     private final ServerFactory factory;
     private JTextField portField;
     private JButton toggleServerButton;
     private JLabel statusLabel;
     private JLabel ipLabel;
+    private JTable connectionsTable;
+    private ConnectionTableModel tableModel;
 
     private TcpServer currentServer;
     private Thread serverThread;
@@ -29,45 +34,55 @@ public class ConnectionPanel extends JPanel {
     }
 
     private void initComponents() {
-        setBackground(Color.WHITE);
-        setLayout(new GridBagLayout());
+        setLayout(new BorderLayout(10, 10));
+        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1;
-        gbc.weighty = 0;
+        add(createControlPanel(), BorderLayout.NORTH);
+        add(createConnectionsTablePanel(), BorderLayout.CENTER);
+    }
 
-        ipLabel = new JLabel("IP del Servidor: Cargando...");
-        ipLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+    private JPanel createControlPanel() {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 5));
+        panel.setBorder(BorderFactory.createTitledBorder("Control del Servidor"));
 
         Border roundedBorder = UiBuilder.createRoundedBorder();
 
-        portField = new JTextField("12345", 10);
+        ipLabel = new JLabel("IP del Servidor: Cargando...");
+        ipLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
+        panel.add(ipLabel);
+
+        JSeparator separator = new JSeparator(SwingConstants.VERTICAL);
+        separator.setPreferredSize(new Dimension(2, 20));
+        panel.add(separator);
+
+        panel.add(new JLabel("Puerto:"));
+        portField = new JTextField("12345", 8);
         UiBuilder.styleField(portField, roundedBorder);
+        panel.add(portField);
 
         toggleServerButton = new JButton("Iniciar Servidor");
+        UiBuilder.styleButton(toggleServerButton, new Color(46, 153, 85));
+        toggleServerButton.addActionListener(e -> onToggleServer());
+        panel.add(toggleServerButton);
+
         statusLabel = new JLabel("Estado: Detenido");
         statusLabel.setForeground(Color.RED);
+        panel.add(statusLabel);
 
-        UiBuilder.styleButton(toggleServerButton, new Color(46, 153, 85));
+        return panel;
+    }
 
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
-        add(ipLabel, gbc);
+    private JPanel createConnectionsTablePanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createTitledBorder("Conexiones Entrantes"));
 
-        gbc.gridy++; gbc.gridwidth = 1;
-        add(new JLabel("Puerto:"), gbc);
+        panel.add(new JLabel("Máximo de conexiones: 10 (Pool)"), BorderLayout.NORTH);
 
-        gbc.gridx = 1;
-        add(portField, gbc);
+        tableModel = new ConnectionTableModel();
+        connectionsTable = new JTable(tableModel);
 
-        gbc.gridy++; gbc.gridx = 0; gbc.gridwidth = 2;
-        add(toggleServerButton, gbc);
-
-        gbc.gridy++;
-        add(statusLabel, gbc);
-
-        toggleServerButton.addActionListener(e -> onToggleServer());
+        panel.add(new JScrollPane(connectionsTable), BorderLayout.CENTER);
+        return panel;
     }
 
     private void onToggleServer() {
@@ -75,6 +90,7 @@ public class ConnectionPanel extends JPanel {
             try {
                 int port = Integer.parseInt(portField.getText().trim());
                 currentServer = factory.createTcpServer(port);
+                currentServer.addConnectionObserver(this);
 
                 serverThread = new Thread(() -> {
                     try {
@@ -96,6 +112,16 @@ public class ConnectionPanel extends JPanel {
             serverThread.interrupt(); // Opcional, pero buena práctica
             resetServerState();
         }
+    }
+
+    @Override
+    public void onClientConnected(ClientConnection connection) {
+        SwingUtilities.invokeLater(() -> tableModel.addConnection(connection));
+    }
+
+    @Override
+    public void onClientDisconnected(ClientConnection connection) {
+        SwingUtilities.invokeLater(() -> tableModel.removeConnection(connection));
     }
 
     private void resetServerState() {

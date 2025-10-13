@@ -1,8 +1,5 @@
 package com.clientPresentation.views;
 
-import com.chatCommon.dto.auth.LoginRequest;
-import com.chatCommon.dto.auth.LoginResponse;
-import com.clientApplication.commands.contract.ClientCommand;
 import com.clientApplication.factories.CommandFactory;
 import com.clientPresentation.views.actions.ConnectionPanel;
 import com.clientPresentation.views.actions.LoginPanel;
@@ -22,11 +19,10 @@ public class MainClientView extends JFrame {
     private void initComponents() {
         setTitle("Chat Universitario");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(800, 600);
+        setSize(850, 600);
         setLocationRelativeTo(null);
         getContentPane().setBackground(new Color(230, 230, 230));
 
-        // El CardLayout nos permitirá cambiar entre paneles
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
 
