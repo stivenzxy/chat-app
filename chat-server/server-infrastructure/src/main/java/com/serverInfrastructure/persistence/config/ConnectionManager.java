@@ -1,6 +1,7 @@
 package com.serverInfrastructure.persistence.config;
 
 import com.serverInfrastructure.persistence.exception.DatabaseException;
+import com.serverInfrastructure.utils.AppProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +49,7 @@ public class ConnectionManager {
         try {
             return DriverManager.getConnection(URL, USER, PASS);
         } catch (SQLException exception) {
-            exception.printStackTrace();
+            logger.error("Error al conectar con la Base de datos: {}", exception.getMessage());
             throw new DatabaseException("Error al obtener la conexión con la base de datos", 500);
         }
     }

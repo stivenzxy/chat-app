@@ -93,12 +93,7 @@ public class ConnectionPanel extends JPanel implements ConnectionObserver {
                 currentServer.addConnectionObserver(this);
 
                 serverThread = new Thread(() -> {
-                    try {
-                        currentServer.start();
-                    } catch (IOException e) {
-                        SwingUtilities.invokeLater(() -> showError("Error al ejecutar el servidor: " + e.getMessage()));
-                        resetServerState();
-                    }
+                    currentServer.start();
                 });
 
                 serverThread.start();

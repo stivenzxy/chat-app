@@ -17,5 +17,4 @@ public class CommandFactory {
     public ClientCommand<LoginRequest, LoginResponse> createLoginCommand() {
         return new LoginClientCommand(gateway);
     }
-
 }

@@ -1,14 +1,25 @@
 package com.clientInfrastructure.network;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.function.Consumer;
 
 public class TcpClient {
     private final String host;
     private final int port;
+    private static final Logger logger = LoggerFactory.getLogger(TcpClient.class);
+
+    // 1. Guardamos el estado de la conexión en campos de la clase
+    private Socket socket;
+    private PrintWriter out;
+    private BufferedReader in;
+    private Thread listenerThread;
 
     public TcpClient(String host, int port) {
         this.host = host;
@@ -16,33 +27,59 @@ public class TcpClient {
     }
 
     /**
-     * Envía un único mensaje al servidor y espera una única línea como respuesta.
-     * Abre y cierra la conexión para cada mensaje.
-     *
-     * @param message El string del mensaje a enviar.
-     * @return El string de la respuesta recibida del servidor.
-     * @throws RuntimeException si ocurre un error de comunicación.
+     * 2. Establece la conexión e inicia un hilo para escuchar mensajes del servidor.
+     * @param onMessageReceived Un "notificador" que se ejecuta cada vez que llega un mensaje.
      */
-    public String sendMessage(String message) {
-        // Usamos try-with-resources para asegurar que el socket y los streams se cierren automáticamente
-        try (Socket socket = new Socket(host, port);
-             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+    public void connect(Consumer<String> onMessageReceived) throws IOException {
+        logger.info("Conectando al servidor en {}:{}", host, port);
+        socket = new Socket(host, port);
+        out = new PrintWriter(socket.getOutputStream(), true);
+        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            // 1. Enviar el mensaje al servidor
-            System.out.println("Enviando -> " + message);
+        // 3. Hilo Lector: su única tarea es escuchar al servidor
+        listenerThread = new Thread(() -> {
+            try {
+                String serverMessage;
+                while (!Thread.currentThread().isInterrupted() && (serverMessage = in.readLine()) != null) {
+                    logger.info("Recibido <- {}", serverMessage);
+                    // Cuando llega un mensaje, se lo pasamos al notificador
+                    onMessageReceived.accept(serverMessage);
+                }
+            } catch (IOException e) {
+                if (!socket.isClosed()) {
+                    logger.error("La conexión con el servidor se ha perdido.", e);
+                }
+            } finally {
+                logger.info("El hilo lector ha terminado.");
+            }
+        });
+        listenerThread.setName("ClientListenerThread");
+        listenerThread.start();
+        logger.info("Conectado y escuchando al servidor.");
+    }
+
+    /**
+     * 4. Envía un mensaje al servidor a través de la conexión ya establecida.
+     */
+    public void sendMessage(String message) {
+        if (out != null) {
+            logger.info("Enviando -> {}", message);
             out.println(message);
+        } else {
+            logger.warn("No se puede enviar el mensaje, no hay conexión activa.");
+        }
+    }
 
-            // 2. Esperar y leer la respuesta del servidor
-            String response = in.readLine();
-            System.out.println("Recibido <- " + response);
-            return response;
-
+    /**
+     * 5. Cierra todos los recursos y detiene el hilo lector.
+     */
+    public void disconnect() {
+        logger.info("Desconectando del servidor...");
+        try {
+            if (listenerThread != null) listenerThread.interrupt();
+            if (socket != null && !socket.isClosed()) socket.close();
         } catch (IOException e) {
-            // 3. Si algo falla (ej. el servidor no responde), se lanza una excepción
-            //    que será capturada por el TcpAuthAdapter.
-            System.err.println("Error de comunicación TCP: " + e.getMessage());
-            throw new RuntimeException("No se pudo comunicar con el servidor.", e);
+            logger.error("Error al cerrar la conexión.", e);
         }
     }
 }

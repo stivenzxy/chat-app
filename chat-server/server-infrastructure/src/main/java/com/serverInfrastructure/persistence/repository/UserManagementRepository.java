@@ -9,7 +9,7 @@ import com.serverInfrastructure.persistence.dao.UserDAO;
 import java.util.List;
 import java.util.Optional;
 
-public class MysqlUserRepository implements UserRepository {
+public class UserManagementRepository implements UserRepository {
 
     private final UserDAO userDAO = new UserDAO();
 

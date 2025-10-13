@@ -21,8 +21,8 @@ public class ConnectionTableModel extends AbstractTableModel {
     public Object getValueAt(int rowIndex, int columnIndex) {
         ClientConnection connection = connections.get(rowIndex);
         return switch (columnIndex) {
-            case 0 -> connection.id();
-            case 1 -> connection.ipAddress();
+            case 0 -> connection.getId();
+            case 1 -> connection.getIpAddress();
             case 2 -> "Conectado";
             default -> null;
         };
