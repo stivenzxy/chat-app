@@ -29,18 +29,14 @@ public class ConnectionPanel extends JPanel {
     }
 
     private void initComponents() {
+        setBackground(Color.WHITE);
         setLayout(new GridBagLayout());
-        setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createEmptyBorder(20, 20, 20, 20),
-                BorderFactory.createLineBorder(new Color(210, 210, 210))
-        ));
-
-        setBackground(new Color(245, 245, 245));
-        setBorder(BorderFactory.createTitledBorder("Gestión del Servidor"));
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
+        gbc.weighty = 0;
 
         ipLabel = new JLabel("IP del Servidor: Cargando...");
         ipLabel.setFont(new Font("SansSerif", Font.BOLD, 14));

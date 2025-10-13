@@ -27,7 +27,7 @@ public class RegisterUserPanel extends JPanel {
     }
 
     private void initComponents() {
-        setBackground(new Color(235, 235, 235));
+        setBackground(new Color(245, 245, 245));
         setLayout(new GridBagLayout());
 
         setBorder(BorderFactory.createCompoundBorder(
@@ -43,63 +43,43 @@ public class RegisterUserPanel extends JPanel {
         Border roundedBorder = UiBuilder.createRoundedBorder();
 
         usernameField = new JTextField(15);
-        styleField(usernameField, roundedBorder);
+        UiBuilder.styleField(usernameField, roundedBorder);
 
         emailField = new JTextField(15);
-        styleField(emailField, roundedBorder);
+        UiBuilder.styleField(emailField, roundedBorder);
 
         passwordField = new JPasswordField(15);
-        styleField(passwordField, roundedBorder);
+        UiBuilder.styleField(passwordField, roundedBorder);
 
         ipField = new JTextField(15);
-        styleField(ipField, roundedBorder);
+        UiBuilder.styleField(ipField, roundedBorder);
 
         photoField = new JTextField(15);
-        styleField(photoField, roundedBorder);
-        
+        UiBuilder.styleField(photoField, roundedBorder);
+
         gbc.gridx = 0;
         gbc.gridy = 0;
-        add(createLabelWithField("Nombre de usuario", usernameField), gbc);
+        add(UiBuilder.createLabelWithField("Nombre de usuario", usernameField), gbc);
         gbc.gridx = 1;
-        add(createLabelWithField("Dirección IP", ipField), gbc);
+        add(UiBuilder.createLabelWithField("Dirección IP", ipField), gbc);
         gbc.gridx = 0;
         gbc.gridy++;
-        add(createLabelWithField("Email", emailField), gbc);
+        add(UiBuilder.createLabelWithField("Email", emailField), gbc);
         gbc.gridx = 1;
-        add(createLabelWithField("Foto (URL o ruta)", photoField), gbc);
+        add(UiBuilder.createLabelWithField("Foto (URL o ruta)", photoField), gbc);
         gbc.gridx = 0;
         gbc.gridy++;
-        add(createLabelWithField("Contraseña", passwordField), gbc);
+        add(UiBuilder.createLabelWithField("Contraseña", passwordField), gbc);
 
         gbc.gridx = 1;
         gbc.anchor = GridBagConstraints.SOUTH;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
         registerButton = new JButton("Registrar usuario");
-        registerButton.setBackground(new Color(46, 153, 85));
-        registerButton.setForeground(Color.WHITE);
-        registerButton.setFont(new Font("SansSerif", Font.BOLD, 14));
-        registerButton.setPreferredSize(new Dimension(200, 40));
-        registerButton.setFocusPainted(false);
-        registerButton.setBorder(new RoundBorder(10, registerButton.getBackground().darker()));
+        UiBuilder.styleButton(registerButton, new Color(46, 153, 85));
         add(registerButton, gbc);
 
         registerButton.addActionListener(e -> onRegisterUser());
-    }
-
-    private void styleField(JComponent field, Border border) {
-        field.setBorder(border);
-        field.setBackground(new Color(245, 245, 245));
-        field.setFont(new Font("SansSerif", Font.PLAIN, 14));
-    }
-
-    private JPanel createLabelWithField(String label, JComponent field) {
-        JPanel panel = new JPanel(new BorderLayout(0, 5));
-        panel.setOpaque(false);
-        JLabel lbl = new JLabel(label);
-        lbl.setFont(new Font("SansSerif", Font.BOLD, 13));
-        lbl.setForeground(new Color(80, 80, 80));
-        panel.add(lbl, BorderLayout.NORTH);
-        panel.add(field, BorderLayout.CENTER);
-        return panel;
     }
 
     private void onRegisterUser() {
@@ -135,27 +115,5 @@ public class RegisterUserPanel extends JPanel {
         passwordField.setText("");
         photoField.setText("");
         ipField.setText("");
-    }
-
-    private record RoundBorder(int radius, Color color) implements Border {
-
-        @Override
-        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(this.color);
-            g2.drawRoundRect(x, y, width - 1, height - 1, radius, radius);
-            g2.dispose();
-        }
-
-        @Override
-        public Insets getBorderInsets(Component c) {
-            return new Insets(this.radius / 2, this.radius / 2, this.radius / 2, this.radius / 2);
-        }
-
-        @Override
-        public boolean isBorderOpaque() {
-            return true;
-        }
     }
 }
