@@ -23,17 +23,6 @@ public class ServerFactory {
         this.passwordHasher = new BcryptPasswordHasher();
     }
 
-    public CommandHandler createCommandHandler() {
-        ProtocolParser parser = new ProtocolParser('|', '\\');
-        CommandHandler handler = new CommandHandler(parser);
-
-        // --- REGISTRO CENTRAL DE COMANDOS ---
-        // Aquí se "activan" todas las funcionalidades del servidor.
-        handler.registerCommand("LOGIN", new LoginCommand(createLoginService()));
-
-        return handler;
-    }
-
     public CreateUserService createUserUseCase() {
         return new CreateNewUserService(userRepository, new CreateUserMapper(passwordHasher));
     }
@@ -46,11 +35,13 @@ public class ServerFactory {
         return new UserController(createUserUseCase());
     }
 
-    public MainServerView createUserManagementView() {
-        return new MainServerView(createUserController(), this);
+    public MainServerView createMainServerView() {
+        return new MainServerView(this);
     }
 
     public TcpServer createTcpServer(int port) {
-        return new TcpServer(port, createCommandHandler());
+        CommandHandlerFactory commandHandlerFactory = new CommandHandlerFactory(this);
+        CommandHandler commandHandler = commandHandlerFactory.create();
+        return new TcpServer(port, commandHandler);
     }
 }

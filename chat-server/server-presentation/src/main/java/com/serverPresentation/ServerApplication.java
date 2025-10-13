@@ -9,8 +9,7 @@ public class ServerApplication {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             ServerFactory factory = new ServerFactory();
-
-            MainServerView view = new MainServerView(factory.createUserController(), factory);
+            MainServerView view = factory.createMainServerView();
             view.setVisible(true);
         });
     }

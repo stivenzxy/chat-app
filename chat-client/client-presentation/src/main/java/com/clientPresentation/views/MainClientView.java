@@ -6,6 +6,8 @@ import com.clientPresentation.views.actions.LoginPanel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 public class MainClientView extends JFrame {
 
@@ -17,11 +19,17 @@ public class MainClientView extends JFrame {
     }
 
     private void initComponents() {
-        setTitle("Chat Universitario");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(850, 600);
         setLocationRelativeTo(null);
         getContentPane().setBackground(new Color(230, 230, 230));
+
+        try {
+            String clientIp = InetAddress.getLocalHost().getHostAddress();
+            setTitle("Chat Universitario - Cliente [" + clientIp + "]");
+        } catch (UnknownHostException e) {
+            setTitle("Chat Universitario - Cliente [IP desconocida]");
+        }
 
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);

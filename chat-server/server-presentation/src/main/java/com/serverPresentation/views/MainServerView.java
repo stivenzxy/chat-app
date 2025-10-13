@@ -10,14 +10,12 @@ import java.awt.*;
 
 public class MainServerView extends JFrame {
 
-    private final UserController userController;
     private final ServerFactory factory;
 
     private JPanel cardsPanel;
     private CardLayout cardLayout;
 
-    public MainServerView(UserController userController, ServerFactory factory) {
-        this.userController = userController;
+    public MainServerView(ServerFactory factory) {
         this.factory = factory;
         initComponents();
     }
@@ -25,7 +23,7 @@ public class MainServerView extends JFrame {
     private void initComponents() {
         setTitle("Chat universitario - Servidor");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(850, 600);
+        setSize(950, 600);
         setLocationRelativeTo(null);
 
         cardLayout = new CardLayout();
@@ -65,7 +63,8 @@ public class MainServerView extends JFrame {
         panel.add(titleLabel, BorderLayout.NORTH);
 
         JTabbedPane userTabs = new JTabbedPane();
-        userTabs.addTab("Registrar Usuario", new RegisterUserPanel(userController));
+
+        userTabs.addTab("Registrar Usuario", new RegisterUserPanel(factory.createUserController()));
         userTabs.addTab("Listado de Usuarios", new JPanel());
         panel.add(userTabs, BorderLayout.CENTER);
 
