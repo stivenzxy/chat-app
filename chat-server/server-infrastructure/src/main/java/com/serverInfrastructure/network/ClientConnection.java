@@ -18,6 +18,19 @@ public class ClientConnection {
         this.ipAddress = (newSocket != null) ? newSocket.getInetAddress().getHostAddress() : null;
         this.id = "temp";
     }
+    
+    public void resetForReuse(Socket newSocket) {
+        this.socket = newSocket;
+        this.ipAddress = (newSocket != null) ? newSocket.getInetAddress().getHostAddress() : null;
+        this.id = "temp"; // Solo para nuevas conexiones reutilizadas
+    }
+    
+    public void clearSocketOnly() {
+        // Solo cierra el socket pero mantiene el ID para logging
+        this.socket = null;
+        this.ipAddress = null;
+        // NO cambiamos el ID aquí
+    }
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }

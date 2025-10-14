@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +22,7 @@ public class TcpGatewayAdapter implements ServerGatewayPort {
 
     private final BlockingQueue<String> responseQueue = new LinkedBlockingQueue<>(1);
     private Consumer<List<String>> asyncMessageListener;
+    private Consumer<String> disconnectListener;
 
     public TcpGatewayAdapter(TcpClient tcpClient, ProtocolParser parser) {
         this.tcpClient = tcpClient;
@@ -32,7 +32,13 @@ public class TcpGatewayAdapter implements ServerGatewayPort {
             tcpClient.connect(message -> {
                 List<String> parts = parser.decode(message);
 
-                if (isResponse(parts)) {
+                if (isDisconnectMessage(parts)) {
+                    // Mensaje de desconexión del servidor
+                    if (disconnectListener != null) {
+                        String reason = parts.size() > 1 ? parts.get(1) : "Desconectado por el servidor";
+                        disconnectListener.accept(reason);
+                    }
+                } else if (isResponse(parts)) {
                     try {
                         responseQueue.put(message);
                     } catch (InterruptedException e) {
@@ -80,10 +86,19 @@ public class TcpGatewayAdapter implements ServerGatewayPort {
     public void setAsyncMessageListener(Consumer<List<String>> listener) {
         this.asyncMessageListener = listener;
     }
+    
+    public void setDisconnectListener(Consumer<String> listener) {
+        this.disconnectListener = listener;
+    }
 
     private boolean isResponse(List<String> parts) {
         if (parts.isEmpty()) return false;
         String first = parts.getFirst().toUpperCase();
         return first.equals("OK") || first.equals("ERROR") || first.equals("ACK");
+    }
+    
+    private boolean isDisconnectMessage(List<String> parts) {
+        if (parts.isEmpty()) return false;
+        return parts.getFirst().equalsIgnoreCase("DISCONNECT");
     }
 }

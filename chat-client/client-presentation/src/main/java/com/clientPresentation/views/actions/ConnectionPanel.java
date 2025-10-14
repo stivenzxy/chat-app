@@ -15,12 +15,14 @@ import java.util.function.Consumer;
 public class ConnectionPanel extends JPanel {
 
     private final Consumer<CommandFactory> onConnectionSuccess;
+    private final Runnable onReturnToConnection;
     private JTextField ipField;
     private JTextField portField;
     private JButton connectButton;
 
-    public ConnectionPanel(Consumer<CommandFactory> onConnectionSuccess) {
+    public ConnectionPanel(Consumer<CommandFactory> onConnectionSuccess, Runnable onReturnToConnection) {
         this.onConnectionSuccess = onConnectionSuccess;
+        this.onReturnToConnection = onReturnToConnection;
         initComponents();
     }
 
@@ -74,8 +76,21 @@ public class ConnectionPanel extends JPanel {
             ProtocolParser parser = new ProtocolParser('|', '\\');
             TcpClient tcpClient = new TcpClient(host, port);
             ServerGatewayPort gateway = new TcpGatewayAdapter(tcpClient, parser);
-            CommandFactory commandFactory = new CommandFactory(gateway);
 
+            gateway.setDisconnectListener(reason -> {
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(this,
+                        "Has sido desconectado del servidor.\nRazón: " + reason,
+                        "Desconectado",
+                        JOptionPane.WARNING_MESSAGE);
+
+                    if (onReturnToConnection != null) {
+                        onReturnToConnection.run();
+                    }
+                });
+            });
+
+            CommandFactory commandFactory = new CommandFactory(gateway);
             onConnectionSuccess.accept(commandFactory);
 
         } catch (NumberFormatException ex) {

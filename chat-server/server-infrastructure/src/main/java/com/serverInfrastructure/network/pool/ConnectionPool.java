@@ -28,8 +28,11 @@ public class ConnectionPool {
         if (!available.isEmpty()) {
             connection = available.removeFirst();
             connection.reset(socket);
+            logger.info("Pool: Reutilizando conexión existente del pool (disponibles: {} → {})",
+                available.size() + 1, available.size());
         } else {
             connection = new ClientConnection("temp", socket.getInetAddress().getHostAddress(), socket);
+            logger.info("Pool: Creando nueva conexión (total en uso: {})", inUse.size() + 1);
         }
 
         inUse.add(connection);
@@ -37,6 +40,8 @@ public class ConnectionPool {
     }
 
     public synchronized void releaseConnection(ClientConnection connection) {
+        String connectionId = connection.getId();
+        
         try {
             if (connection.getSocket() != null && !connection.getSocket().isClosed()) {
                 connection.getSocket().close();
@@ -46,11 +51,35 @@ public class ConnectionPool {
         }
 
         inUse.remove(connection);
-        connection.reset(null);
+        connection.resetForReuse(null);
         available.add(connection);
+        
+        logger.info("Pool: Conexión [{}] liberada y disponible para reutilización (disponibles: {} → {})",
+            connectionId, available.size() - 1, available.size());
     }
 
     public synchronized int getInUseCount() {
         return inUse.size();
+    }
+
+    public synchronized int getMaxConnections() {
+        return maxConnections;
+    }
+    
+    public synchronized ClientConnection findConnectionById(String id) {
+        return inUse.stream()
+                .filter(conn -> id.equals(conn.getId()))
+                .findFirst()
+                .orElse(null);
+    }
+    
+    public synchronized void forceDisconnect(ClientConnection connection) {
+        try {
+            if (connection.getSocket() != null && !connection.getSocket().isClosed()) {
+                connection.getSocket().close();
+            }
+        } catch (Exception e) {
+            logger.debug("Error al desconectar forzosamente: {}", e.getMessage());
+        }
     }
 }
