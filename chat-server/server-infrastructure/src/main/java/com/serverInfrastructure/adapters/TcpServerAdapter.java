@@ -38,8 +38,12 @@ public class TcpServerAdapter implements ServerControl, ConnectionListener {
         serverThread = new Thread(() -> {
             try {
                 server.start();
-            } catch (Exception e) {
-                logger.error("El hilo del servidor falló inesperadamente.", e);
+            } catch (RuntimeException e) {
+                if (server != null) {
+                    logger.error("El hilo del servidor falló inesperadamente.", e);
+                } else {
+                    logger.debug("Hilo del servidor terminó durante el cierre");
+                }
             }
         });
         serverThread.setName("TcpServerThread");

@@ -57,6 +57,13 @@ public class TcpServer {
                     logger.warn("Conexión rechazada: se alcanzó el máximo de usuarios permitidos");
                 }
             }
+        } catch (SocketException exception) {
+            if (serverSocket != null && serverSocket.isClosed()) {
+                logger.info("Servidor detenido correctamente");
+            } else {
+                logger.error("Error de socket inesperado", exception);
+                throw new RuntimeException(exception);
+            }
         } catch (IOException exception) {
             logger.error("Error al iniciar el servidor", exception);
             throw new RuntimeException(exception);
@@ -102,16 +109,14 @@ public class TcpServer {
             ClientConnection connection = connectionPool.findConnectionById(clientId);
             if (connection != null) {
                 logger.info("[{}] Desconectando cliente por solicitud del servidor", clientId);
-                
-                // Enviamos una notificación al cliente antes de desconectarlo
+
                 try {
                     if (connection.getSocket() != null && !connection.getSocket().isClosed()) {
                         PrintWriter out = new PrintWriter(connection.getSocket().getOutputStream(), true);
                         String disconnectMessage = protocolParser.encode("DISCONNECT", "Desconectado por el servidor");
                         out.println(disconnectMessage);
                         logger.info("[{}] Notificación de desconexión enviada al cliente", clientId);
-                        
-                        // Esperamos un momento para que el mensaje llegue
+
                         Thread.sleep(100);
                     }
                 } catch (Exception e) {
@@ -149,15 +154,13 @@ public class TcpServer {
         } catch (IOException exception) {
             logger.error("[{}] Error de comunicación: {}", connection.getId(), exception.getMessage());
         } finally {
-            // Guardamos el ID antes de que se pierda en releaseConnection
             String connectionId = connection.getId();
             
             try {
                 socket.close();
-                // Primero notificamos la desconexión con los datos originales
                 fireClientDisconnected(connection);
-                // Después liberamos la conexión (esto resetea el ID)
                 connectionPool.releaseConnection(connection);
+
                 logger.info("[{}] Cliente desconectado", connectionId);
             } catch (IOException e) {
                 logger.warn("[{}] Error al cerrar la conexión: {}", connectionId, e.getMessage());

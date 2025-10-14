@@ -65,7 +65,6 @@ public class ConnectionTableModel extends AbstractTableModel {
         }
         
         int rowIndex = connections.indexOf(clientInfo);
-        System.out.println("📋 TableModel: Índice encontrado: " + rowIndex);
         
         if (rowIndex != -1) {
             connections.remove(rowIndex);
