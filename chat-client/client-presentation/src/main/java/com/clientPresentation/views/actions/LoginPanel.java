@@ -8,15 +8,18 @@ import com.clientApplication.commands.contract.ClientCommand;
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
+
 public class LoginPanel extends JPanel {
     private final ClientCommand<LoginRequest, LoginResponse> loginCommand;
+    private final Runnable onLoginSuccessCallback;
 
     private JTextField usernameField;
     private JPasswordField passwordField;
     private JButton loginButton;
 
-    public LoginPanel(ClientCommand<LoginRequest, LoginResponse> loginCommand) {
+    public LoginPanel(ClientCommand<LoginRequest, LoginResponse> loginCommand, Runnable onLoginSuccessCallback) {
         this.loginCommand = loginCommand;
+        this.onLoginSuccessCallback = onLoginSuccessCallback;
         initComponents();
     }
 
@@ -74,8 +77,11 @@ public class LoginPanel extends JPanel {
         LoginResponse response = loginCommand.execute(request);
 
         if (response.isSuccess()) {
-            JOptionPane.showMessageDialog(this, "¡Login exitoso!", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            // Lógica para cambiar al panel del chat
+            // Ya no mostramos un JOptionPane aquí
+            // En su lugar, notificamos a la vista principal para que cambie de panel
+            if (onLoginSuccessCallback != null) {
+                onLoginSuccessCallback.run();
+            }
         } else {
             JOptionPane.showMessageDialog(this, response.getMessage(), "Fallo de Autenticación", JOptionPane.ERROR_MESSAGE);
         }

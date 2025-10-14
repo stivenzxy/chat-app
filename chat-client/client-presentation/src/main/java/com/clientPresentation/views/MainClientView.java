@@ -13,6 +13,7 @@ public class MainClientView extends JFrame {
 
     private CardLayout cardLayout;
     private JPanel mainPanel;
+    private CommandFactory commandFactory;
 
     public MainClientView() {
         initComponents();
@@ -45,10 +46,28 @@ public class MainClientView extends JFrame {
     }
 
     private void onConnectionSuccess(CommandFactory commandFactory) {
+        this.commandFactory = commandFactory; // Guardar la fábrica
         System.out.println("Conexión exitosa. Creando panel de login...");
-        LoginPanel loginPanel = new LoginPanel(commandFactory.createLoginCommand());
+
+        // Pasamos un "callback" o una acción a ejecutar cuando el login sea exitoso
+        LoginPanel loginPanel = new LoginPanel(
+                commandFactory.createLoginCommand(),
+                this::onLoginSuccess // Referencia al método
+        );
+
         mainPanel.add(loginPanel, "LOGIN_PANEL");
         cardLayout.show(mainPanel, "LOGIN_PANEL");
+    }
+
+    // Nuevo método que se llamará desde LoginPanel
+    private void onLoginSuccess() {
+        // Ocultar el subtítulo de "conéctate al servidor"
+        // (Este es un poco más complejo, por ahora lo dejamos)
+        setTitle("Chat Universitario - ¡Bienvenido!");
+
+        ChatPanel chatPanel = new ChatPanel(commandFactory.createGetUsersCommand());
+        mainPanel.add(chatPanel, "CHAT_PANEL");
+        cardLayout.show(mainPanel, "CHAT_PANEL");
     }
 
     private JPanel createHeaderPanel() {

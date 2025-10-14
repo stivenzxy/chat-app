@@ -61,14 +61,18 @@ public class UserDAO {
 
     public List<User> selectAll() {
         List<User> users = new ArrayList<>();
-        String sql = "SELECT user_id, username, email, photo_url, ip_address FROM users";
+        // Consulta corregida para incluir todas las columnas necesarias con los nombres correctos
+        String sql = "SELECT user_id, username, email, password_hash, photo_path, ip_address, created_at FROM users";
 
         try (Connection conn = connectionManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
 
             while (rs.next()) {
-                users.add(mapToUser(rs));
+                User user = mapToUser(rs);
+                if (user != null) {
+                    users.add(user);
+                }
             }
         } catch (SQLException exception) {
             logger.error("Error al obtener todos los usuarios: {}", exception.getMessage());
