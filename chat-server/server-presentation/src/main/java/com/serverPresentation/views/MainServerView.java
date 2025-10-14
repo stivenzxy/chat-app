@@ -29,7 +29,7 @@ public class MainServerView extends JFrame {
         cardsPanel = new JPanel(cardLayout);
 
         JMenuBar menuBar = new JMenuBar();
-        JMenu navigationMenu = new JMenu("Navegación");
+        JMenu navigationMenu = new JMenu("Menú >");
         JMenuItem userManagementItem = new JMenuItem("Gestión de Usuarios");
         JMenuItem connectionManagementItem = new JMenuItem("Gestión de Conexiones");
 
@@ -95,5 +95,4 @@ public class MainServerView extends JFrame {
         panel.add(connectionPanel, BorderLayout.CENTER);
         return panel;
     }
-
 }
