@@ -35,7 +35,7 @@ public class UserDAO {
     }
 
     public Optional<User> findByUsername(Username username) {
-        String sql = "SELECT * FROM users WHERE username = ?";
+        String sql = "SELECT * FROM users WHERE BINARY username = ?";
         return getUser(username.value(), sql);
     }
 
@@ -55,7 +55,7 @@ public class UserDAO {
     }
 
     public Optional<User> findByEmail(Email email) {
-        String sql = "SELECT * FROM users WHERE email = ?";
+        String sql = "SELECT * FROM users WHERE BINARY email = ?";
         return getUser(email.value(), sql);
     }
 
