@@ -8,12 +8,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.chatCommon.protocol.ProtocolParser;
 import com.serverInfrastructure.network.pool.ConnectionPool;
+import com.serverInfrastructure.services.ActiveUserManager;
 import com.serverInfrastructure.services.CommandHandler;
+import com.serverInfrastructure.services.ActiveUserManager;
+import com.serverInfrastructure.services.ActiveUserObserver;
+import com.serverDomain.entities.User;
 import com.serverInfrastructure.utils.AppProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TcpServer {
+public class TcpServer implements ActiveUserObserver {
     private final int port;
     private final CommandHandler commandHandler;
     private final ProtocolParser protocolParser;
@@ -30,9 +34,11 @@ public class TcpServer {
     public TcpServer(int port, CommandHandler commandHandler) {
         this.port = port;
         this.commandHandler = commandHandler;
+        this.commandHandler.setServer(this);
         this.protocolParser = new ProtocolParser('|', '\\');
         int maxConnections = AppProperties.getInt("MAX_CONNECTIONS");
         this.connectionPool = new ConnectionPool(maxConnections);
+        ActiveUserManager.getInstance().addObserver(this);
     }
 
     public void start() {
@@ -144,7 +150,8 @@ public class TcpServer {
                 logger.info("[{}] Petición recibida: {}", connection.getId(), request);
 
                 List<String> parts = protocolParser.decode(request);
-                String response = commandHandler.process(parts);
+                // ¡Aquí está el cambio clave! Pasamos el objeto 'connection'
+                String response = commandHandler.process(parts, connection);
 
                 logger.info("[{}] Enviando respuesta: {}", connection.getId(), response);
                 out.println(response);
@@ -155,9 +162,12 @@ public class TcpServer {
             logger.error("[{}] Error de comunicación: {}", connection.getId(), exception.getMessage());
         } finally {
             String connectionId = connection.getId();
-            
             try {
                 socket.close();
+
+                // Notificar al gestor que el usuario se ha desconectado
+                ActiveUserManager.getInstance().userLoggedOut(connectionId);
+
                 fireClientDisconnected(connection);
                 connectionPool.releaseConnection(connection);
 
@@ -167,4 +177,50 @@ public class TcpServer {
             }
         }
     }
+
+    @Override
+    public void onUserLoggedIn(User user) {
+        String message = protocolParser.encode("USER_CONNECTED", user.getId(), user.getUsername().value());
+        broadcastMessage(message, user.getUsername().value());
+    }
+
+    @Override
+    public void onUserLoggedOut(User user) {
+        String message = protocolParser.encode("USER_DISCONNECTED", user.getId(), user.getUsername().value());
+        broadcastMessage(message, null); // Enviar a todos
+    }
+
+    public boolean sendMessageToUser(String username, String message) {
+        ClientConnection connection = connectionPool.findConnectionById(username);
+        if (connection != null) {
+            try {
+                if (connection.getSocket() != null && !connection.getSocket().isClosed()) {
+                    PrintWriter out = new PrintWriter(connection.getSocket().getOutputStream(), true);
+                    out.println(message);
+                    logger.info("Mensaje directo enviado a [{}]: {}", username, message);
+                    return true;
+                }
+            } catch (IOException e) {
+                logger.warn("[{}] Error al enviar mensaje directo: {}", username, e.getMessage());
+            }
+        }
+        return false;
+    }
+
+    private void broadcastMessage(String message, String excludeUsername) {
+        logger.info("Broadcasting: {}", message);
+        for (ClientConnection connection : connectionPool.getInUseConnections()) {
+            if (connection.getId() != null && !connection.getId().equals(excludeUsername)) {
+                try {
+                    if (connection.getSocket() != null && !connection.getSocket().isClosed()) {
+                        PrintWriter out = new PrintWriter(connection.getSocket().getOutputStream(), true);
+                        out.println(message);
+                    }
+                } catch (IOException e) {
+                    logger.warn("[{}] Error al hacer broadcast: {}", connection.getId(), e.getMessage());
+                }
+            }
+        }
+    }
+
 }

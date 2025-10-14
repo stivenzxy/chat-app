@@ -8,4 +8,5 @@ public interface ServerGatewayPort {
     List<String> sendAndReceive(String command, String... args);
     void setAsyncMessageListener(Consumer<List<String>> listener);
     void setDisconnectListener(Consumer<String> listener);
+    void disconnect();
 }

@@ -1,19 +1,23 @@
 package com.serverInfrastructure.adapters.commands;
 
 import com.chatCommon.dto.auth.LoginRequest;
-import com.chatCommon.dto.auth.LoginResponse;
 import com.chatCommon.protocol.ProtocolParser;
-import com.serverApplication.commands.LoginCommand;
+import com.serverApplication.useCases.LoginService;
+import com.serverDomain.entities.User;
 import com.serverInfrastructure.adapters.ProtocolCommandAdapter;
+import com.serverInfrastructure.network.ClientConnection;
+import com.serverInfrastructure.services.ActiveUserManager;
 
 import java.util.List;
+import java.util.Optional;
 
 public class LoginCommandAdapter implements ProtocolCommandAdapter {
 
-    private final LoginCommand command;
+    private final LoginService loginService;
+    private final ActiveUserManager activeUserManager = ActiveUserManager.getInstance();
 
-    public LoginCommandAdapter(LoginCommand command) {
-        this.command = command;
+    public LoginCommandAdapter(LoginService loginService) {
+        this.loginService = loginService;
     }
 
     @Override
@@ -22,14 +26,20 @@ public class LoginCommandAdapter implements ProtocolCommandAdapter {
     }
 
     @Override
-    public String execute(List<String> parts, ProtocolParser parser) {
+    public String execute(List<String> parts, ProtocolParser parser, ClientConnection connectionContext) {
         if (parts.size() != 3)
             return parser.encode("ERROR", "Argumentos inválidos para LOGIN");
 
         LoginRequest request = new LoginRequest(parts.get(1), parts.get(2));
-        LoginResponse response = command.execute(request);
+        Optional<User> userOptional = loginService.loginAndGetUser(request);
 
-        String status = response.isSuccess() ? "OK" : "ERROR";
-        return parser.encode(status, response.getMessage());
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            connectionContext.setId(user.getUsername().value());
+            activeUserManager.userLoggedIn(user.getUsername().value(), user);
+            return parser.encode("OK", "Login exitoso");
+        } else {
+            return parser.encode("ERROR", "Credenciales inválidas");
+        }
     }
 }

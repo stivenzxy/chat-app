@@ -4,6 +4,7 @@ import com.chatCommon.dto.auth.LoginRequest;
 import com.chatCommon.dto.auth.LoginResponse;
 import com.chatCommon.viewResources.UiBuilder;
 import com.clientApplication.commands.contract.ClientCommand;
+import java.util.function.Consumer;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -11,13 +12,13 @@ import java.awt.*;
 
 public class LoginPanel extends JPanel {
     private final ClientCommand<LoginRequest, LoginResponse> loginCommand;
-    private final Runnable onLoginSuccessCallback;
+    private final Consumer<String> onLoginSuccessCallback;
 
     private JTextField usernameField;
     private JPasswordField passwordField;
     private JButton loginButton;
 
-    public LoginPanel(ClientCommand<LoginRequest, LoginResponse> loginCommand, Runnable onLoginSuccessCallback) {
+    public LoginPanel(ClientCommand<LoginRequest, LoginResponse> loginCommand, Consumer<String> onLoginSuccessCallback) {
         this.loginCommand = loginCommand;
         this.onLoginSuccessCallback = onLoginSuccessCallback;
         initComponents();
@@ -77,10 +78,8 @@ public class LoginPanel extends JPanel {
         LoginResponse response = loginCommand.execute(request);
 
         if (response.isSuccess()) {
-            // Ya no mostramos un JOptionPane aquí
-            // En su lugar, notificamos a la vista principal para que cambie de panel
             if (onLoginSuccessCallback != null) {
-                onLoginSuccessCallback.run();
+                onLoginSuccessCallback.accept(username);
             }
         } else {
             JOptionPane.showMessageDialog(this, response.getMessage(), "Fallo de Autenticación", JOptionPane.ERROR_MESSAGE);

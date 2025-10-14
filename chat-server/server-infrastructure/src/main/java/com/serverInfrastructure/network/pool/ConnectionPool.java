@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
 
 public class ConnectionPool {
     private final int maxConnections;
@@ -81,5 +82,9 @@ public class ConnectionPool {
         } catch (Exception e) {
             logger.debug("Error al desconectar forzosamente: {}", e.getMessage());
         }
+    }
+
+    public synchronized List<ClientConnection> getInUseConnections() {
+        return Collections.unmodifiableList(new ArrayList<>(inUse));
     }
 }

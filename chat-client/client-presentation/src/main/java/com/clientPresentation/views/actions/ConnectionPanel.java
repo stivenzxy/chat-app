@@ -10,17 +10,18 @@ import com.clientInfrastructure.network.TcpClient;
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class ConnectionPanel extends JPanel {
 
-    private final Consumer<CommandFactory> onConnectionSuccess;
+    private final BiConsumer<CommandFactory, ServerGatewayPort> onConnectionSuccess;
     private final Runnable onReturnToConnection;
     private JTextField ipField;
     private JTextField portField;
     private JButton connectButton;
 
-    public ConnectionPanel(Consumer<CommandFactory> onConnectionSuccess, Runnable onReturnToConnection) {
+    public ConnectionPanel(BiConsumer<CommandFactory, ServerGatewayPort> onConnectionSuccess, Runnable onReturnToConnection) {
         this.onConnectionSuccess = onConnectionSuccess;
         this.onReturnToConnection = onReturnToConnection;
         initComponents();
@@ -91,7 +92,7 @@ public class ConnectionPanel extends JPanel {
             });
 
             CommandFactory commandFactory = new CommandFactory(gateway);
-            onConnectionSuccess.accept(commandFactory);
+            onConnectionSuccess.accept(commandFactory, gateway);
 
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "El puerto debe ser un número válido.", "Error de Formato", JOptionPane.ERROR_MESSAGE);

@@ -19,23 +19,28 @@ public class LoginService implements AuthService {
         this.passwordHasher = passwordHasher;
     }
 
-    @Override
-    public boolean login(LoginRequest loginUserRequest) {
+    public Optional<User> loginAndGetUser(LoginRequest loginUserRequest) {
         try {
             Username username = new Username(loginUserRequest.getUsername());
             String plainTextPassword = loginUserRequest.getPassword();
 
             Optional<User> userOptional = userRepository.findByUsername(username);
 
-            if (userOptional.isEmpty()) {
-                return false;
+            // Verifica si el usuario existe Y si la contraseña coincide
+            if (userOptional.isPresent() && userOptional.get().verifyPassword(plainTextPassword, passwordHasher)) {
+                return userOptional; // Éxito, devuelve el usuario
             }
 
-            User user = userOptional.get();
-            return user.verifyPassword(plainTextPassword, passwordHasher);
+            return Optional.empty(); // Fracaso
 
         } catch (Exception exception) {
-            return false;
+            return Optional.empty();
         }
+    }
+
+
+    @Override
+    public boolean login(LoginRequest loginUserRequest) {
+        return loginAndGetUser(loginUserRequest).isPresent();
     }
 }

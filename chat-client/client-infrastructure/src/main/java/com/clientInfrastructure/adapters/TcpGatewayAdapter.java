@@ -101,4 +101,11 @@ public class TcpGatewayAdapter implements ServerGatewayPort {
         if (parts.isEmpty()) return false;
         return parts.getFirst().equalsIgnoreCase("DISCONNECT");
     }
+
+    @Override
+    public void disconnect() {
+        if (tcpClient != null) {
+            tcpClient.disconnect();
+        }
+    }
 }
