@@ -1,6 +1,7 @@
 package com.serverApplication.useCases;
 
 import com.chatCommon.dto.UserDTO;
+import com.serverDomain.entities.User;
 import com.serverDomain.repositories.UserRepository;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,5 +18,9 @@ public class GetAllUsersService {
         return userRepository.findAll().stream()
                 .map(user -> new UserDTO(user.getId(), user.getUsername().value()))
                 .collect(Collectors.toList());
+    }
+    
+    public List<User> executeForEntities() {
+        return userRepository.findAll();
     }
 }

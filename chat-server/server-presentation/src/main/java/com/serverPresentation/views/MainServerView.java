@@ -64,7 +64,7 @@ public class MainServerView extends JFrame {
         JTabbedPane userTabs = new JTabbedPane();
 
         userTabs.addTab("Registrar Usuario", new RegisterUserPanel(factory.createUserController()));
-        userTabs.addTab("Listado de Usuarios", new JPanel());
+        userTabs.addTab("Listado de Usuarios", factory.createUserListPanel());
         panel.add(userTabs, BorderLayout.CENTER);
 
         return panel;
