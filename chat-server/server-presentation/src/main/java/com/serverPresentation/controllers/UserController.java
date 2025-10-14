@@ -2,7 +2,7 @@ package com.serverPresentation.controllers;
 
 import com.serverApplication.dto.CreateUserRequest;
 import com.serverApplication.dto.UserPresentationDTO;
-import com.serverApplication.useCases.GetRegisteredUsers;
+import com.serverApplication.useCases.GetRegisteredUsersService;
 import com.serverApplication.useCases.interfaces.CreateUserService;
 import com.serverPresentation.observers.UserRegistrationObservable;
 import com.serverPresentation.observers.UserRegistrationObserver;
@@ -13,11 +13,11 @@ import java.util.List;
 
 public class UserController {
     private final CreateUserService createUserService;
-    private final GetRegisteredUsers getUsersPresentationService;
+    private final GetRegisteredUsersService getUsersPresentationService;
     private final UserRegistrationObservable observable;
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
-    public UserController(CreateUserService createUserService, GetRegisteredUsers getUsersPresentationService) {
+    public UserController(CreateUserService createUserService, GetRegisteredUsersService getUsersPresentationService) {
         this.createUserService = createUserService;
         this.getUsersPresentationService = getUsersPresentationService;
         this.observable = new UserRegistrationObservable();

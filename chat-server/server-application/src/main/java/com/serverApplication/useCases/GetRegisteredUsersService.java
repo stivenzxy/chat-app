@@ -7,11 +7,11 @@ import com.serverDomain.repositories.UserRepository;
 
 import java.util.List;
 
-public class GetRegisteredUsers {
+public class GetRegisteredUsersService {
 
     private final UserRepository userRepository;
 
-    public GetRegisteredUsers(UserRepository userRepository) {
+    public GetRegisteredUsersService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 

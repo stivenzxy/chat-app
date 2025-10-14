@@ -3,7 +3,7 @@ package com.serverInfrastructure.factories;
 import com.serverApplication.factories.ServiceFactory;
 import com.serverApplication.mappers.CreateUserMapper;
 import com.serverApplication.useCases.CreateNewUserService;
-import com.serverApplication.useCases.GetRegisteredUsers;
+import com.serverApplication.useCases.GetRegisteredUsersService;
 import com.serverApplication.useCases.interfaces.CreateUserService;
 import com.serverApplication.useCases.LoginService;
 import com.serverDomain.repositories.UserRepository;
@@ -32,8 +32,8 @@ public class DefaultServiceFactory implements ServiceFactory {
     }
 
     @Override
-    public GetRegisteredUsers createGetUsersPresentationService() {
-        return new GetRegisteredUsers(userRepository);
+    public GetRegisteredUsersService createGetUsersPresentationService() {
+        return new GetRegisteredUsersService(userRepository);
     }
 
     @Override
