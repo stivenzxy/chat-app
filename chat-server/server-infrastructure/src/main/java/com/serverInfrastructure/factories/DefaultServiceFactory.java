@@ -9,6 +9,7 @@ import com.serverDomain.repositories.UserRepository;
 import com.serverDomain.services.PasswordHasher;
 import com.serverInfrastructure.persistence.repository.UserManagementRepository;
 import com.serverInfrastructure.services.BcryptPasswordHasher;
+import com.serverApplication.useCases.GetAllUsersService;
 
 public class DefaultServiceFactory implements ServiceFactory {
     private final UserRepository userRepository;
@@ -22,6 +23,11 @@ public class DefaultServiceFactory implements ServiceFactory {
     @Override
     public CreateUserService createUserService() {
         return new CreateNewUserService(userRepository, new CreateUserMapper(passwordHasher));
+    }
+
+    @Override
+    public GetAllUsersService createGetAllUsersService() { // Añadir este método
+        return new GetAllUsersService(userRepository);
     }
 
     @Override
