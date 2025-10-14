@@ -1,8 +1,6 @@
 package com.chatCommon.protocol;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringJoiner;
+import java.util.*;
 
 public class ProtocolParser {
 
@@ -14,10 +12,6 @@ public class ProtocolParser {
         this.escapeChar = escapeChar;
     }
 
-    /**
-     * Decodifica un mensaje de la red en sus partes componentes,
-     * respetando las reglas de escape.
-     */
     public List<String> decode(String message) {
         List<String> parts = new ArrayList<>();
         StringBuilder currentPart = new StringBuilder();
@@ -40,10 +34,17 @@ public class ProtocolParser {
         return parts;
     }
 
-    /**
-     * Codifica una serie de strings en un único mensaje para la red,
-     * aplicando las reglas de escape necesarias.
-     */
+    public Map<String, String> decodeMap(String message) {
+        Map<String, String> map = new LinkedHashMap<>();
+        for (String part : decode(message)) {
+            String[] kv = part.split("=", 2);
+            if (kv.length == 2) {
+                map.put(kv[0], kv[1]);
+            }
+        }
+        return map;
+    }
+
     public String encode(String... parts) {
         StringJoiner joiner = new StringJoiner(String.valueOf(delimiter));
         for (String part : parts) {
@@ -52,9 +53,6 @@ public class ProtocolParser {
         return joiner.toString();
     }
 
-    /**
-     * Método auxiliar para escapar un único string.
-     */
     private String escape(String part) {
         StringBuilder escaped = new StringBuilder();
         for (char c : part.toCharArray()) {

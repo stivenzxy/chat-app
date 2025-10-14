@@ -2,7 +2,7 @@ package com.serverApplication.useCases;
 
 import com.serverApplication.dto.CreateUserRequest;
 import com.serverApplication.mappers.CreateUserMapper;
-import com.serverApplication.useCases.Interfaces.CreateUserService;
+import com.serverApplication.useCases.interfaces.CreateUserService;
 import com.serverDomain.entities.User;
 import com.serverDomain.repositories.UserRepository;
 

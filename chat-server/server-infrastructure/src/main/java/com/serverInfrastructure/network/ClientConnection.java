@@ -13,6 +13,12 @@ public class ClientConnection {
         this.socket = socket;
     }
 
+    public void reset(Socket newSocket) {
+        this.socket = newSocket;
+        this.ipAddress = (newSocket != null) ? newSocket.getInetAddress().getHostAddress() : null;
+        this.id = "temp";
+    }
+
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 

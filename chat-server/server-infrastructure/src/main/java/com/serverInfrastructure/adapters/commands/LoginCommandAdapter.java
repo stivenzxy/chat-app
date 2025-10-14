@@ -1,10 +1,10 @@
-package com.serverInfrastructure.network.protocol.adapters;
+package com.serverInfrastructure.adapters.commands;
 
 import com.chatCommon.dto.auth.LoginRequest;
 import com.chatCommon.dto.auth.LoginResponse;
 import com.chatCommon.protocol.ProtocolParser;
 import com.serverApplication.commands.LoginCommand;
-import com.serverInfrastructure.network.protocol.ProtocolCommandAdapter;
+import com.serverInfrastructure.adapters.ProtocolCommandAdapter;
 
 import java.util.List;
 

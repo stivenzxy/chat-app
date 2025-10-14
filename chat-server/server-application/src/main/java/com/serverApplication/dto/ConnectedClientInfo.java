@@ -1,4 +1,4 @@
 package com.serverApplication.dto;
 
-public class ConnectedClientInfo {
+public record ConnectedClientInfo(String id, String ipAddress) {
 }

@@ -10,8 +10,6 @@ import com.clientInfrastructure.network.TcpClient;
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
-import java.io.IOException;
-import java.net.Socket;
 import java.util.function.Consumer;
 
 public class ConnectionPanel extends JPanel {
@@ -72,7 +70,6 @@ public class ConnectionPanel extends JPanel {
 
         try {
             int port = Integer.parseInt(portStr);
-            testConnection(host, port);
 
             ProtocolParser parser = new ProtocolParser('|', '\\');
             TcpClient tcpClient = new TcpClient(host, port);
@@ -83,12 +80,8 @@ public class ConnectionPanel extends JPanel {
 
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "El puerto debe ser un número válido.", "Error de Formato", JOptionPane.ERROR_MESSAGE);
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "No se pudo conectar al servidor.\n" + ex.getMessage(), "Error de Conexión", JOptionPane.ERROR_MESSAGE);
         }
-    }
-
-    private void testConnection(String host, int port) throws IOException {
-        new Socket(host, port).close();
     }
 }

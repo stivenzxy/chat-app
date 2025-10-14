@@ -1,45 +1,29 @@
 package com.serverPresentation.factories;
 
-import com.serverApplication.mappers.CreateUserMapper;
-import com.serverApplication.useCases.CreateNewUserService;
-import com.serverApplication.useCases.Interfaces.CreateUserService;
-import com.serverApplication.useCases.LoginService;
-import com.serverDomain.repositories.UserRepository;
-import com.serverDomain.services.PasswordHasher;
-import com.serverInfrastructure.network.TcpServer;
-import com.serverInfrastructure.persistence.repository.UserManagementRepository;
-import com.serverInfrastructure.services.BcryptPasswordHasher;
-import com.serverInfrastructure.services.CommandHandler;
+import com.serverApplication.factories.ServiceFactory;
+import com.serverApplication.ports.ServerControl;
 import com.serverPresentation.controllers.UserController;
 import com.serverPresentation.views.MainServerView;
+import com.serverPresentation.views.actions.ConnectionPanel;
 
-public class ServerFactory {
-    private final UserRepository userRepository;
-    private final PasswordHasher passwordHasher;
-    public ServerFactory() {
-        this.userRepository = new UserManagementRepository();
-        this.passwordHasher = new BcryptPasswordHasher();
-    }
+public class PresentationFactory {
+    private final ServiceFactory serviceFactory;
+    private final ServerControl serverControl;
 
-    public CreateUserService createUserUseCase() {
-        return new CreateNewUserService(userRepository, new CreateUserMapper(passwordHasher));
-    }
-
-    public LoginService createLoginService() {
-        return new LoginService(userRepository, passwordHasher);
+    public PresentationFactory(ServiceFactory serviceFactory, ServerControl serverControl) {
+        this.serviceFactory = serviceFactory;
+        this.serverControl = serverControl;
     }
 
     public UserController createUserController() {
-        return new UserController(createUserUseCase());
+        return new UserController(serviceFactory.createUserService());
+    }
+
+    public ConnectionPanel createConnectionPanel() {
+        return new ConnectionPanel(serverControl);
     }
 
     public MainServerView createMainServerView() {
         return new MainServerView(this);
-    }
-
-    public TcpServer createTcpServer(int port) {
-        CommandHandlerFactory commandHandlerFactory = new CommandHandlerFactory(this);
-        CommandHandler commandHandler = commandHandlerFactory.create();
-        return new TcpServer(port, commandHandler);
     }
 }

@@ -1,7 +1,6 @@
 package com.serverPresentation.views;
 
-import com.serverPresentation.controllers.UserController;
-import com.serverPresentation.factories.ServerFactory;
+import com.serverPresentation.factories.PresentationFactory;
 import com.serverPresentation.views.actions.ConnectionPanel;
 import com.serverPresentation.views.actions.RegisterUserPanel;
 
@@ -10,12 +9,12 @@ import java.awt.*;
 
 public class MainServerView extends JFrame {
 
-    private final ServerFactory factory;
+    private final PresentationFactory factory;
 
     private JPanel cardsPanel;
     private CardLayout cardLayout;
 
-    public MainServerView(ServerFactory factory) {
+    public MainServerView(PresentationFactory factory) {
         this.factory = factory;
         initComponents();
     }
@@ -80,7 +79,7 @@ public class MainServerView extends JFrame {
         titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
         panel.add(titleLabel, BorderLayout.NORTH);
 
-        ConnectionPanel connectionPanel = new ConnectionPanel(factory);
+        ConnectionPanel connectionPanel = factory.createConnectionPanel();
         connectionPanel.setOpaque(true);
         connectionPanel.setBackground(Color.WHITE);
         connectionPanel.setBorder(

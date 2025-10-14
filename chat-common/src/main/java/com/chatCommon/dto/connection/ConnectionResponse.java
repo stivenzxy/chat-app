@@ -1,4 +1,4 @@
 package com.chatCommon.dto.connection;
 
-public class ConnectionResponse {
+public record ConnectionResponse(boolean success, String message) {
 }

@@ -8,7 +8,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.chatCommon.protocol.ProtocolParser;
 import com.serverInfrastructure.network.pool.ConnectionPool;
-import com.serverInfrastructure.persistence.dao.UserDAO;
 import com.serverInfrastructure.services.CommandHandler;
 import com.serverInfrastructure.utils.AppProperties;
 import org.slf4j.Logger;
@@ -21,7 +20,7 @@ public class TcpServer {
 
     private volatile ServerSocket serverSocket;
 
-    private final List<ConnectionObserver> listeners = new CopyOnWriteArrayList<>();
+    private final List<ConnectionListener> listeners = new CopyOnWriteArrayList<>();
     private static final AtomicInteger connectionCounter = new AtomicInteger(0);
 
     private final ConnectionPool connectionPool;
@@ -34,10 +33,6 @@ public class TcpServer {
         this.protocolParser = new ProtocolParser('|', '\\');
         int maxConnections = AppProperties.getInt("MAX_CONNECTIONS", 2);
         this.connectionPool = new ConnectionPool(maxConnections);
-    }
-
-    public void addConnectionObserver(ConnectionObserver listener) {
-        this.listeners.add(listener);
     }
 
     public void start() {
@@ -68,14 +63,18 @@ public class TcpServer {
         }
     }
 
+    public void addConnectionListener(ConnectionListener listener) {
+        this.listeners.add(listener);
+    }
+
     private void fireClientConnected(ClientConnection connection) {
-        for (ConnectionObserver listener : listeners) {
+        for (ConnectionListener listener : listeners) {
             listener.onClientConnected(connection);
         }
     }
 
     private void fireClientDisconnected(ClientConnection connection) {
-        for (ConnectionObserver listener : listeners) {
+        for (ConnectionListener listener : listeners) {
             listener.onClientDisconnected(connection);
         }
     }
@@ -93,20 +92,24 @@ public class TcpServer {
     private void handleClient(ClientConnection connection) {
         Socket socket = connection.getSocket();
 
+        logger.info("[{}] Nueva conexión desde {}", connection.getId(), socket.getInetAddress());
+
         try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
 
-            String message;
+            String request;
 
-            while ((message = in.readLine()) != null) {
-                logger.info("[{}] Mensaje recibido: {}", connection.getId(), message);
+            while ((request = in.readLine()) != null) {
+                logger.info("[{}] Petición recibida: {}", connection.getId(), request);
 
-                List<String> parts = protocolParser.decode(message);
+                List<String> parts = protocolParser.decode(request);
                 String response = commandHandler.process(parts);
 
                 logger.info("[{}] Enviando respuesta: {}", connection.getId(), response);
                 out.println(response);
             }
+
+            logger.info("[{}] Flujo de entrada cerrado por el cliente", connection.getId());
         } catch (IOException exception) {
             logger.error("[{}] Error de comunicación: {}", connection.getId(), exception.getMessage());
         } finally {

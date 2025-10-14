@@ -1,4 +1,4 @@
-package com.serverApplication.Interfaces.services;
+package com.serverApplication.useCases.interfaces;
 
 import com.serverApplication.dto.CreateUserRequest;
 

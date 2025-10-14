@@ -1,4 +1,4 @@
-package com.serverInfrastructure.network.protocol;
+package com.serverInfrastructure.adapters;
 
 import com.chatCommon.protocol.ProtocolParser;
 

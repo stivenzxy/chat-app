@@ -1,14 +1,13 @@
 package com.serverPresentation.views.models;
 
-import com.serverInfrastructure.network.ClientConnection;
-
+import com.serverApplication.dto.ConnectedClientInfo;
 import javax.swing.table.AbstractTableModel;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ConnectionTableModel extends AbstractTableModel {
     private final String[] columnNames = {"ID Cliente", "Dirección IP", "Estado"};
-    private final List<ClientConnection> connections = new ArrayList<>();
+    private final List<ConnectedClientInfo> connections = new ArrayList<>();
 
     @Override
     public int getRowCount() { return connections.size(); }
@@ -19,22 +18,22 @@ public class ConnectionTableModel extends AbstractTableModel {
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
-        ClientConnection connection = connections.get(rowIndex);
+        ConnectedClientInfo clientInfo = connections.get(rowIndex);
         return switch (columnIndex) {
-            case 0 -> connection.getId();
-            case 1 -> connection.getIpAddress();
+            case 0 -> clientInfo.id();
+            case 1 -> clientInfo.ipAddress();
             case 2 -> "Conectado";
             default -> null;
         };
     }
 
-    public void addConnection(ClientConnection connection) {
-        connections.add(connection);
+    public void addConnection(ConnectedClientInfo clientInfo) {
+        connections.add(clientInfo);
         fireTableRowsInserted(connections.size() - 1, connections.size() - 1);
     }
 
-    public void removeConnection(ClientConnection connection) {
-        int rowIndex = connections.indexOf(connection);
+    public void removeConnection(ConnectedClientInfo clientInfo) {
+        int rowIndex = connections.indexOf(clientInfo);
         if (rowIndex != -1) {
             connections.remove(rowIndex);
             fireTableRowsDeleted(rowIndex, rowIndex);

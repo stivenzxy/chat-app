@@ -3,65 +3,87 @@ package com.clientInfrastructure.adapters;
 import com.clientApplication.ports.ServerGatewayPort;
 import com.clientInfrastructure.network.TcpClient;
 import com.chatCommon.protocol.ProtocolParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 public class TcpGatewayAdapter implements ServerGatewayPort {
     private final TcpClient tcpClient;
     private final ProtocolParser parser;
 
-    // 1. "Buzón" para sincronizar la respuesta entre el hilo lector y el hilo principal.
-    // Una capacidad de 1 es suficiente para una petición-respuesta a la vez.
+    private static final Logger logger = LoggerFactory.getLogger(TcpGatewayAdapter.class);
+
     private final BlockingQueue<String> responseQueue = new LinkedBlockingQueue<>(1);
+    private Consumer<List<String>> asyncMessageListener;
 
     public TcpGatewayAdapter(TcpClient tcpClient, ProtocolParser parser) {
         this.tcpClient = tcpClient;
         this.parser = parser;
 
         try {
-            // Le decimos al cliente que ponga los mensajes recibidos en nuestra cola
             tcpClient.connect(message -> {
-                try {
-                    // Esta es la llamada que puede ser interrumpida
-                    responseQueue.put(message);
-                } catch (InterruptedException e) {
-                    // Si el hilo es interrumpido, restauramos la bandera de interrupción
-                    Thread.currentThread().interrupt();
-                    System.err.println("El hilo de escucha fue interrumpido al intentar poner un mensaje en la cola.");
+                List<String> parts = parser.decode(message);
+
+                if (isResponse(parts)) {
+                    try {
+                        responseQueue.put(message);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        logger.error("El hilo fue interrumpido al poner una respuesta en la cola.");
+                    }
+                } else {
+                    if (asyncMessageListener != null) {
+                        asyncMessageListener.accept(parts);
+                    } else {
+                        logger.warn("Mensaje asíncrono recibido pero no hay listener registrado: {}", message);
+                    }
                 }
             });
         } catch (Exception e) {
-            // Si la conexión inicial falla, la aplicación no puede continuar.
             throw new RuntimeException("No se pudo conectar al servidor al iniciar el gateway.", e);
         }
     }
 
     @Override
-    public List<String> sendAndReceive(List<String> requestParts) {
+    public List<String> sendAndReceive(String command, String... args) {
         try {
-            String messageToSend = parser.encode(requestParts.toArray(new String[0]));
+            List<String> allParts = new ArrayList<>();
+            allParts.add(command);
+            allParts.addAll(Arrays.asList(args));
 
-            // 3. Limpiamos la cola y enviamos el mensaje.
+            String requestToSend = parser.encode(allParts.toArray(new String[0]));
+
             responseQueue.clear();
-            tcpClient.sendMessage(messageToSend);
+            tcpClient.sendRequest(requestToSend);
 
-            // 4. Esperamos la respuesta en la cola por un tiempo máximo (ej. 5 segundos).
-            // poll() es mejor que take() porque evita que la app se congele indefinidamente.
             String rawResponse = responseQueue.poll(5, TimeUnit.SECONDS);
 
             if (rawResponse == null) {
-                // Timeout: el servidor no respondió a tiempo.
                 return List.of("ERROR", "El servidor no respondió a tiempo.");
             }
 
-            // 5. Si llega una respuesta, la decodificamos y la devolvemos.
             return parser.decode(rawResponse);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return List.of("ERROR", "La espera de respuesta fue interrumpida.");
         }
+    }
+
+    public void setAsyncMessageListener(Consumer<List<String>> listener) {
+        this.asyncMessageListener = listener;
+    }
+
+    private boolean isResponse(List<String> parts) {
+        if (parts.isEmpty()) return false;
+        String first = parts.getFirst().toUpperCase();
+        return first.equals("OK") || first.equals("ERROR") || first.equals("ACK");
     }
 }

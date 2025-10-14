@@ -1,7 +1,6 @@
 package com.serverInfrastructure.network.pool;
 
 import com.serverInfrastructure.network.ClientConnection;
-import com.serverInfrastructure.utils.AppProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +27,7 @@ public class ConnectionPool {
         ClientConnection connection;
         if (!available.isEmpty()) {
             connection = available.removeFirst();
-            connection.setSocket(socket);
+            connection.reset(socket);
         } else {
             connection = new ClientConnection("temp", socket.getInetAddress().getHostAddress(), socket);
         }
@@ -38,7 +37,16 @@ public class ConnectionPool {
     }
 
     public synchronized void releaseConnection(ClientConnection connection) {
+        try {
+            if (connection.getSocket() != null && !connection.getSocket().isClosed()) {
+                connection.getSocket().close();
+            }
+        } catch (Exception e) {
+            logger.debug("Error cerrando socket: {}", e.getMessage());
+        }
+
         inUse.remove(connection);
+        connection.reset(null);
         available.add(connection);
     }
 

@@ -1,22 +1,21 @@
 package com.serverPresentation.views.actions;
 
 import com.chatCommon.viewResources.UiBuilder;
+import com.serverApplication.dto.ConnectedClientInfo;
+import com.serverApplication.ports.ServerControl;
 import com.serverInfrastructure.network.ClientConnection;
-import com.serverInfrastructure.network.ConnectionObserver;
+import com.serverApplication.ports.ClientConnectionObserver;
 import com.serverInfrastructure.network.TcpServer;
-import com.serverPresentation.factories.ServerFactory;
+import com.serverPresentation.factories.PresentationFactory;
 import com.serverPresentation.views.models.ConnectionTableModel;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-public class ConnectionPanel extends JPanel implements ConnectionObserver {
-
-    private final ServerFactory factory;
+public class ConnectionPanel extends JPanel implements ClientConnectionObserver {
     private JTextField portField;
     private JButton toggleServerButton;
     private JLabel statusLabel;
@@ -24,11 +23,11 @@ public class ConnectionPanel extends JPanel implements ConnectionObserver {
     private JTable connectionsTable;
     private ConnectionTableModel tableModel;
 
-    private TcpServer currentServer;
-    private Thread serverThread;
+    private final ServerControl serverControl;
 
-    public ConnectionPanel(ServerFactory factory) {
-        this.factory = factory;
+    public ConnectionPanel(ServerControl serverControl) {
+        this.serverControl = serverControl;
+        this.serverControl.addConnectionObserver(this);
         initComponents();
         loadServerIp();
     }
@@ -86,43 +85,33 @@ public class ConnectionPanel extends JPanel implements ConnectionObserver {
     }
 
     private void onToggleServer() {
-        if (currentServer == null) {
+        boolean isServerRunning = toggleServerButton.getText().equals("Detener Servidor");
+
+        if (!isServerRunning) {
             try {
                 int port = Integer.parseInt(portField.getText().trim());
-                currentServer = factory.createTcpServer(port);
-                currentServer.addConnectionObserver(this);
+                serverControl.startServer(port);
 
-                serverThread = new Thread(() -> {
-                    currentServer.start();
-                });
-
-                serverThread.start();
                 updateUI(true, port);
             } catch (NumberFormatException ex) {
                 showError("El puerto debe ser un número válido.");
+            } catch (Exception ex) {
+                showError("No se pudo iniciar el servidor: " + ex.getMessage());
             }
         } else {
-            // Detener servidor
-            currentServer.stop();
-            serverThread.interrupt(); // Opcional, pero buena práctica
-            resetServerState();
+            serverControl.stopServer();
+            updateUI(false, 0);
         }
     }
 
     @Override
-    public void onClientConnected(ClientConnection connection) {
-        SwingUtilities.invokeLater(() -> tableModel.addConnection(connection));
+    public void onClientConnected(ConnectedClientInfo clientInfo) {
+        SwingUtilities.invokeLater(() -> tableModel.addConnection(clientInfo));
     }
 
     @Override
-    public void onClientDisconnected(ClientConnection connection) {
-        SwingUtilities.invokeLater(() -> tableModel.removeConnection(connection));
-    }
-
-    private void resetServerState() {
-        currentServer = null;
-        serverThread = null;
-        SwingUtilities.invokeLater(() -> updateUI(false, 0));
+    public void onClientDisconnected(ConnectedClientInfo clientInfo) {
+        SwingUtilities.invokeLater(() -> tableModel.removeConnection(clientInfo));
     }
 
     private void updateUI(boolean isRunning, int port) {

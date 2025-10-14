@@ -1,7 +1,7 @@
 package com.serverApplication.useCases;
 
 import com.chatCommon.dto.auth.LoginRequest;
-import com.serverApplication.useCases.Interfaces.AuthService;
+import com.serverApplication.useCases.interfaces.AuthService;
 import com.serverDomain.entities.User;
 import com.serverDomain.repositories.UserRepository;
 import com.serverDomain.services.PasswordHasher;

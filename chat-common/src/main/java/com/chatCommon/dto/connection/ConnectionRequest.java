@@ -1,4 +1,4 @@
 package com.chatCommon.dto.connection;
 
-public class WelcomeCommand {
+public record ConnectionRequest(String ip, int port) {
 }

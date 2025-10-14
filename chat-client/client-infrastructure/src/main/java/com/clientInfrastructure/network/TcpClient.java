@@ -28,43 +28,48 @@ public class TcpClient {
 
     /**
      * 2. Establece la conexión e inicia un hilo para escuchar mensajes del servidor.
+     *
      * @param onMessageReceived Un "notificador" que se ejecuta cada vez que llega un mensaje.
      */
-    public void connect(Consumer<String> onMessageReceived) throws IOException {
+    public void connect(Consumer<String> onMessageReceived) {
         logger.info("Conectando al servidor en {}:{}", host, port);
-        socket = new Socket(host, port);
-        out = new PrintWriter(socket.getOutputStream(), true);
-        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-        // 3. Hilo Lector: su única tarea es escuchar al servidor
-        listenerThread = new Thread(() -> {
-            try {
-                String serverMessage;
-                while (!Thread.currentThread().isInterrupted() && (serverMessage = in.readLine()) != null) {
-                    logger.info("Recibido <- {}", serverMessage);
-                    // Cuando llega un mensaje, se lo pasamos al notificador
-                    onMessageReceived.accept(serverMessage);
+        try {
+            socket = new Socket(host, port);
+
+            out = new PrintWriter(socket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+
+            // 3. Hilo Lector: su única tarea es escuchar al servidor
+            listenerThread = new Thread(() -> {
+                try {
+                    String serverResponse;
+                    while (!Thread.currentThread().isInterrupted() && (serverResponse = in.readLine()) != null) {
+                        logger.info("Recibido <- {}", serverResponse);
+                        // Cuando llega un mensaje, se lo pasamos al notificador
+                        onMessageReceived.accept(serverResponse);
+                    }
+                } catch (IOException e) {
+                    if (!socket.isClosed()) {
+                        logger.error("La conexión con el servidor se ha perdido.", e);
+                    }
+                } finally {
+                    logger.info("El hilo lector ha terminado.");
                 }
-            } catch (IOException e) {
-                if (!socket.isClosed()) {
-                    logger.error("La conexión con el servidor se ha perdido.", e);
-                }
-            } finally {
-                logger.info("El hilo lector ha terminado.");
-            }
-        });
-        listenerThread.setName("ClientListenerThread");
-        listenerThread.start();
-        logger.info("Conectado y escuchando al servidor.");
+            });
+            listenerThread.setName("ClientListenerThread");
+            listenerThread.start();
+            logger.info("Conectado y escuchando al servidor.");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    /**
-     * 4. Envía un mensaje al servidor a través de la conexión ya establecida.
-     */
-    public void sendMessage(String message) {
+    public void sendRequest(String request) {
         if (out != null) {
-            logger.info("Enviando -> {}", message);
-            out.println(message);
+            logger.info("Enviando -> {}", request);
+            out.println(request);
         } else {
             logger.warn("No se puede enviar el mensaje, no hay conexión activa.");
         }

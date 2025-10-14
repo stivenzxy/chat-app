@@ -6,7 +6,9 @@ import com.clientApplication.commands.contract.ClientCommand;
 import com.clientApplication.ports.ServerGatewayPort;
 
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class LoginClientCommand implements ClientCommand<LoginRequest, LoginResponse> {
 
@@ -19,15 +21,18 @@ public class LoginClientCommand implements ClientCommand<LoginRequest, LoginResp
     @Override
     public LoginResponse execute(LoginRequest request) {
         try {
-            List<String> requestParts = Arrays.asList("LOGIN", request.getUsername(), request.getPassword());
-            List<String> responseParts = gateway.sendAndReceive(requestParts);
+            List<String> responseParts = gateway.sendAndReceive(
+                    "LOGIN",
+                    request.getUsername(),
+                    request.getPassword()
+            );
 
             boolean success = !responseParts.isEmpty() && "OK".equalsIgnoreCase(responseParts.get(0));
             String message = responseParts.size() > 1 ? responseParts.get(1) : (success ? "Éxito" : "Respuesta desconocida");
 
             return new LoginResponse(success, message);
-        } catch (Exception e) {
-            return new LoginResponse(false, "Error de comunicación: " + e.getMessage());
+        } catch (Exception exception) {
+            return new LoginResponse(false, "Error de comunicación: " + exception.getMessage());
         }
     }
 }

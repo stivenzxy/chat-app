@@ -1,8 +1,8 @@
 package com.serverApplication.ports;
 
-import com.serverApplication.dto.ClientConnection;
+import com.serverApplication.dto.ConnectedClientInfo;
 
-public interface ConnectionObserver {
-    void onClientConnected(ClientConnection connection);
-    void onClientDisconnected(ClientConnection connection);
+public interface ClientConnectionObserver {
+    void onClientConnected(ConnectedClientInfo clientInfo);
+    void onClientDisconnected(ConnectedClientInfo clientInfo);
 }

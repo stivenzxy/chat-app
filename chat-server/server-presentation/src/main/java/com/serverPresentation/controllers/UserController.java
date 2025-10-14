@@ -1,7 +1,7 @@
 package com.serverPresentation.controllers;
 
 import com.serverApplication.dto.CreateUserRequest;
-import com.serverApplication.useCases.Interfaces.CreateUserService;
+import com.serverApplication.useCases.interfaces.CreateUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
