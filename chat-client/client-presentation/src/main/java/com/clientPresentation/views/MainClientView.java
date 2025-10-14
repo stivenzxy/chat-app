@@ -34,7 +34,7 @@ public class MainClientView extends JFrame {
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
 
-        ConnectionPanel connectionPanel = new ConnectionPanel(this::onConnectionSuccess);
+        ConnectionPanel connectionPanel = new ConnectionPanel(this::onConnectionSuccess, this::onReturnToConnection);
 
         mainPanel.add(connectionPanel, "CONNECTION_PANEL");
 
@@ -49,6 +49,11 @@ public class MainClientView extends JFrame {
         LoginPanel loginPanel = new LoginPanel(commandFactory.createLoginCommand());
         mainPanel.add(loginPanel, "LOGIN_PANEL");
         cardLayout.show(mainPanel, "LOGIN_PANEL");
+    }
+    
+    private void onReturnToConnection() {
+        System.out.println("Regresando al panel de conexión...");
+        cardLayout.show(mainPanel, "CONNECTION_PANEL");
     }
 
     private JPanel createHeaderPanel() {

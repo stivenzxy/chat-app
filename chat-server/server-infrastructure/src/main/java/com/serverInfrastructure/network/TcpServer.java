@@ -31,7 +31,7 @@ public class TcpServer {
         this.port = port;
         this.commandHandler = commandHandler;
         this.protocolParser = new ProtocolParser('|', '\\');
-        int maxConnections = AppProperties.getInt("MAX_CONNECTIONS", 2);
+        int maxConnections = AppProperties.getInt("MAX_CONNECTIONS");
         this.connectionPool = new ConnectionPool(maxConnections);
     }
 
@@ -89,6 +89,42 @@ public class TcpServer {
         }
     }
 
+    public int getMaxConnections() {
+        return connectionPool != null ? connectionPool.getMaxConnections() : 0;
+    }
+
+    public int getCurrentConnections() {
+        return connectionPool != null ? connectionPool.getInUseCount() : 0;
+    }
+    
+    public void disconnectClient(String clientId) {
+        if (connectionPool != null) {
+            ClientConnection connection = connectionPool.findConnectionById(clientId);
+            if (connection != null) {
+                logger.info("[{}] Desconectando cliente por solicitud del servidor", clientId);
+                
+                // Enviamos una notificación al cliente antes de desconectarlo
+                try {
+                    if (connection.getSocket() != null && !connection.getSocket().isClosed()) {
+                        PrintWriter out = new PrintWriter(connection.getSocket().getOutputStream(), true);
+                        String disconnectMessage = protocolParser.encode("DISCONNECT", "Desconectado por el servidor");
+                        out.println(disconnectMessage);
+                        logger.info("[{}] Notificación de desconexión enviada al cliente", clientId);
+                        
+                        // Esperamos un momento para que el mensaje llegue
+                        Thread.sleep(100);
+                    }
+                } catch (Exception e) {
+                    logger.warn("[{}] Error al enviar notificación de desconexión: {}", clientId, e.getMessage());
+                }
+                
+                connectionPool.forceDisconnect(connection);
+            } else {
+                logger.warn("No se encontró cliente con ID: {}", clientId);
+            }
+        }
+    }
+
     private void handleClient(ClientConnection connection) {
         Socket socket = connection.getSocket();
 
@@ -113,13 +149,18 @@ public class TcpServer {
         } catch (IOException exception) {
             logger.error("[{}] Error de comunicación: {}", connection.getId(), exception.getMessage());
         } finally {
+            // Guardamos el ID antes de que se pierda en releaseConnection
+            String connectionId = connection.getId();
+            
             try {
                 socket.close();
-                connectionPool.releaseConnection(connection);
+                // Primero notificamos la desconexión con los datos originales
                 fireClientDisconnected(connection);
-                logger.info("[{}] Cliente desconectado", connection.getId());
+                // Después liberamos la conexión (esto resetea el ID)
+                connectionPool.releaseConnection(connection);
+                logger.info("[{}] Cliente desconectado", connectionId);
             } catch (IOException e) {
-                logger.warn("[{}] Error al cerrar la conexión: {}", connection.getId(), e.getMessage());
+                logger.warn("[{}] Error al cerrar la conexión: {}", connectionId, e.getMessage());
             }
         }
     }

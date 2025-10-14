@@ -44,7 +44,7 @@ public class TcpServerAdapter implements ServerControl, ConnectionListener {
         });
         serverThread.setName("TcpServerThread");
         serverThread.start();
-        logger.info("Adaptador ha iniciado el servidor en el puerto {}.", port);
+        //logger.info("Adaptador ha iniciado el servidor en el puerto {}.", port);
     }
 
     @Override
@@ -66,11 +66,23 @@ public class TcpServerAdapter implements ServerControl, ConnectionListener {
         this.appObservers.add(observer);
     }
 
+    public int getMaxConnections() {
+        return server != null ? server.getMaxConnections() : 0;
+    }
+
+    public int getCurrentConnections() {
+        return server != null ? server.getCurrentConnections() : 0;
+    }
+    
+    public void disconnectClient(String clientId) {
+        if (server != null) {
+            server.disconnectClient(clientId);
+        }
+    }
+
 
     @Override
     public void onClientConnected(ClientConnection connection) {
-        logger.debug("Evento de red 'conectado' recibido para {}. Traduciendo para la capa de aplicación.", connection.getId());
-
         ConnectedClientInfo clientInfo = new ConnectedClientInfo(connection.getId(), connection.getIpAddress());
 
         for (ClientConnectionObserver observer : appObservers) {
@@ -80,7 +92,6 @@ public class TcpServerAdapter implements ServerControl, ConnectionListener {
 
     @Override
     public void onClientDisconnected(ClientConnection connection) {
-        logger.debug("Evento de red 'desconectado' recibido para {}. Traduciendo para la capa de aplicación.", connection.getId());
         ConnectedClientInfo clientInfo = new ConnectedClientInfo(connection.getId(), connection.getIpAddress());
         for (ClientConnectionObserver observer : appObservers) {
             observer.onClientDisconnected(clientInfo);

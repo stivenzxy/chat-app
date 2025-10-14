@@ -26,6 +26,15 @@ public class AppProperties {
         return resourceBundle.getString(key);
     }
 
+    public static int getInt(String key) {
+        try {
+            return Integer.parseInt(resourceBundle.getString(key));
+        } catch (Exception exception) {
+            logger.error("FATAL: Clave {} no encontrada o inválida en la configuración. Esta clave es obligatoria.", key);
+            throw new RuntimeException("Configuración inválida: falta la clave " + key, exception);
+        }
+    }
+
     public static int getInt(String key, int defaultValue) {
         try {
             return Integer.parseInt(resourceBundle.getString(key));

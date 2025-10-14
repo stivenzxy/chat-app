@@ -3,10 +3,7 @@ package com.serverPresentation.views.actions;
 import com.chatCommon.viewResources.UiBuilder;
 import com.serverApplication.dto.ConnectedClientInfo;
 import com.serverApplication.ports.ServerControl;
-import com.serverInfrastructure.network.ClientConnection;
 import com.serverApplication.ports.ClientConnectionObserver;
-import com.serverInfrastructure.network.TcpServer;
-import com.serverPresentation.factories.PresentationFactory;
 import com.serverPresentation.views.models.ConnectionTableModel;
 
 import javax.swing.*;
@@ -14,12 +11,14 @@ import javax.swing.border.Border;
 import java.awt.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.List;
 
 public class ConnectionPanel extends JPanel implements ClientConnectionObserver {
     private JTextField portField;
     private JButton toggleServerButton;
     private JLabel statusLabel;
     private JLabel ipLabel;
+    private JLabel connectionPoolLabel;
     private JTable connectionsTable;
     private ConnectionTableModel tableModel;
 
@@ -75,12 +74,41 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver 
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createTitledBorder("Conexiones Entrantes"));
 
-        panel.add(new JLabel("Máximo de conexiones: 10 (Pool)"), BorderLayout.NORTH);
+        connectionPoolLabel = new JLabel("Pool de conexiones: Servidor detenido");
+        panel.add(connectionPoolLabel, BorderLayout.NORTH);
 
         tableModel = new ConnectionTableModel();
         connectionsTable = new JTable(tableModel);
 
-        panel.add(new JScrollPane(connectionsTable), BorderLayout.CENTER);
+        JPanel tablePanel = new JPanel(new BorderLayout());
+        tablePanel.add(new JScrollPane(connectionsTable), BorderLayout.CENTER);
+
+        JPanel buttonPanel = createConnectionButtonsPanel();
+        tablePanel.add(buttonPanel, BorderLayout.SOUTH);
+        
+        panel.add(tablePanel, BorderLayout.CENTER);
+        return panel;
+    }
+    
+    private JPanel createConnectionButtonsPanel() {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        
+        JButton disconnectButton = new JButton("Desconectar Seleccionados");
+        UiBuilder.styleButton(disconnectButton, new Color(220, 38, 38));
+        disconnectButton.addActionListener(e -> onDisconnectSelected());
+        
+        JButton selectAllButton = new JButton("Seleccionar Todo");
+        UiBuilder.styleButton(selectAllButton, new Color(59, 130, 246));
+        selectAllButton.addActionListener(e -> onSelectAll());
+        
+        JButton clearSelectionButton = new JButton("Limpiar Selección");
+        UiBuilder.styleButton(clearSelectionButton, new Color(107, 114, 128));
+        clearSelectionButton.addActionListener(e -> onClearSelection());
+        
+        panel.add(selectAllButton);
+        panel.add(clearSelectionButton);
+        panel.add(disconnectButton);
+        
         return panel;
     }
 
@@ -106,12 +134,59 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver 
 
     @Override
     public void onClientConnected(ConnectedClientInfo clientInfo) {
-        SwingUtilities.invokeLater(() -> tableModel.addConnection(clientInfo));
+        SwingUtilities.invokeLater(() -> {
+            tableModel.addConnection(clientInfo);
+            updateConnectionPoolLabel();
+        });
     }
 
     @Override
     public void onClientDisconnected(ConnectedClientInfo clientInfo) {
-        SwingUtilities.invokeLater(() -> tableModel.removeConnection(clientInfo));
+        SwingUtilities.invokeLater(() -> {
+            System.out.println("UI: Removiendo cliente [" + clientInfo.id() + "] de la tabla");
+            tableModel.removeConnection(clientInfo);
+            updateConnectionPoolLabel();
+        });
+    }
+
+    private void updateConnectionPoolLabel() {
+        int current = serverControl.getCurrentConnections();
+        int max = serverControl.getMaxConnections();
+        connectionPoolLabel.setText(String.format("Pool de conexiones: %d/%d", current, max));
+    }
+    
+    private void onDisconnectSelected() {
+        List<ConnectedClientInfo> selectedClients = tableModel.getSelectedConnections();
+        if (selectedClients.isEmpty()) {
+            JOptionPane.showMessageDialog(this, 
+                "No hay clientes seleccionados para desconectar.", 
+                "Información", 
+                JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        int confirmed = JOptionPane.showConfirmDialog(this, 
+            String.format("¿Está seguro de desconectar %d cliente(s) seleccionado(s)?", selectedClients.size()), 
+            "Confirmar Desconexión", 
+            JOptionPane.YES_NO_OPTION, 
+            JOptionPane.WARNING_MESSAGE);
+            
+        if (confirmed == JOptionPane.YES_OPTION) {
+            for (ConnectedClientInfo client : selectedClients) {
+                serverControl.disconnectClient(client.id());
+            }
+            tableModel.clearSelections();
+        }
+    }
+    
+    private void onSelectAll() {
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            tableModel.setValueAt(true, i, 0);
+        }
+    }
+    
+    private void onClearSelection() {
+        tableModel.clearSelections();
     }
 
     private void updateUI(boolean isRunning, int port) {
@@ -121,12 +196,14 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver 
             toggleServerButton.setText("Detener Servidor");
             UiBuilder.styleButton(toggleServerButton, new Color(220, 38, 38));
             portField.setEnabled(false);
+            updateConnectionPoolLabel();
         } else {
             statusLabel.setText("Estado: Detenido");
             statusLabel.setForeground(Color.RED);
             toggleServerButton.setText("Iniciar Servidor");
             UiBuilder.styleButton(toggleServerButton, new Color(46, 153, 85));
             portField.setEnabled(true);
+            connectionPoolLabel.setText("Pool de conexiones: Servidor detenido");
         }
     }
 
