@@ -1,7 +1,7 @@
 package com.serverInfrastructure.persistence.config;
 
 import com.serverInfrastructure.persistence.exception.DatabaseException;
-import com.serverInfrastructure.utils.AppProperties;
+import com.chatCommon.utils.AppProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,12 +19,20 @@ public class ConnectionManager {
     private static volatile ConnectionManager instance = null;
     private static final Logger logger = LoggerFactory.getLogger(ConnectionManager.class);
 
-    private static final String DRIVER = AppProperties.getProperty("DRIVER");
-    private static final String URL = AppProperties.getProperty("URL");
-    private static final String USER = AppProperties.getProperty("USER");
-    private static final String PASS = AppProperties.getProperty("PASSWORD");
+    // --- CAMBIAR ESTOS CAMPOS DE STATIC A INSTANCE ---
+    private final String DRIVER;
+    private final String URL;
+    private final String USER;
+    private final String PASS;
 
     private ConnectionManager() {
+        // --- INICIALIZAR AppProperties AQUÍ ---
+        AppProperties props = new AppProperties("server-configuration");
+        DRIVER = props.getProperty("DRIVER");
+        URL = props.getProperty("URL");
+        USER = props.getProperty("USER");
+        PASS = props.getProperty("PASSWORD");
+
         try {
             Class.forName(DRIVER);
             initDatabase();

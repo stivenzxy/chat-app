@@ -4,11 +4,13 @@ import com.chatCommon.dto.MessageDTO;
 import com.clientApplication.commands.contract.ClientCommand;
 import com.clientApplication.factories.CommandFactory;
 import com.clientPresentation.services.AudioService;
+import com.clientInfrastructure.persistence.dao.MessageDAO;
 import javax.sound.sampled.LineUnavailableException;
 import java.awt.event.ActionEvent;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.List;
 
 public class PrivateChatPanel extends JPanel {
     private final String selfUsername;
@@ -23,13 +25,17 @@ public class PrivateChatPanel extends JPanel {
     private final AudioService audioService;
     private final ClientCommand<MessageDTO, Boolean> sendAudioCommand;
 
+    private final MessageDAO messageDAO;
+
     public PrivateChatPanel(String selfUsername, String otherUsername, CommandFactory commandFactory) {
         this.selfUsername = selfUsername;
         this.otherUsername = otherUsername;
         this.sendMessageCommand = commandFactory.createSendPrivateMessageCommand();
         this.sendAudioCommand = commandFactory.createSendPrivateAudioCommand(); // Nuevo
         this.audioService = new AudioService(); // Nuevo
+        this.messageDAO = new MessageDAO(); // Instanciar DAO
         initComponents();
+        loadChatHistory();
     }
 
     private void initComponents() {
@@ -96,7 +102,7 @@ public class PrivateChatPanel extends JPanel {
         appendMessage("Yo", "[Mensaje de audio enviado]");
 
         MessageDTO audioMessage = new MessageDTO(selfUsername, otherUsername, audioData);
-
+        messageDAO.saveMessage(audioMessage);
         new SwingWorker<Boolean, Void>() {
             @Override
             protected Boolean doInBackground() throws Exception {
@@ -144,6 +150,8 @@ public class PrivateChatPanel extends JPanel {
         // Crear el DTO y ejecutar el comando
         MessageDTO message = new MessageDTO(selfUsername, otherUsername, content);
 
+        messageDAO.saveMessage(message);
+
         // Ejecutar en segundo plano para no bloquear la UI
         new SwingWorker<Boolean, Void>() {
             @Override
@@ -168,7 +176,49 @@ public class PrivateChatPanel extends JPanel {
     public void appendMessage(String sender, String content) {
         SwingUtilities.invokeLater(() -> {
             JLabel messageLabel = new JLabel(String.format("[%s]: %s", sender, content));
-            chatHistoryArea.add(messageLabel);        });
+            chatHistoryArea.add(messageLabel);
+
+            chatHistoryArea.revalidate();
+            chatHistoryArea.repaint();
+        });
+    }
+
+    private void loadChatHistory() {
+        // --- INICIO DE LA LÓGICA FALTANTE ---
+        new SwingWorker<List<MessageDTO>, Void>() {
+            @Override
+            protected List<MessageDTO> doInBackground() throws Exception {
+                // Obtener el historial de la base de datos
+                return messageDAO.getChatHistory(selfUsername, otherUsername);
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    List<MessageDTO> history = get();
+                    for (MessageDTO msg : history) {
+                        String sender = msg.getSenderId().equals(selfUsername) ? "Yo" : msg.getSenderId();
+
+                        if (msg.getMessageType() == com.chatCommon.dto.MessageType.TEXT) {
+                            appendMessage(sender, msg.getTextContent());
+                        } else if (msg.getMessageType() == com.chatCommon.dto.MessageType.AUDIO) {
+                            appendAudioMessage(sender, msg.getAudioContent());
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(PrivateChatPanel.this,
+                            "Error al cargar el historial de chat.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
+        // --- FIN DE LA LÓGICA FALTANTE ---
+    }
+
+    public void receiveMessage(String sender, String content) {
+        MessageDTO message = new MessageDTO(sender, selfUsername, content);
+        messageDAO.saveMessage(message); // Guardar mensaje recibido
+        appendMessage(sender, content);  // Mostrar en la UI
     }
 
     public String getOtherUsername() {

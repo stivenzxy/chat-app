@@ -10,10 +10,9 @@ import com.chatCommon.protocol.ProtocolParser;
 import com.serverInfrastructure.network.pool.ConnectionPool;
 import com.serverInfrastructure.services.ActiveUserManager;
 import com.serverInfrastructure.services.CommandHandler;
-import com.serverInfrastructure.services.ActiveUserManager;
 import com.serverInfrastructure.services.ActiveUserObserver;
 import com.serverDomain.entities.User;
-import com.serverInfrastructure.utils.AppProperties;
+import com.chatCommon.utils.AppProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +35,11 @@ public class TcpServer implements ActiveUserObserver {
         this.commandHandler = commandHandler;
         this.commandHandler.setServer(this);
         this.protocolParser = new ProtocolParser('|', '\\');
-        int maxConnections = AppProperties.getInt("MAX_CONNECTIONS");
+
+        AppProperties props = new AppProperties("server-configuration");
+        // ¡Esta línea es correcta! Llama al método desde la instancia 'props'
+        int maxConnections = props.getInt("MAX_CONNECTIONS");
+
         this.connectionPool = new ConnectionPool(maxConnections);
         ActiveUserManager.getInstance().addObserver(this);
     }

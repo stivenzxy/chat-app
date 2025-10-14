@@ -133,7 +133,7 @@ public class ChatPanel extends JPanel {
             openPrivateChat(sender);
         }
         PrivateChatPanel chatPanel = openChats.get(sender);
-        chatPanel.appendMessage(sender, content);
+        chatPanel.receiveMessage(sender, content);
     }
 
     public void receiveAudioMessage(String sender, byte[] audioData) {
