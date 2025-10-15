@@ -1,8 +1,8 @@
 package com.serverPresentation.views;
 
 import com.serverPresentation.factories.PresentationFactory;
-import com.serverPresentation.views.actions.ConnectionPanel;
-import com.serverPresentation.views.actions.RegisterUserPanel;
+import com.serverPresentation.views.components.ConnectionPanel;
+import com.serverPresentation.views.components.RegisterUserPanel;
 
 import javax.swing.*;
 import java.awt.*;

@@ -4,8 +4,8 @@ import com.serverApplication.factories.ServiceFactory;
 import com.serverApplication.ports.ServerControl;
 import com.serverPresentation.controllers.UserController;
 import com.serverPresentation.views.MainServerView;
-import com.serverPresentation.views.actions.ConnectionPanel;
-import com.serverPresentation.views.actions.UserListPanel;
+import com.serverPresentation.views.components.ConnectionPanel;
+import com.serverPresentation.views.components.UserListPanel;
 
 public class PresentationFactory {
     private final ServiceFactory serviceFactory;

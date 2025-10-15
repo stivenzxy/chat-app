@@ -1,4 +1,4 @@
-package com.serverPresentation.views.actions;
+package com.serverPresentation.views.components;
 
 import com.chatCommon.viewResources.UiBuilder;
 import com.serverApplication.dto.CreateUserRequest;

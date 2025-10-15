@@ -1,14 +1,14 @@
 package com.clientPresentation.views;
 
 import com.chatCommon.dto.GetUsersResponse;
+import com.chatCommon.dto.MessageDTO;
 import com.chatCommon.dto.UserDTO;
 import com.clientApplication.commands.contract.ClientCommand;
 import com.clientApplication.factories.CommandFactory;
-import com.clientPresentation.components.DisconnectButton;
+import com.clientPresentation.views.components.atoms.DisconnectButton;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Vector;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -138,7 +138,9 @@ public class ChatPanel extends JPanel {
             openPrivateChat(sender);
         }
         PrivateChatPanel chatPanel = openChats.get(sender);
-        chatPanel.receiveMessage(sender, content);
+
+        MessageDTO message = new MessageDTO(sender, selfUsername, content);
+        chatPanel.receiveMessage(message);
     }
 
     public void receiveAudioMessage(String sender, byte[] audioData) {
@@ -147,6 +149,8 @@ public class ChatPanel extends JPanel {
         }
 
         PrivateChatPanel chatPanel = openChats.get(sender);
-        chatPanel.appendAudioMessage(sender, audioData);
+
+        MessageDTO audioMessage = new MessageDTO(sender, selfUsername, audioData);
+        chatPanel.receiveMessage(audioMessage);
     }
 }

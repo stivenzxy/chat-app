@@ -7,8 +7,8 @@ import com.clientApplication.factories.MessageHandlerFactory;
 import com.clientApplication.handlers.MessageHandler;
 import com.clientApplication.listeners.*;
 import com.clientApplication.ports.ServerGatewayPort;
-import com.clientPresentation.views.actions.ConnectionPanel;
-import com.clientPresentation.views.actions.LoginPanel;
+import com.clientPresentation.views.components.ConnectionPanel;
+import com.clientPresentation.views.components.LoginPanel;
 
 import javax.swing.*;
 import java.awt.*;

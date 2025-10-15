@@ -1,10 +1,10 @@
-package com.clientPresentation.views.actions;
+package com.clientPresentation.views.components;
 
 import com.chatCommon.dto.auth.LoginRequest;
 import com.chatCommon.dto.auth.LoginResponse;
 import com.chatCommon.viewResources.UiBuilder;
 import com.clientApplication.commands.contract.ClientCommand;
-import com.clientPresentation.components.DisconnectButton;
+import com.clientPresentation.views.components.atoms.DisconnectButton;
 import java.util.function.Consumer;
 
 import javax.swing.*;

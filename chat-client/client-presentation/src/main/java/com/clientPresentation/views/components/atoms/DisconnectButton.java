@@ -1,4 +1,4 @@
-package com.clientPresentation.components;
+package com.clientPresentation.views.components.atoms;
 
 import com.chatCommon.viewResources.UiBuilder;
 import javax.swing.*;
