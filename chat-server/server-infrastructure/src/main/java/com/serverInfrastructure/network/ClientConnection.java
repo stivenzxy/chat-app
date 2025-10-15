@@ -22,7 +22,7 @@ public class ClientConnection {
     public void resetForReuse(Socket newSocket) {
         this.socket = newSocket;
         this.ipAddress = (newSocket != null) ? newSocket.getInetAddress().getHostAddress() : null;
-        this.id = "temp"; // Solo para nuevas conexiones reutilizadas
+        this.id = "temp";
     }
     
     public void clearSocketOnly() {

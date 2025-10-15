@@ -111,7 +111,7 @@ public class TcpServer implements ActiveUserObserver {
     public int getCurrentConnections() {
         return connectionPool != null ? connectionPool.getInUseCount() : 0;
     }
-    
+
     public void disconnectClient(String clientId) {
         if (connectionPool != null) {
             ClientConnection connection = connectionPool.findConnectionById(clientId);
@@ -129,7 +129,7 @@ public class TcpServer implements ActiveUserObserver {
                 } catch (Exception e) {
                     logger.warn("[{}] Error al enviar notificación de desconexión: {}", clientId, e.getMessage());
                 }
-                
+
                 connectionPool.forceDisconnect(connection);
             } else {
                 logger.warn("No se encontró cliente con ID: {}", clientId);
@@ -191,22 +191,17 @@ public class TcpServer implements ActiveUserObserver {
     @Override
     public void onUserLoggedOut(User user) {
         String message = protocolParser.encode("USER_DISCONNECTED", user.getId(), user.getUsername().value());
-        broadcastMessage(message, null); // Enviar a todos
-        
-        // IMPORTANTE: También notificar a los ClientConnectionObserver (UI del servidor)
+        broadcastMessage(message, null);
+
         ClientConnection connection = connectionPool.findConnectionById(user.getUsername().value());
         if (connection != null) {
-            System.out.println("DEBUG: Notificando ClientConnectionObserver para usuario desconectado: " + user.getUsername().value());
+            //System.out.println("DEBUG: Notificando ClientConnectionObserver para usuario desconectado: " + user.getUsername().value());
             fireClientDisconnected(connection);
         } else {
             System.out.println("DEBUG: No se encontró conexión para usuario: " + user.getUsername().value());
         }
     }
 
-    public boolean sendMessageToUser(String username, String message) {
-        return sendMessageToUser(username, message, null);
-    }
-    
     public boolean sendMessageToUser(String username, String message, String senderInfo) {
         ClientConnection connection = connectionPool.findConnectionById(username);
         if (connection != null) {
@@ -214,13 +209,11 @@ public class TcpServer implements ActiveUserObserver {
                 if (connection.getSocket() != null && !connection.getSocket().isClosed()) {
                     PrintWriter out = new PrintWriter(connection.getSocket().getOutputStream(), true);
                     out.println(message);
-                    
-                    // Log mejorado con información del remitente si está disponible
+
                     if (senderInfo != null) {
-                        // Extraer contenido del mensaje para log más claro
                         String messageContent = extractMessageContent(message);
-                        logger.info("Cliente [{}] envió \"{}\" a cliente [{}]", 
-                                   senderInfo, messageContent, username);
+                        logger.info("Cliente [{}] envió \"{}\" a cliente [{}]",
+                                senderInfo, messageContent, username);
                     } else {
                         logger.info("Mensaje directo enviado a [{}]: {}", username, message);
                     }
@@ -232,21 +225,21 @@ public class TcpServer implements ActiveUserObserver {
         }
         return false;
     }
-    
+
     private String extractMessageContent(String protocolMessage) {
         try {
             List<String> parts = protocolParser.decode(protocolMessage);
             if (parts.size() >= 3) {
                 String command = parts.get(0);
                 if ("RECEIVE_PRIVATE_MESSAGE".equals(command)) {
-                    return parts.get(2); // Contenido del mensaje
+                    return parts.get(2);
                 } else if ("RECEIVE_PRIVATE_AUDIO".equals(command)) {
-                    return "[Audio message]"; // No mostramos el base64, solo indicamos que es audio
+                    return "[Audio message]";
                 }
             }
-            return protocolMessage; // Fallback al mensaje completo
+            return protocolMessage;
         } catch (Exception e) {
-            return protocolMessage; // Fallback en caso de error
+            return protocolMessage;
         }
     }
 
@@ -265,5 +258,4 @@ public class TcpServer implements ActiveUserObserver {
             }
         }
     }
-
 }

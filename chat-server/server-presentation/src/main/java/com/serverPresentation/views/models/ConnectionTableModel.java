@@ -72,7 +72,18 @@ public class ConnectionTableModel extends AbstractTableModel {
                 break;
             }
         }
-        
+
+        if (rowIndex == -1) {
+            for (int i = 0; i < connections.size(); i++) {
+                ConnectedClientInfo existing = connections.get(i);
+                boolean posibleTemporal = existing.id().startsWith("cliente-");
+                if (posibleTemporal && existing.ipAddress().equals(clientInfo.ipAddress())) {
+                    rowIndex = i;
+                    break;
+                }
+            }
+        }
+
         if (rowIndex != -1) {
             ConnectedClientInfo removedConnection = connections.remove(rowIndex);
             selectedConnections.remove(removedConnection);
