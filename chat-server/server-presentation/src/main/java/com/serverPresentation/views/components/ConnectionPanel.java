@@ -172,7 +172,7 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver 
             
         if (confirmed == JOptionPane.YES_OPTION) {
             for (ConnectedClientInfo client : selectedClients) {
-                serverControl.disconnectClient(client.id());
+                serverControl.disconnectClient(client.connectionId());
             }
             tableModel.clearSelections();
         }
