@@ -63,6 +63,12 @@ public class TcpServer implements ActiveUserObserver {
                     clientThread.start();
                 } catch (RuntimeException exception) {
                     logger.warn("Conexión rechazada: se alcanzó el máximo de usuarios permitidos");
+                    // Notificar al cliente inmediatamente y cerrar socket
+                    try (PrintWriter tempOut = new PrintWriter(socket.getOutputStream(), true)) {
+                        String rejectMessage = protocolParser.encode("DISCONNECT", "Servidor a máxima capacidad. Intente más tarde.");
+                        tempOut.println(rejectMessage);
+                    } catch (Exception ignored) {}
+                    try { socket.close(); } catch (Exception ignored) {}
                 }
             }
         } catch (SocketException exception) {

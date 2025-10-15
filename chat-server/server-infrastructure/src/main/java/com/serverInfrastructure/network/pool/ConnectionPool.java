@@ -14,6 +14,7 @@ public class ConnectionPool {
     private final List<ClientConnection> available = new ArrayList<>();
     private final List<ClientConnection> inUse = new ArrayList<>();
     private static final Logger logger = LoggerFactory.getLogger(ConnectionPool.class);
+    private long sequenceGenerator = 0L;
 
     public ConnectionPool(int maxConnections) {
         this.maxConnections = maxConnections;
@@ -29,11 +30,13 @@ public class ConnectionPool {
         if (!available.isEmpty()) {
             connection = available.removeFirst();
             connection.reset(socket);
-            logger.info("Pool: Reutilizando conexión existente del pool (disponibles: {} → {})",
-                available.size() + 1, available.size());
+            connection.incrementReuseCount();
+            logger.info("Pool: Reutilizando conexión instanciaSeq={} reuseCount={} (disponibles: {} → {})",
+                connection.getPoolSequence(), connection.getReuseCount(), available.size() + 1, available.size());
         } else {
             connection = new ClientConnection("temp", socket.getInetAddress().getHostAddress(), socket);
-            logger.info("Pool: Creando nueva conexión (total en uso: {})", inUse.size() + 1);
+            connection.setPoolSequence(++sequenceGenerator);
+            logger.info("Pool: Creando nueva conexión instanciaSeq={} (total en uso: {})", connection.getPoolSequence(), inUse.size() + 1);
         }
 
         inUse.add(connection);
@@ -55,8 +58,8 @@ public class ConnectionPool {
         connection.resetForReuse(null);
         available.add(connection);
         
-        logger.info("Pool: Conexión [{}] liberada y disponible para reutilización (disponibles: {} → {})",
-            connectionId, available.size() - 1, available.size());
+        logger.info("Pool: Conexión [{}] instanciaSeq={} liberada -> reuseCount actual {} (disponibles: {} → {})",
+            connectionId, connection.getPoolSequence(), connection.getReuseCount(), available.size() - 1, available.size());
     }
 
     public synchronized int getInUseCount() {
