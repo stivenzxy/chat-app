@@ -6,7 +6,7 @@ import com.serverApplication.useCases.LoginService;
 import com.serverDomain.entities.User;
 import com.serverInfrastructure.adapters.ProtocolCommandAdapter;
 import com.serverInfrastructure.network.ClientConnection;
-import com.serverInfrastructure.services.ActiveUserManager;
+import com.serverInfrastructure.observers.ActiveUserManager;
 
 import java.util.List;
 import java.util.Optional;

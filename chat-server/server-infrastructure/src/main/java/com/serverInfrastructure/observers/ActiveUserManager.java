@@ -1,4 +1,4 @@
-package com.serverInfrastructure.services;
+package com.serverInfrastructure.observers;
 
 import com.serverDomain.entities.User;
 import java.util.Collections;
@@ -11,7 +11,7 @@ public class ActiveUserManager {
 
     private static final ActiveUserManager INSTANCE = new ActiveUserManager();
     private final Map<String, User> activeUsers = new ConcurrentHashMap<>();
-    // Lista de observadores
+
     private final List<ActiveUserObserver> observers = new CopyOnWriteArrayList<>();
 
     private ActiveUserManager() {}
@@ -30,7 +30,6 @@ public class ActiveUserManager {
 
     public void userLoggedIn(String username, User user) {
         if (activeUsers.putIfAbsent(username, user) == null) {
-            // Notificar a los observadores solo si el usuario no estaba ya logueado
             notifyUserLoggedIn(user);
         }
     }
@@ -38,8 +37,10 @@ public class ActiveUserManager {
     public void userLoggedOut(String username) {
         User user = activeUsers.remove(username);
         if (user != null) {
-            // Notificar a los observadores solo si el usuario fue efectivamente removido
+            //System.out.println("DEBUG: Usuario " + username + " removido exitosamente. Notificando observers...");
             notifyUserLoggedOut(user);
+        } else {
+            System.out.println("DEBUG: Usuario " + username + " no encontrado en activeUsers. Usuarios activos: " + activeUsers.keySet());
         }
     }
 

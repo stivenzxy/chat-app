@@ -21,7 +21,6 @@ public class SendPrivateAudioClientCommand implements ClientCommand<MessageDTO, 
         }
 
         try {
-            // Codificar los bytes del audio a Base64
             String audioBase64 = Base64.getEncoder().encodeToString(request.getAudioContent());
 
             List<String> responseParts = gateway.sendAndReceive(

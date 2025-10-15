@@ -33,7 +33,6 @@ public class TcpGatewayAdapter implements ServerGatewayPort {
                 List<String> parts = parser.decode(message);
 
                 if (isDisconnectMessage(parts)) {
-                    // Mensaje de desconexión del servidor
                     if (disconnectListener != null) {
                         String reason = parts.size() > 1 ? parts.get(1) : "Desconectado por el servidor";
                         disconnectListener.accept(reason);
@@ -48,8 +47,6 @@ public class TcpGatewayAdapter implements ServerGatewayPort {
                 } else {
                     if (asyncMessageListener != null) {
                         asyncMessageListener.accept(parts);
-                    } else {
-                        logger.warn("Mensaje asíncrono recibido pero no hay listener registrado: {}", message);
                     }
                 }
             });

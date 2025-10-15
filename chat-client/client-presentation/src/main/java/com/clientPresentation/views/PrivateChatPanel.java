@@ -1,6 +1,7 @@
 package com.clientPresentation.views;
 
 import com.chatCommon.dto.MessageDTO;
+import com.chatCommon.dto.MessageType;
 import com.clientApplication.commands.contract.ClientCommand;
 import com.clientApplication.factories.CommandFactory;
 import com.clientPresentation.services.AudioService;
@@ -144,15 +145,12 @@ public class PrivateChatPanel extends JPanel {
             return;
         }
 
-        // Mostrar el mensaje propio inmediatamente
         appendMessage("Yo", content);
 
-        // Crear el DTO y ejecutar el comando
         MessageDTO message = new MessageDTO(selfUsername, otherUsername, content);
 
         messageDAO.saveMessage(message);
 
-        // Ejecutar en segundo plano para no bloquear la UI
         new SwingWorker<Boolean, Void>() {
             @Override
             protected Boolean doInBackground() throws Exception {
@@ -184,11 +182,9 @@ public class PrivateChatPanel extends JPanel {
     }
 
     private void loadChatHistory() {
-        // --- INICIO DE LA LÓGICA FALTANTE ---
         new SwingWorker<List<MessageDTO>, Void>() {
             @Override
-            protected List<MessageDTO> doInBackground() throws Exception {
-                // Obtener el historial de la base de datos
+            protected List<MessageDTO> doInBackground() {
                 return messageDAO.getChatHistory(selfUsername, otherUsername);
             }
 
@@ -199,26 +195,25 @@ public class PrivateChatPanel extends JPanel {
                     for (MessageDTO msg : history) {
                         String sender = msg.getSenderId().equals(selfUsername) ? "Yo" : msg.getSenderId();
 
-                        if (msg.getMessageType() == com.chatCommon.dto.MessageType.TEXT) {
+                        if (msg.getMessageType() == MessageType.TEXT) {
                             appendMessage(sender, msg.getTextContent());
-                        } else if (msg.getMessageType() == com.chatCommon.dto.MessageType.AUDIO) {
+                        } else if (msg.getMessageType() == MessageType.AUDIO) {
                             appendAudioMessage(sender, msg.getAudioContent());
                         }
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    System.err.println("Error al cargar el historial de chat: " + e);
                     JOptionPane.showMessageDialog(PrivateChatPanel.this,
                             "Error al cargar el historial de chat.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         }.execute();
-        // --- FIN DE LA LÓGICA FALTANTE ---
     }
 
     public void receiveMessage(String sender, String content) {
         MessageDTO message = new MessageDTO(sender, selfUsername, content);
-        messageDAO.saveMessage(message); // Guardar mensaje recibido
-        appendMessage(sender, content);  // Mostrar en la UI
+        messageDAO.saveMessage(message);
+        appendMessage(sender, content);
     }
 
     public String getOtherUsername() {

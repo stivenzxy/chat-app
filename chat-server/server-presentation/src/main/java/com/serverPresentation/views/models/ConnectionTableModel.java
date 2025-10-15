@@ -61,15 +61,24 @@ public class ConnectionTableModel extends AbstractTableModel {
 
     public void removeConnection(ConnectedClientInfo clientInfo) {
         for (int i = 0; i < connections.size(); i++) {
-            System.out.println("  - [" + i + "] " + connections.get(i).id());
+            ConnectedClientInfo existing = connections.get(i);
+            System.out.println("  - [" + i + "] " + existing.id() + " | IP: " + existing.ipAddress());
+        }
+
+        int rowIndex = -1;
+        for (int i = 0; i < connections.size(); i++) {
+            if (connections.get(i).id().equals(clientInfo.id())) {
+                rowIndex = i;
+                break;
+            }
         }
         
-        int rowIndex = connections.indexOf(clientInfo);
-        
         if (rowIndex != -1) {
-            connections.remove(rowIndex);
-            selectedConnections.remove(clientInfo);
+            ConnectedClientInfo removedConnection = connections.remove(rowIndex);
+            selectedConnections.remove(removedConnection);
             fireTableRowsDeleted(rowIndex, rowIndex);
+        } else {
+            System.out.println("DEBUG: No se encontró el cliente " + clientInfo.id() + " en la tabla para remover");
         }
     }
     

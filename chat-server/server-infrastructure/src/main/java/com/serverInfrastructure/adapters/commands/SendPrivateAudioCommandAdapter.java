@@ -34,12 +34,24 @@ public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
         // Mensaje que se reenviará al destinatario
         String forwardMessage = parser.encode("RECEIVE_PRIVATE_AUDIO", senderId, audioBase64);
 
-        boolean delivered = server.sendMessageToUser(recipientId, forwardMessage);
+        // Obtener información del remitente para logs más claros
+        String senderInfo = getSenderInfo(connectionContext) + " [AUDIO]";
+
+        boolean delivered = server.sendMessageToUser(recipientId, forwardMessage, senderInfo);
 
         if (delivered) {
             return parser.encode("OK", "Audio enviado.");
         } else {
             return parser.encode("ERROR", "El usuario no está conectado o no existe.");
+        }
+    }
+    
+    private String getSenderInfo(ClientConnection connection) {
+        try {
+            String ip = connection.getSocket().getInetAddress().getHostAddress();
+            return connection.getId() + " | IP: " + ip;
+        } catch (Exception e) {
+            return connection.getId();
         }
     }
 }

@@ -1,18 +1,26 @@
 package com.clientPresentation.views;
 
 import com.chatCommon.dto.UserDTO;
+import com.clientApplication.events.*;
 import com.clientApplication.factories.CommandFactory;
+import com.clientApplication.factories.MessageHandlerFactory;
+import com.clientApplication.handlers.MessageHandler;
+import com.clientApplication.listeners.*;
 import com.clientApplication.ports.ServerGatewayPort;
 import com.clientPresentation.views.actions.ConnectionPanel;
 import com.clientPresentation.views.actions.LoginPanel;
-import java.util.Base64;
 
 import javax.swing.*;
 import java.awt.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Base64;
 
-public class MainClientView extends JFrame {
+public class MainClientView extends JFrame implements 
+        UserConnectionListener, 
+        UserDisconnectionListener, 
+        PrivateMessageListener, 
+        PrivateAudioListener {
 
     private CardLayout cardLayout;
     private JPanel mainPanel;
@@ -20,6 +28,7 @@ public class MainClientView extends JFrame {
     private ServerGatewayPort gateway;
     private String loggedInUsername;
     private ChatPanel chatPanel;
+    private MessageHandler messageHandler;
 
     public MainClientView() {
         initComponents();
@@ -31,11 +40,7 @@ public class MainClientView extends JFrame {
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent windowEvent) {
-                if (gateway != null) {
-                    System.out.println("Cerrando la ventana, desconectando del servidor...");
-                    gateway.disconnect(); // Desconexión elegante
-                }
-                System.exit(0); // Ahora sí, cerrar la aplicación
+                handleDisconnectAndExit();
             }
         });
 
@@ -62,6 +67,38 @@ public class MainClientView extends JFrame {
         cardLayout.show(mainPanel, "CONNECTION_PANEL");
     }
 
+    private void handleDisconnectAndExit() {
+        if (gateway != null) {
+            System.out.println("Cerrando la ventana, desconectando del servidor...");
+            gateway.disconnect();
+        }
+        System.exit(0);
+    }
+
+    public void handleDisconnectAndReturnToConnection() {
+        if (gateway != null) {
+            System.out.println("Desconectando del servidor...");
+            gateway.disconnect();
+        }
+
+        this.gateway = null;
+        this.commandFactory = null;
+        this.loggedInUsername = null;
+        this.chatPanel = null;
+        this.messageHandler = null;
+
+        mainPanel.removeAll();
+
+        ConnectionPanel newConnectionPanel = new ConnectionPanel(this::onConnectionSuccess, this::onReturnToConnection);
+        mainPanel.add(newConnectionPanel, "CONNECTION_PANEL");
+
+        cardLayout.show(mainPanel, "CONNECTION_PANEL");
+        setTitle("Chat Universitario - Cliente [Desconectado]");
+
+        revalidate();
+        repaint();
+    }
+
     private void onConnectionSuccess(CommandFactory commandFactory, ServerGatewayPort gateway) {
         this.commandFactory = commandFactory;
         this.gateway = gateway;
@@ -69,7 +106,8 @@ public class MainClientView extends JFrame {
 
         LoginPanel loginPanel = new LoginPanel(
                 commandFactory.createLoginCommand(),
-                this::onLoginSuccess // MODIFICAR: ahora el onLoginSuccess necesita el username
+                this::onLoginSuccess,
+                this::handleDisconnectAndReturnToConnection
         );
 
         mainPanel.add(loginPanel, "LOGIN_PANEL");
@@ -81,57 +119,64 @@ public class MainClientView extends JFrame {
         cardLayout.show(mainPanel, "CONNECTION_PANEL");
     }
 
-    private void onLoginSuccess(String username) { // MODIFICAR: Recibir el username
-        this.loggedInUsername = username; // Guardar
+    private void onLoginSuccess(String username) {
+        this.loggedInUsername = username;
         setTitle("Chat Universitario - ¡Bienvenido, " + username + "!");
 
-        // Guardamos la referencia al ChatPanel para poder llamarlo
-        this.chatPanel = new ChatPanel(loggedInUsername, commandFactory); // MODIFICAR: pasar username y factory
-
+        this.chatPanel = new ChatPanel(loggedInUsername, commandFactory, this::handleDisconnectAndReturnToConnection);
         mainPanel.add(chatPanel, "CHAT_PANEL");
         cardLayout.show(mainPanel, "CHAT_PANEL");
 
-        // CONFIGURAR EL LISTENER
+        this.messageHandler = MessageHandlerFactory.createAsyncMessageHandler();
+
+        messageHandler.registerUserConnectionListener(this);
+        messageHandler.registerUserDisconnectionListener(this);
+        messageHandler.registerPrivateMessageListener(this);
+        messageHandler.registerPrivateAudioListener(this);
+
         this.gateway.setAsyncMessageListener(parts -> {
-            if (parts == null || parts.isEmpty()) return;
+            messageHandler.handleAsyncMessage(parts);
+        });
+    }
 
-            String command = parts.getFirst();
-            switch (command.toUpperCase()) {
-                case "USER_CONNECTED":
-                    if (parts.size() >= 3) {
-                        UserDTO newUser = new UserDTO(parts.get(1), parts.get(2));
-                        chatPanel.addUserToList(newUser);
-                    }
-                    break;
-                case "USER_DISCONNECTED":
-                    if (parts.size() >= 2) {
-                        chatPanel.removeUserFromList(parts.get(1));
-                    }
-                    break;
-                case "RECEIVE_PRIVATE_MESSAGE": // <-- NUEVO CASO
-                    if (parts.size() >= 3) {
-                        String sender = parts.get(1);
-                        String content = parts.get(2);
-                        // Asegurarnos de que el panel de chat exista antes de usarlo
-                        if (this.chatPanel != null) {
-                            this.chatPanel.receiveMessage(sender, content);
-                        }
-                    }
-                    break;
-                case "RECEIVE_PRIVATE_AUDIO": // <-- NUEVO CASO
-                    if (parts.size() >= 3) {
-                        String sender = parts.get(1);
-                        String audioBase64 = parts.get(2);
+    @Override
+    public void onUserConnected(UserConnectionEvent event) {
+        SwingUtilities.invokeLater(() -> {
+            if (chatPanel != null) {
+                UserDTO newUser = new UserDTO(event.userId(), event.username());
+                chatPanel.addUserToList(newUser);
+            }
+        });
+    }
 
-                        // Decodificar de Base64 a byte[]
-                        byte[] audioData = Base64.getDecoder().decode(audioBase64);
+    @Override
+    public void onUserDisconnected(UserDisconnectionEvent event) {
+        SwingUtilities.invokeLater(() -> {
+            if (chatPanel != null) {
+                chatPanel.removeUserFromList(event.userId());
+            }
+        });
+    }
 
-                        if (this.chatPanel != null) {
-                            // Necesitamos un nuevo método en ChatPanel para esto
-                            this.chatPanel.receiveAudioMessage(sender, audioData);
-                        }
-                    }
-                    break;
+    @Override
+    public void onPrivateMessageReceived(PrivateMessageEvent event) {
+        SwingUtilities.invokeLater(() -> {
+            if (chatPanel != null) {
+                chatPanel.receiveMessage(event.sender(), event.content());
+            }
+        });
+    }
+
+    @Override
+    public void onPrivateAudioReceived(PrivateAudioEvent event) {
+        SwingUtilities.invokeLater(() -> {
+            if (chatPanel != null) {
+                try {
+                    byte[] audioData = Base64.getDecoder().decode(event.audioBase64());
+                    chatPanel.receiveAudioMessage(event.sender(), audioData);
+                } catch (IllegalArgumentException e) {
+                    System.err.println("Error decodificando audio: " + e.getMessage());
+                }
             }
         });
     }

@@ -20,11 +20,10 @@ public class SendPrivateMessageClientCommand implements ClientCommand<MessageDTO
             List<String> responseParts = gateway.sendAndReceive(
                     "SEND_PRIVATE_MESSAGE",
                     request.getRecipientId(),
-                    request.getTextContent() // CORRECTO
+                    request.getTextContent()
             );
-            return !responseParts.isEmpty() && "OK".equalsIgnoreCase(responseParts.get(0));
+            return !responseParts.isEmpty() && "OK".equalsIgnoreCase(responseParts.getFirst());
         } catch (Exception e) {
-            // ...
             return false;
         }
     }

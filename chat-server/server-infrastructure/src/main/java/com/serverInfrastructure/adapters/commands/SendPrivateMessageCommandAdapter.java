@@ -34,14 +34,26 @@ public class SendPrivateMessageCommandAdapter implements ProtocolCommandAdapter 
         // Mensaje que se enviará al destinatario
         String forwardMessage = parser.encode("RECEIVE_PRIVATE_MESSAGE", senderId, content);
 
-        // Pedir al servidor que envíe el mensaje
-        boolean delivered = server.sendMessageToUser(recipientId, forwardMessage);
+        // Obtener información adicional del remitente para logs más claros
+        String senderInfo = getSenderInfo(connectionContext);
+
+        // Pedir al servidor que envíe el mensaje con información del remitente
+        boolean delivered = server.sendMessageToUser(recipientId, forwardMessage, senderInfo);
 
         if (delivered) {
             // Confirmación para el remitente
             return parser.encode("OK", "Mensaje enviado.");
         } else {
             return parser.encode("ERROR", "El usuario no está conectado o no existe.");
+        }
+    }
+    
+    private String getSenderInfo(ClientConnection connection) {
+        try {
+            String ip = connection.getSocket().getInetAddress().getHostAddress();
+            return connection.getId() + " | IP: " + ip;
+        } catch (Exception e) {
+            return connection.getId();
         }
     }
 }

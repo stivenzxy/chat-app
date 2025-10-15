@@ -143,7 +143,6 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver 
     @Override
     public void onClientDisconnected(ConnectedClientInfo clientInfo) {
         SwingUtilities.invokeLater(() -> {
-            System.out.println("UI: Removiendo cliente [" + clientInfo.id() + "] de la tabla");
             tableModel.removeConnection(clientInfo);
             updateConnectionPoolLabel();
         });
