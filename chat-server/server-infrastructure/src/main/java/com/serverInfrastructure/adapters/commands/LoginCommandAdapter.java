@@ -35,7 +35,7 @@ public class LoginCommandAdapter implements ProtocolCommandAdapter {
 
         if (userOptional.isPresent()) {
             User user = userOptional.get();
-            connectionContext.setId(user.getUsername().value());
+            connectionContext.setId(user.getId());
             activeUserManager.userLoggedIn(user.getUsername().value(), user);
             return parser.encode("OK", "Login exitoso");
         } else {

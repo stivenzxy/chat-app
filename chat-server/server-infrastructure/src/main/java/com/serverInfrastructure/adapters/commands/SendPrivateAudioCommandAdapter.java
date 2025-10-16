@@ -26,18 +26,31 @@ public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
             return parser.encode("ERROR", "Argumentos insuficientes para enviar audio.");
         }
 
-        // Formato: SEND_PRIVATE_AUDIO|destinatario_id|audio_en_base64
-        String senderId = connectionContext.getId();
-        String recipientId = parts.get(1);
+        // Formato: SEND_PRIVATE_AUDIO|destinatario_username|audio_en_base64
+        String senderUserId = connectionContext.getId();
+        
+        // Obtener username del usuario que envía el audio
+        com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
+        String senderUsername = aum.getActiveUsers().entrySet().stream()
+            .filter(entry -> entry.getValue().getId().equals(senderUserId))
+            .map(entry -> entry.getKey())
+            .findFirst()
+            .orElse(null);
+            
+        if (senderUsername == null) {
+            return parser.encode("ERROR", "Remitente no válido");
+        }
+        
+        String recipientUsername = parts.get(1);
         String audioBase64 = parts.get(2);
 
         // Mensaje que se reenviará al destinatario
-        String forwardMessage = parser.encode("RECEIVE_PRIVATE_AUDIO", senderId, audioBase64);
+        String forwardMessage = parser.encode("RECEIVE_PRIVATE_AUDIO", senderUsername, audioBase64);
 
         // Obtener información del remitente para logs más claros
         String senderInfo = getSenderInfo(connectionContext) + " [AUDIO]";
 
-        boolean delivered = server.sendMessageToUser(recipientId, forwardMessage, senderInfo);
+        boolean delivered = server.sendMessageToUser(recipientUsername, forwardMessage, senderInfo);
 
         if (delivered) {
             return parser.encode("OK", "Audio enviado.");

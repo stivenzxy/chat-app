@@ -42,8 +42,12 @@ public class ChatInputPanel extends JPanel {
     public JToggleButton getRecordButton() { return recordButton; }
 
     public void addSendAction(ActionListener listener) {
-        sendButton.addActionListener(listener);
-        messageInputField.addActionListener(listener);
+        sendButton.addActionListener(e -> {
+            listener.actionPerformed(e);
+        });
+        messageInputField.addActionListener(e -> {
+            listener.actionPerformed(e);
+        });
     }
 
     private void styleIconButton(AbstractButton button, Color color) {

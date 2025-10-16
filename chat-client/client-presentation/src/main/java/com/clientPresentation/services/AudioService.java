@@ -74,4 +74,8 @@ public class AudioService {
         speaker.drain();
         speaker.close();
     }
+
+    public boolean isRecording() {
+        return isRecording;
+    }
 }

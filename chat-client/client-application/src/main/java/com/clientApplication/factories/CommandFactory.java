@@ -9,6 +9,14 @@ import com.clientApplication.commands.contract.ClientCommand;
 import com.chatCommon.dto.MessageDTO;
 import com.clientApplication.commands.SendPrivateMessageClientCommand;
 import com.clientApplication.commands.SendPrivateAudioClientCommand;
+import com.clientApplication.commands.CreateChannelClientCommand;
+import com.clientApplication.commands.ListChannelsClientCommand;
+import com.clientApplication.commands.SendChannelMessageClientCommand;
+import com.clientApplication.commands.SendChannelAudioClientCommand;
+import com.clientApplication.commands.InviteToChannelClientCommand;
+import com.clientApplication.commands.RespondInviteClientCommand;
+import com.clientApplication.commands.ListPendingInvitesClientCommand;
+import com.clientApplication.commands.GetChannelMembersClientCommand;
 import com.clientApplication.ports.ServerGatewayPort;
 
 public class CommandFactory {
@@ -34,4 +42,13 @@ public class CommandFactory {
     public ClientCommand<MessageDTO, Boolean> createSendPrivateAudioCommand() {
         return new SendPrivateAudioClientCommand(gateway);
     }
+
+    public CreateChannelClientCommand createCreateChannelCommand() { return new CreateChannelClientCommand(gateway); }
+    public ListChannelsClientCommand createListChannelsCommand() { return new ListChannelsClientCommand(gateway); }
+    public SendChannelMessageClientCommand createSendChannelMessageCommand() { return new SendChannelMessageClientCommand(gateway); }
+    public SendChannelAudioClientCommand createSendChannelAudioCommand() { return new SendChannelAudioClientCommand(gateway); }
+    public InviteToChannelClientCommand createInviteToChannelCommand() { return new InviteToChannelClientCommand(gateway); }
+    public RespondInviteClientCommand createRespondInviteCommand() { return new RespondInviteClientCommand(gateway); }
+    public ListPendingInvitesClientCommand createListPendingInvitesCommand() { return new ListPendingInvitesClientCommand(gateway); }
+    public GetChannelMembersClientCommand createGetChannelMembersCommand() { return new GetChannelMembersClientCommand(gateway); }
 }

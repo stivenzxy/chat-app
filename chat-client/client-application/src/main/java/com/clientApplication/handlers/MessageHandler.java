@@ -9,4 +9,7 @@ public interface MessageHandler {
     void registerUserDisconnectionListener(UserDisconnectionListener listener);
     void registerPrivateMessageListener(PrivateMessageListener listener);
     void registerPrivateAudioListener(PrivateAudioListener listener);
+    void registerChannelMessageListener(ChannelMessageListener listener);
+    void registerChannelAudioListener(ChannelAudioListener listener);
+    void registerInviteListener(InviteListener listener);
 }

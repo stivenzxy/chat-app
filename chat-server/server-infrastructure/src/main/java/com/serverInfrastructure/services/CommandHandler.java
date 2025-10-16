@@ -53,15 +53,12 @@ public class CommandHandler {
     private String handleLogout(ClientConnection connection) {
         try {
             String connectionId = connection.getId();
-            System.out.println("DEBUG: Procesando LOGOUT para conexión: " + connectionId);
             
             // Notificar al ActiveUserManager que el usuario se ha desconectado
             ActiveUserManager.getInstance().userLoggedOut(connectionId);
             
-            System.out.println("DEBUG: LOGOUT procesado exitosamente para: " + connectionId);
             return parser.encode("LOGOUT_SUCCESS", "Logout exitoso");
         } catch (Exception e) {
-            System.out.println("DEBUG: Error durante LOGOUT: " + e.getMessage());
             e.printStackTrace();
             return parser.encode("ERROR", "Error durante logout: " + e.getMessage());
         }

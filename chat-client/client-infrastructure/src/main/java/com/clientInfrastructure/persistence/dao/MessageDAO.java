@@ -65,4 +65,68 @@ public class MessageDAO {
         }
         return history;
     }
+
+    // Guardar mensaje de canal (usa recipient_channel_id)
+    public void saveChannelTextMessage(String senderId, int channelId, String content, LocalDateTime timestamp) {
+        System.out.println("DEBUG: Guardando mensaje de canal - sender: " + senderId + ", canal: " + channelId + ", contenido: " + content);
+        String sql = "INSERT INTO messages (sender_id, recipient_channel_id, content, message_type, sent_at) VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            System.out.println("DEBUG: Conexión establecida, preparando statement: " + sql);
+            stmt.setString(1, senderId);
+            stmt.setInt(2, channelId);
+            stmt.setString(3, content);
+            stmt.setString(4, MessageType.TEXT.name());
+            stmt.setTimestamp(5, Timestamp.valueOf(timestamp));
+            System.out.println("DEBUG: Parámetros establecidos, ejecutando update...");
+            int rowsAffected = stmt.executeUpdate();
+            System.out.println("DEBUG: Mensaje de canal guardado exitosamente - filas afectadas: " + rowsAffected);
+        } catch (SQLException e) { 
+            logger.error("Error al guardar mensaje de canal: {}", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void saveChannelAudioMessage(String senderId, int channelId, byte[] audio, LocalDateTime timestamp) {
+        String sql = "INSERT INTO messages (sender_id, recipient_channel_id, message_type, audio_content, sent_at) VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, senderId);
+            stmt.setInt(2, channelId);
+            stmt.setString(3, MessageType.AUDIO.name());
+            stmt.setBytes(4, audio);
+            stmt.setTimestamp(5, Timestamp.valueOf(timestamp));
+            stmt.executeUpdate();
+        } catch (SQLException e) { logger.error("Error al guardar audio de canal: {}", e.getMessage()); }
+    }
+
+    public List<MessageDTO> getChannelHistory(int channelId) {
+        System.out.println("DEBUG: getChannelHistory - buscando mensajes para canal " + channelId);
+        List<MessageDTO> history = new ArrayList<>();
+        String sql = "SELECT * FROM messages WHERE recipient_channel_id = ? ORDER BY sent_at ASC";
+        try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            System.out.println("DEBUG: Conexión establecida para consulta, preparando statement: " + sql);
+            stmt.setInt(1, channelId);
+            System.out.println("DEBUG: Parámetro establecido: channelId = " + channelId);
+            ResultSet rs = stmt.executeQuery();
+            System.out.println("DEBUG: Query ejecutado, procesando resultados...");
+            int count = 0;
+            while (rs.next()) {
+                count++;
+                String senderId = rs.getString("sender_id");
+                String textContent = rs.getString("content");
+                byte[] audioContent = rs.getBytes("audio_content");
+                MessageType messageType = MessageType.valueOf(rs.getString("message_type"));
+                System.out.println("DEBUG: Mensaje encontrado - sender: " + senderId + ", tipo: " + messageType + ", contenido: " + textContent);
+                if (messageType == MessageType.TEXT) {
+                    history.add(new MessageDTO(senderId, String.valueOf(channelId), textContent));
+                } else {
+                    history.add(new MessageDTO(senderId, String.valueOf(channelId), audioContent));
+                }
+            }
+            System.out.println("DEBUG: getChannelHistory - encontrados " + count + " mensajes para canal " + channelId);
+        } catch (SQLException e) { 
+            logger.error("Error al cargar historial de canal: {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return history;
+    }
 }
