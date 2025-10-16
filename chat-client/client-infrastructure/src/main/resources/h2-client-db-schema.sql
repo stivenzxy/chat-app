@@ -29,5 +29,9 @@ CREATE TABLE IF NOT EXISTS messages (
     content TEXT,
     message_type VARCHAR(20) NOT NULL,
     audio_content BLOB,
-    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT check_recipient CHECK (
+        (recipient_id IS NOT NULL AND recipient_channel_id IS NULL) OR 
+        (recipient_id IS NULL AND recipient_channel_id IS NOT NULL)
+    )
 );

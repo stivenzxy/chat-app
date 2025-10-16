@@ -29,12 +29,9 @@ public class GetChannelMembersClientCommand implements ClientCommand<Integer, Li
                 }
                 return Arrays.asList(membersPayload.split(","));
             } else {
-                System.err.println("Error obteniendo miembros del canal: " + 
-                    (responseParts.size() > 1 ? responseParts.get(1) : "Respuesta inválida"));
                 return List.of();
             }
         } catch (Exception e) {
-            System.err.println("Error ejecutando comando GET_CHANNEL_MEMBERS: " + e.getMessage());
             return List.of();
         }
     }

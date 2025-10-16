@@ -70,7 +70,6 @@ public class AsyncMessageHandler implements MessageHandler {
     }
 
     private void handleChannelMessage(List<String> parts) {
-        System.out.println("DEBUG: Cliente recibió mensaje de canal: " + parts);
         if (parts.size() < 4) {
             logger.warn("Mensaje RECEIVE_CHANNEL_MESSAGE malformado: {}", parts);
             return;
@@ -78,11 +77,9 @@ public class AsyncMessageHandler implements MessageHandler {
         int channelId = Integer.parseInt(parts.get(1));
         String sender = parts.get(2);
         String content = parts.get(3);
-        System.out.println("DEBUG: Procesando mensaje de canal " + channelId + " de " + sender + ": " + content);
         ChannelMessageEvent event = new ChannelMessageEvent(channelId, sender, content);
         List<ChannelMessageListener> listenersCopy;
         synchronized (channelMessageListeners) { listenersCopy = new ArrayList<>(channelMessageListeners); }
-        System.out.println("DEBUG: Notificando a " + listenersCopy.size() + " listeners de mensajes de canal");
         for (ChannelMessageListener l : listenersCopy) { try { l.onChannelMessage(event); } catch (Exception e) { logger.error("Error notificando ChannelMessageListener", e); } }
     }
 
