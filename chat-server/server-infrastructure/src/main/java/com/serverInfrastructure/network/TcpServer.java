@@ -100,6 +100,17 @@ public class TcpServer implements ActiveUserObserver {
         }
     }
 
+    private void fireClientIdentityUpdated(ClientConnection connection) {
+        for (ConnectionListener listener : listeners) {
+            listener.onClientIdentityUpdated(connection);
+        }
+    }
+
+    // Método público de apoyo para adapters de comandos (evita exponer la lista internamente)
+    public void fireClientIdentityUpdatedPublic(ClientConnection connection) {
+        fireClientIdentityUpdated(connection);
+    }
+
     public void stop() {
         try {
             if (serverSocket != null && !serverSocket.isClosed()) {

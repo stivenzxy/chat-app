@@ -1,4 +1,4 @@
 package com.serverApplication.dto;
 
-public record ConnectedClientInfo(String id, String ipAddress) {
+public record ConnectedClientInfo(long poolSeq, String connectionId, String ipAddress, int reuseCount) {
 }
