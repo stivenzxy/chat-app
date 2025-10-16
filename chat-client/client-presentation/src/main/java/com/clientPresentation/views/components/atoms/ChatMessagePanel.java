@@ -52,27 +52,41 @@ public class ChatMessagePanel extends JPanel {
         UiBuilder.styleButton(playButton, new Color(107, 114, 128));
         playButton.setPreferredSize(new Dimension(140, 30));
 
-        playButton.addActionListener(e -> new SwingWorker<Void, Void>() {
-            @Override
-            protected Void doInBackground() throws Exception {
-                audioService.playAudio(audioData);
-                return null;
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    get();
-                } catch (Exception e) {
-                    JOptionPane.showMessageDialog(
-                            ChatMessagePanel.this,
-                            "Error al reproducir el audio: " + e.getCause().getMessage(),
-                            "Error de Audio",
-                            JOptionPane.ERROR_MESSAGE
-                    );
+        playButton.addActionListener(e -> {
+            playButton.setEnabled(false);
+            playButton.setText("🔊 Reproduciendo");
+            
+            new SwingWorker<Void, Void>() {
+                @Override
+                protected Void doInBackground() throws Exception {
+                    audioService.playAudio(audioData);
+                    return null;
                 }
-            }
-        }.execute());
+
+                @Override
+                protected void done() {
+                    try {
+                        get();
+                        // Reproducción exitosa
+                    } catch (Exception ex) {
+                        String errorMessage = "Error al reproducir el audio";
+                        if (ex.getCause() != null && ex.getCause().getMessage() != null) {
+                            errorMessage += ": " + ex.getCause().getMessage();
+                        }
+                        JOptionPane.showMessageDialog(
+                                ChatMessagePanel.this,
+                                errorMessage,
+                                "Error de Audio",
+                                JOptionPane.ERROR_MESSAGE
+                        );
+                    } finally {
+                        // Restaurar el botón
+                        playButton.setEnabled(true);
+                        playButton.setText("▶️ Reproducir");
+                    }
+                }
+            }.execute();
+        });
 
         audioPanel.add(playButton);
         return audioPanel;
