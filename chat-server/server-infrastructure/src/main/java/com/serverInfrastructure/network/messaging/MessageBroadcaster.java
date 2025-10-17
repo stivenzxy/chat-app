@@ -34,7 +34,8 @@ public class MessageBroadcaster {
                         logger.info("Cliente [{}] envió \"{}\" a cliente [{}]",
                                 senderInfo, messageContent, username);
                     } else {
-                        logger.info("Mensaje directo enviado a [{}]: {}", username, message);
+                        String messageContent = extractMessageContent(message);
+                        logger.info("Mensaje directo enviado a [{}]: {}", username, messageContent);
                     }
                     return true;
                 }
@@ -46,7 +47,13 @@ public class MessageBroadcaster {
     }
 
     public void broadcastMessage(String message, String excludeUsername) {
-        logger.info("Broadcasting: {}", message);
+        String messageContent = extractMessageContent(message);
+        if (excludeUsername != null) {
+            logger.info("Broadcasting: {} (excluyendo a: {})", messageContent, excludeUsername);
+        } else {
+            logger.info("Broadcasting: {}", messageContent);
+        }
+        
         for (ClientConnection connection : connectionPool.getInUseConnections()) {
             if (connection.getId() != null && !connection.getId().equals(excludeUsername)) {
                 try {
@@ -86,17 +93,49 @@ public class MessageBroadcaster {
     private String extractMessageContent(String protocolMessage) {
         try {
             List<String> parts = protocolParser.decode(protocolMessage);
-            if (parts.size() >= 3) {
+            if (parts.size() >= 2) {
                 String command = parts.get(0);
-                if ("RECEIVE_PRIVATE_MESSAGE".equals(command)) {
-                    return parts.get(2);
-                } else if ("RECEIVE_PRIVATE_AUDIO".equals(command)) {
-                    return "[Audio message]";
+                switch (command) {
+                    case "RECEIVE_PRIVATE_MESSAGE":
+                        if (parts.size() >= 3) {
+                            return parts.get(2);
+                        }
+                        break;
+                    case "RECEIVE_PRIVATE_AUDIO":
+                        return "[Mensaje de audio]";
+                    case "USER_CONNECTED":
+                        if (parts.size() >= 3) {
+                            String username = parts.get(2);
+                            boolean hasPhoto = parts.size() >= 4 && !parts.get(3).isEmpty();
+                            return hasPhoto ? "Usuario conectado: " + username + " [con foto de perfil]" 
+                                           : "Usuario conectado: " + username;
+                        }
+                        break;
+                    case "USER_DISCONNECTED":
+                        if (parts.size() >= 3) {
+                            return "Usuario desconectado: " + parts.get(2);
+                        }
+                        break;
+                    case "SERVER_BROADCAST":
+                        if (parts.size() >= 2) {
+                            return "Broadcast del servidor: " + parts.get(1);
+                        }
+                        break;
+                    case "RECEIVE_CHANNEL_MESSAGE":
+                        if (parts.size() >= 4) {
+                            return "Mensaje de canal [" + parts.get(1) + "] de " + parts.get(2) + ": " + parts.get(3);
+                        }
+                        break;
+                    case "RECEIVE_CHANNEL_AUDIO":
+                        if (parts.size() >= 3) {
+                            return "Audio de canal [" + parts.get(1) + "] de " + parts.get(2) + ": [Mensaje de audio]";
+                        }
+                        break;
                 }
             }
-            return protocolMessage;
+            return parts.isEmpty() ? protocolMessage : "Comando: " + parts.get(0);
         } catch (Exception e) {
-            return protocolMessage;
+            return "Mensaje de protocolo";
         }
     }
 }

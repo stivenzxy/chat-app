@@ -27,16 +27,13 @@ public class BroadcastPanel extends JPanel {
     private void initComponents() {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        
-        // Panel superior con título
+
         JPanel titlePanel = createTitlePanel();
         add(titlePanel, BorderLayout.NORTH);
         
-        // Panel central con historial
         JPanel historyPanel = createHistoryPanel();
         add(historyPanel, BorderLayout.CENTER);
         
-        // Panel inferior para escribir mensaje
         JPanel inputPanel = createInputPanel();
         add(inputPanel, BorderLayout.SOUTH);
     }
