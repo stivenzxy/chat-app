@@ -16,7 +16,7 @@ public class LoginCommandAdapter implements ProtocolCommandAdapter {
 
     private final LoginService loginService;
     private final ActiveUserManager activeUserManager = ActiveUserManager.getInstance();
-    private CommandHandler commandHandler; // se inyecta después
+    private CommandHandler commandHandler;
 
     public LoginCommandAdapter(LoginService loginService) {
         this.loginService = loginService;
@@ -44,7 +44,6 @@ public class LoginCommandAdapter implements ProtocolCommandAdapter {
             connectionContext.setId(user.getId());
             activeUserManager.userLoggedIn(user.getUsername().value(), user);
             if (commandHandler != null && commandHandler.getServer() != null) {
-                // Usamos reflexión mínima: exponemos método público en TcpServer para reenviar evento
                 try {
                     commandHandler.getServer().getClass()
                             .getDeclaredMethod("fireClientIdentityUpdatedPublic", ClientConnection.class)

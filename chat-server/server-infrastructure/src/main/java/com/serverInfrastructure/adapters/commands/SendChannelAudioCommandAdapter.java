@@ -8,6 +8,7 @@ import com.serverInfrastructure.services.CommandHandler;
 import com.serverInfrastructure.persistence.dao.MessageDAO;
 
 import java.util.List;
+import java.util.Map;
 
 public class SendChannelAudioCommandAdapter implements ProtocolCommandAdapter {
     private final ChannelRepository channelRepository;
@@ -34,7 +35,7 @@ public class SendChannelAudioCommandAdapter implements ProtocolCommandAdapter {
         com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
         String senderUsername = aum.getActiveUsers().entrySet().stream()
             .filter(entry -> entry.getValue().getId().equals(senderUserId))
-            .map(entry -> entry.getKey())
+            .map(Map.Entry::getKey)
             .findFirst()
             .orElse(null);
             

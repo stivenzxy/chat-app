@@ -1,4 +1,3 @@
-// Contenido del archivo RegisterUserPanel.java
 package com.serverPresentation.views.components;
 
 import com.chatCommon.viewResources.UiBuilder;
@@ -7,10 +6,10 @@ import com.serverPresentation.controllers.UserController;
 
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.filechooser.FileNameExtensionFilter; // <<< AÑADIR IMPORT
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.io.File; // <<< AÑADIR IMPORT
-import java.nio.file.Files; // <<< AÑADIR IMPORT
+import java.io.File;
+import java.nio.file.Files;
 
 public class RegisterUserPanel extends JPanel {
 
@@ -21,11 +20,9 @@ public class RegisterUserPanel extends JPanel {
     private JPasswordField passwordField;
     private JTextField ipField;
 
-    // --- INICIO DE CAMBIOS EN CAMPOS ---
     private JButton selectPhotoButton;
     private JLabel photoFileNameLabel;
     private byte[] selectedPhotoBytes;
-    // --- FIN DE CAMBIOS EN CAMPOS ---
 
     private JButton registerButton;
 
@@ -35,7 +32,6 @@ public class RegisterUserPanel extends JPanel {
     }
 
     private void initComponents() {
-        // ... (configuración inicial del panel)
         setBackground(new Color(245, 245, 245));
         setLayout(new GridBagLayout());
 
@@ -63,13 +59,11 @@ public class RegisterUserPanel extends JPanel {
         ipField = new JTextField(15);
         UiBuilder.styleField(ipField, roundedBorder);
 
-        // --- INICIO DE NUEVOS COMPONENTES PARA FOTO ---
         selectPhotoButton = new JButton("Seleccionar Foto...");
         photoFileNameLabel = new JLabel("Ningún archivo seleccionado.");
         photoFileNameLabel.setFont(new Font("SansSerif", Font.ITALIC, 12));
 
         selectPhotoButton.addActionListener(e -> onSelectPhoto());
-        // --- FIN DE NUEVOS COMPONENTES PARA FOTO ---
 
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -80,14 +74,12 @@ public class RegisterUserPanel extends JPanel {
         gbc.gridy++;
         add(UiBuilder.createLabelWithField("Email", emailField), gbc);
 
-        // --- INICIO DE PANEL PARA FOTO ---
         gbc.gridx = 1;
         JPanel photoPanel = new JPanel(new BorderLayout(5,0));
         photoPanel.setOpaque(false);
         photoPanel.add(selectPhotoButton, BorderLayout.WEST);
         photoPanel.add(photoFileNameLabel, BorderLayout.CENTER);
         add(UiBuilder.createLabelWithField("Foto de Perfil", photoPanel), gbc);
-        // --- FIN DE PANEL PARA FOTO ---
 
         gbc.gridx = 0;
         gbc.gridy++;
@@ -114,7 +106,6 @@ public class RegisterUserPanel extends JPanel {
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             try {
-                // Limitar tamaño de archivo a 5MB
                 if (selectedFile.length() > 5 * 1024 * 1024) {
                     JOptionPane.showMessageDialog(this, "El archivo es demasiado grande (máx 5MB).", "Error", JOptionPane.ERROR_MESSAGE);
                     return;

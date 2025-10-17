@@ -21,9 +21,17 @@ public class MainServerView extends JFrame {
 
     private void initComponents() {
         setTitle("Chat universitario - Servidor");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setSize(950, 600);
         setLocationRelativeTo(null);
+        
+        // Manejar el cierre de ventana correctamente
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+                handleServerShutdown();
+            }
+        });
 
         cardLayout = new CardLayout();
         cardsPanel = new JPanel(cardLayout);
@@ -94,5 +102,23 @@ public class MainServerView extends JFrame {
 
         panel.add(connectionPanel, BorderLayout.CENTER);
         return panel;
+    }
+    
+    private void handleServerShutdown() {
+        int option = JOptionPane.showConfirmDialog(
+            this,
+            "¿Está seguro de que desea cerrar el servidor?\nTodos los clientes conectados serán desconectados.",
+            "Confirmar Cierre del Servidor",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.QUESTION_MESSAGE
+        );
+        
+        if (option == JOptionPane.YES_OPTION) {
+            // Detener el servidor si está corriendo
+            factory.getServerControl().stopServer();
+            
+            // Salir de la aplicación
+            System.exit(0);
+        }
     }
 }

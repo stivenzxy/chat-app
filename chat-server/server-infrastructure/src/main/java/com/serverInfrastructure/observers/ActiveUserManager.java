@@ -38,7 +38,6 @@ public class ActiveUserManager {
         User user = activeUsers.remove(username);
         if (user != null) {
             notifyUserLoggedOut(user);
-        } else {
         }
     }
 

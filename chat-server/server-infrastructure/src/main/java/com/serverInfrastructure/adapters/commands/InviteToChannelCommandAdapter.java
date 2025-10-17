@@ -1,6 +1,7 @@
 package com.serverInfrastructure.adapters.commands;
 
 import com.chatCommon.protocol.ProtocolParser;
+import com.serverDomain.entities.Channel;
 import com.serverDomain.entities.ChannelInvite;
 import com.serverDomain.repositories.ChannelInviteRepository;
 import com.serverDomain.repositories.ChannelRepository;
@@ -10,6 +11,7 @@ import com.serverInfrastructure.services.CommandHandler;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
     private final ChannelRepository channelRepository;
@@ -34,11 +36,10 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
         String invitedUsername = parts.get(2);
 
         var aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
-        
-        // Obtener username del usuario que invita
+
         String inviterUsername = aum.getActiveUsers().entrySet().stream()
             .filter(entry -> entry.getValue().getId().equals(inviterUserId))
-            .map(entry -> entry.getKey())
+            .map(Map.Entry::getKey)
             .findFirst()
             .orElse(null);
             
@@ -60,7 +61,7 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
         ChannelInvite saved = inviteRepository.save(invite);
 
         var channelOpt = channelRepository.findById(channelId);
-        String channelName = channelOpt.map(c -> c.getName()).orElse("Canal");
+        String channelName = channelOpt.map(Channel::getName).orElse("Canal");
         String visibility = channelOpt.map(c -> c.getVisibility().name()).orElse("PUBLIC");
 
         String forward = parser.encode("INVITE_RECEIVED",

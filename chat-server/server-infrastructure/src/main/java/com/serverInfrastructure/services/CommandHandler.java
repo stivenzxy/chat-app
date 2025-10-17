@@ -29,12 +29,11 @@ public class CommandHandler {
         commands.put(command.getCommandName().toUpperCase(), command);
     }
 
-    public String process(List<String> parts, ClientConnection connection) { // Añadir parámetro
+    public String process(List<String> parts, ClientConnection connection) {
         if (parts.isEmpty()) return parser.encode("ERROR", "Comando vacío");
 
         String name = parts.getFirst().toUpperCase();
-        
-        // Manejar LOGOUT de manera especial
+
         if ("LOGOUT".equals(name)) {
             return handleLogout(connection);
         }
@@ -53,13 +52,11 @@ public class CommandHandler {
     private String handleLogout(ClientConnection connection) {
         try {
             String connectionId = connection.getId();
-            
-            // Notificar al ActiveUserManager que el usuario se ha desconectado
+
             ActiveUserManager.getInstance().userLoggedOut(connectionId);
             
             return parser.encode("LOGOUT_SUCCESS", "Logout exitoso");
         } catch (Exception e) {
-            e.printStackTrace();
             return parser.encode("ERROR", "Error durante logout: " + e.getMessage());
         }
     }

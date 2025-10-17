@@ -19,14 +19,12 @@ public class ConnectionManager {
     private static volatile ConnectionManager instance = null;
     private static final Logger logger = LoggerFactory.getLogger(ConnectionManager.class);
 
-    // --- CAMBIAR ESTOS CAMPOS DE STATIC A INSTANCE ---
     private final String DRIVER;
     private final String URL;
     private final String USER;
     private final String PASS;
 
     private ConnectionManager() {
-        // --- INICIALIZAR AppProperties AQUÍ ---
         AppProperties props = new AppProperties("server-configuration");
         DRIVER = props.getProperty("DRIVER");
         URL = props.getProperty("URL");
