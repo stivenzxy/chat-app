@@ -13,6 +13,7 @@ public interface ChannelRepository {
     boolean isMember(Integer channelId, String userId);
     List<String> findMemberUserIds(Integer channelId);
     List<String> findMemberUsernames(Integer channelId);
+    List<Channel> findAll();
 }
 
 

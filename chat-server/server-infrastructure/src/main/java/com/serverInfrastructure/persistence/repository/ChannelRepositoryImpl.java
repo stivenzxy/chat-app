@@ -44,6 +44,11 @@ public class ChannelRepositoryImpl implements ChannelRepository {
     public List<String> findMemberUsernames(Integer channelId) {
         return channelDAO.findMemberUsernames(channelId);
     }
+
+    @Override
+    public List<Channel> findAll() {
+        return channelDAO.findAll();
+    }
 }
 
 

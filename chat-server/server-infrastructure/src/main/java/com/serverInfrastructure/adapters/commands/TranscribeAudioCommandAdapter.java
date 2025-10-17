@@ -1,6 +1,7 @@
 package com.serverInfrastructure.adapters.commands;
 
 import com.chatCommon.protocol.ProtocolParser;
+import com.serverInfrastructure.persistence.dao.MessageDAO;
 import com.serverInfrastructure.adapters.ProtocolCommandAdapter;
 import com.serverInfrastructure.network.ClientConnection;
 import com.serverInfrastructure.network.TcpServer;
@@ -16,6 +17,7 @@ public class TranscribeAudioCommandAdapter implements ProtocolCommandAdapter {
 
     private final TcpServer server;
     private final AudioTranscriptionService audioTranscriptionService;
+    private final MessageDAO messageDAO = new MessageDAO();
 
     public TranscribeAudioCommandAdapter(TcpServer server) {
         this.server = server;
@@ -50,11 +52,13 @@ public class TranscribeAudioCommandAdapter implements ProtocolCommandAdapter {
         try {
             byte[] audioData = Base64.getDecoder().decode(audioBase64);
             String transcribedText = audioTranscriptionService.transcribeAudio(audioData);
-            
+
             if (transcribedText != null && !transcribedText.trim().isEmpty()) {
+                messageDAO.savePrivateTextMessage("System-Transcription", senderUserId, transcribedText);
+
                 return parser.encode("TRANSCRIPTION_RESULT", transcribedText);
             } else {
-                return parser.encode("ERROR", "No se pudo transcribir el audio. Verifique que el servidor Vosk esté ejecutándose.");
+                return parser.encode("ERROR", "No se pudo transcribir...");
             }
         } catch (Exception e) {
             logger.error("Error transcribiendo audio", e);

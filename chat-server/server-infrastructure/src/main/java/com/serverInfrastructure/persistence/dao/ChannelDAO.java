@@ -114,6 +114,21 @@ public class ChannelDAO {
         return usernames;
     }
 
+    public List<Channel> findAll() {
+        String sql = "SELECT * FROM channels ORDER BY name";
+        List<Channel> list = new ArrayList<>();
+        try (Connection conn = connectionManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapRow(rs));
+            }
+        } catch (SQLException e) {
+            logger.error("Error al listar todos los canales: {}", e.getMessage());
+        }
+        return list;
+    }
+
     private Channel mapRow(ResultSet rs) throws SQLException {
         int id = rs.getInt("channel_id");
         String name = rs.getString("name");
