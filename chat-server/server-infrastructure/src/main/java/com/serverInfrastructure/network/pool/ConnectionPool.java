@@ -97,6 +97,6 @@ public class ConnectionPool {
     }
 
     public synchronized List<ClientConnection> getInUseConnections() {
-        return Collections.unmodifiableList(new ArrayList<>(inUse));
+        return List.copyOf(inUse);
     }
 }

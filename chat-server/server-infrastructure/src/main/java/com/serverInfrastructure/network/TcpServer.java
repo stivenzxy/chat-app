@@ -64,7 +64,7 @@ public class TcpServer implements ActiveUserObserver {
                     clientThread.start();
                 } catch (RuntimeException exception) {
                     logger.warn("Conexión rechazada: se alcanzó el máximo de usuarios permitidos");
-                    // Notificar al cliente inmediatamente y cerrar socket
+
                     try (PrintWriter tempOut = new PrintWriter(socket.getOutputStream(), true)) {
                         String rejectMessage = protocolParser.encode("DISCONNECT", "Servidor a máxima capacidad. Intente más tarde.");
                         tempOut.println(rejectMessage);
@@ -107,16 +107,50 @@ public class TcpServer implements ActiveUserObserver {
         }
     }
 
-    // Método público de apoyo para adapters de comandos (evita exponer la lista internamente)
     public void fireClientIdentityUpdatedPublic(ClientConnection connection) {
         fireClientIdentityUpdated(connection);
     }
 
     public void stop() {
+        logger.info("Iniciando cierre del servidor...");
+
+        if (connectionPool != null) {
+            List<ClientConnection> activeConnections = connectionPool.getInUseConnections();
+            logger.info("Notificando a {} clientes sobre el cierre del servidor", activeConnections.size());
+            
+            for (ClientConnection connection : activeConnections) {
+                try {
+                    if (connection.getSocket() != null && !connection.getSocket().isClosed()) {
+                        PrintWriter out = new PrintWriter(connection.getSocket().getOutputStream(), true);
+                        String serverShutdownMessage = protocolParser.encode("SERVER_SHUTDOWN", "El servidor se está cerrando");
+                        out.println(serverShutdownMessage);
+                        logger.debug("[{}] Notificación de cierre enviada al cliente", connection.getId());
+                    }
+                } catch (Exception e) {
+                    logger.warn("[{}] Error al enviar notificación de cierre: {}", connection.getId(), e.getMessage());
+                }
+            }
+
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            for (ClientConnection connection : activeConnections) {
+                try {
+                    connectionPool.forceDisconnect(connection);
+                } catch (Exception e) {
+                    logger.warn("[{}] Error al cerrar conexión: {}", connection.getId(), e.getMessage());
+                }
+            }
+        }
+        
         try {
             if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
             }
+            logger.info("Servidor cerrado correctamente");
         } catch (IOException exception) {
             logger.error("Error al cerrar el ServerSocket: {}", exception.getMessage());
         }
@@ -155,8 +189,6 @@ public class TcpServer implements ActiveUserObserver {
         }
     }
 
-    // Dentro de la clase TcpServer
-
     private void handleClient(ClientConnection connection) {
         Socket socket = connection.getSocket();
 
@@ -170,8 +202,8 @@ public class TcpServer implements ActiveUserObserver {
             while ((request = in.readLine()) != null) {
                 List<String> parts = protocolParser.decode(request);
 
-                if (!parts.isEmpty() && "LOGOUT".equalsIgnoreCase(parts.getFirst())) {
-                    // El logout se gestionará en el finally para cubrir todos los casos
+                if (!parts.isEmpty()) {
+                    parts.getFirst();
                 }
 
                 String response = commandHandler.process(parts, connection);
@@ -188,23 +220,17 @@ public class TcpServer implements ActiveUserObserver {
             try {
                 socket.close();
 
-                // --- INICIO DE LA CORRECCIÓN ---
-                // Buscamos el nombre de usuario asociado al ID de la conexión que se está cerrando
                 String usernameToLogOut = ActiveUserManager.getInstance().getActiveUsers().entrySet().stream()
                         .filter(entry -> entry.getValue().getId().equals(connectionId))
                         .map(java.util.Map.Entry::getKey)
                         .findFirst()
                         .orElse(null);
 
-                // Si encontramos un nombre de usuario, significa que el usuario estaba logueado
                 if (usernameToLogOut != null) {
-                    // Notificamos al ActiveUserManager usando el NOMBRE DE USUARIO
                     ActiveUserManager.getInstance().userLoggedOut(usernameToLogOut);
                 } else {
-                    // Si no hay nombre, es porque el cliente se desconectó antes de hacer login.
                     logger.info("[{}] desconectado antes de completar login. No se notifica.", connectionId);
                 }
-                // --- FIN DE LA CORRECCIÓN ---
 
                 fireClientDisconnected(connection);
                 connectionPool.releaseConnection(connection);
@@ -236,7 +262,6 @@ public class TcpServer implements ActiveUserObserver {
         ClientConnection connection = connectionPool.findConnectionById(user.getUsername().value());
         if (connection != null) {
             fireClientDisconnected(connection);
-        } else {
         }
     }
 

@@ -105,6 +105,18 @@ public class MainClientView extends JFrame implements
         this.commandFactory = commandFactory;
         this.gateway = gateway;
 
+        // Configurar el listener de desconexión para manejar el cierre del servidor
+        gateway.setDisconnectListener(reason -> {
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(this,
+                    "Has sido desconectado del servidor.\nRazón: " + reason,
+                    "Servidor Desconectado",
+                    JOptionPane.WARNING_MESSAGE);
+
+                handleDisconnectAndReturnToConnection();
+            });
+        });
+
         LoginPanel loginPanel = new LoginPanel(
                 commandFactory.createLoginCommand(),
                 this::onLoginSuccess, // Ahora coincide con el Consumer<LoginResponse>

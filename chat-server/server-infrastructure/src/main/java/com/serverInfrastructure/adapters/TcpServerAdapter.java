@@ -120,10 +120,9 @@ public class TcpServerAdapter implements ServerControl, ConnectionListener {
                 connection.getIpAddress(),
                 connection.getReuseCount()
         );
-        // Reutilizamos onClientConnected semantics para refrescar; podríamos tener un método dedicado en observers si se desea.
         for (ClientConnectionObserver observer : appObservers) {
-            observer.onClientDisconnected(clientInfo); // quitar fila vieja
-            observer.onClientConnected(clientInfo);    // agregar fila actualizada
+            observer.onClientDisconnected(clientInfo);
+            observer.onClientConnected(clientInfo);
         }
     }
 }

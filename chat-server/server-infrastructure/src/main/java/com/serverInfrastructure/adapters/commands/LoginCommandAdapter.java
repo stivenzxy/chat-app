@@ -17,7 +17,7 @@ public class LoginCommandAdapter implements ProtocolCommandAdapter {
 
     private final LoginService loginService;
     private final ActiveUserManager activeUserManager = ActiveUserManager.getInstance();
-    private CommandHandler commandHandler; // se inyecta después
+    private CommandHandler commandHandler;
 
     public LoginCommandAdapter(LoginService loginService) {
         this.loginService = loginService;

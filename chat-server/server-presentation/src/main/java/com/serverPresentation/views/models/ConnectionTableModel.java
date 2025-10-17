@@ -64,7 +64,7 @@ public class ConnectionTableModel extends AbstractTableModel {
     public void removeConnection(ConnectedClientInfo clientInfo) {
         int rowIndex = -1;
         for (int i = 0; i < connections.size(); i++) {
-            if (connections.get(i).poolSeq() == clientInfo.poolSeq()) { // Identificamos por UID estable
+            if (connections.get(i).poolSeq() == clientInfo.poolSeq()) {
                 rowIndex = i;
                 break;
             }

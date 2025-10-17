@@ -33,16 +33,13 @@ public class InfrastructureFactory {
         ProtocolParser parser = new ProtocolParser('|', '\\');
         CommandHandler handler = new CommandHandler(parser);
 
-        // Comando de Login existente
     LoginCommandAdapter loginAdapter = new LoginCommandAdapter(serviceFactory.createLoginService());
     loginAdapter.setCommandHandler(handler);
     handler.registerCommand(loginAdapter);
 
-        // Registrar el nuevo comando de obtener usuarios
     GetUsersCommandAdapter getUsersAdapter = new GetUsersCommandAdapter();
         handler.registerCommand(getUsersAdapter);
 
-        // Channels
         ChannelRepository channelRepository = new ChannelRepositoryImpl();
         ChannelInviteRepository inviteRepository = new ChannelInviteRepositoryImpl();
         handler.registerCommand(new CreateChannelCommandAdapter(channelRepository));
@@ -61,11 +58,9 @@ public class InfrastructureFactory {
         CommandHandler handler = createCommandHandler();
         TcpServer server = new TcpServer(port, handler);
 
-        // Adaptador de mensajes de texto
         SendPrivateMessageCommandAdapter sendMessageAdapter = new SendPrivateMessageCommandAdapter(server);
         handler.registerCommand(sendMessageAdapter);
 
-        // NUEVO: Adaptador de mensajes de audio
         SendPrivateAudioCommandAdapter sendAudioAdapter = new SendPrivateAudioCommandAdapter(server);
         handler.registerCommand(sendAudioAdapter);
 

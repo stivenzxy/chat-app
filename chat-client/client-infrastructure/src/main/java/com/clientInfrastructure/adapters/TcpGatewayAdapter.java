@@ -51,7 +51,7 @@ public class TcpGatewayAdapter implements ServerGatewayPort {
                 }
             });
         } catch (Exception e) {
-            throw new RuntimeException("No se pudo conectar al servidor al iniciar el gateway.", e);
+            throw new RuntimeException("El servidor se encuentra inactivo.", e);
         }
     }
 
@@ -96,7 +96,8 @@ public class TcpGatewayAdapter implements ServerGatewayPort {
     
     private boolean isDisconnectMessage(List<String> parts) {
         if (parts.isEmpty()) return false;
-        return parts.getFirst().equalsIgnoreCase("DISCONNECT");
+        String first = parts.getFirst().toUpperCase();
+        return first.equals("DISCONNECT") || first.equals("SERVER_SHUTDOWN");
     }
 
     @Override

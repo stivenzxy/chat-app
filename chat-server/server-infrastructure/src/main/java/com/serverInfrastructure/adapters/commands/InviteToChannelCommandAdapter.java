@@ -36,11 +36,11 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
         var aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
 
         String inviterUsername = aum.getActiveUsers().entrySet().stream()
-                .filter(entry -> entry.getValue().getId().equals(inviterUserId))
-                .map(entry -> entry.getKey())
-                .findFirst()
-                .orElse(null);
-
+            .filter(entry -> entry.getValue().getId().equals(inviterUserId))
+            .map(entry -> entry.getKey())
+            .findFirst()
+            .orElse(null);
+            
         if (inviterUsername == null) {
             return parser.encode("ERROR", "Usuario que invita no está en línea");
         }
@@ -77,3 +77,5 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
         return parser.encode("OK", String.valueOf(saved.getId()));
     }
 }
+
+

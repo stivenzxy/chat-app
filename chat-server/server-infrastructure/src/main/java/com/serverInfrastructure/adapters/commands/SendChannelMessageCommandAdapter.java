@@ -8,6 +8,7 @@ import com.serverInfrastructure.services.CommandHandler;
 import com.serverInfrastructure.persistence.dao.MessageDAO;
 
 import java.util.List;
+import java.util.Map;
 
 public class SendChannelMessageCommandAdapter implements ProtocolCommandAdapter {
     private final ChannelRepository channelRepository;
@@ -34,7 +35,7 @@ public class SendChannelMessageCommandAdapter implements ProtocolCommandAdapter 
         com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
         String senderUsername = aum.getActiveUsers().entrySet().stream()
             .filter(entry -> entry.getValue().getId().equals(senderUserId))
-            .map(entry -> entry.getKey())
+            .map(Map.Entry::getKey)
             .findFirst()
             .orElse(null);
             
@@ -46,14 +47,12 @@ public class SendChannelMessageCommandAdapter implements ProtocolCommandAdapter 
             return parser.encode("ERROR", "No eres miembro del canal");
         }
 
-        // Guardar mensaje en la base de datos del servidor
         messageDAO.saveChannelTextMessage(senderUserId, channelId, content);
 
         List<String> memberUsernames = channelRepository.findMemberUsernames(channelId);
         
         String forward = parser.encode("RECEIVE_CHANNEL_MESSAGE", String.valueOf(channelId), senderUsername, content);
-        
-        // Enviar a todos los miembros EXCEPTO al remitente
+
         memberUsernames.stream()
             .filter(u -> !u.equals(senderUsername)) // Excluir al remitente
             .forEach(u -> {
