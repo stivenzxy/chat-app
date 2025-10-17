@@ -69,7 +69,6 @@ public class MainClientView extends JFrame implements
 
     private void handleDisconnectAndExit() {
         if (gateway != null) {
-            System.out.println("Cerrando la ventana, desconectando del servidor...");
             gateway.disconnect();
         }
         System.exit(0);
@@ -77,7 +76,6 @@ public class MainClientView extends JFrame implements
 
     public void handleDisconnectAndReturnToConnection() {
         if (gateway != null) {
-            System.out.println("Desconectando del servidor...");
             gateway.disconnect();
         }
 
@@ -102,7 +100,6 @@ public class MainClientView extends JFrame implements
     private void onConnectionSuccess(CommandFactory commandFactory, ServerGatewayPort gateway) {
         this.commandFactory = commandFactory;
         this.gateway = gateway;
-        System.out.println("Conexión exitosa. Creando panel de login...");
 
         LoginPanel loginPanel = new LoginPanel(
                 commandFactory.createLoginCommand(),
@@ -115,7 +112,6 @@ public class MainClientView extends JFrame implements
     }
 
     private void onReturnToConnection() {
-        System.out.println("Regresando al panel de conexión...");
         cardLayout.show(mainPanel, "CONNECTION_PANEL");
     }
 
@@ -123,11 +119,11 @@ public class MainClientView extends JFrame implements
         this.loggedInUsername = username;
         setTitle("Chat Universitario - ¡Bienvenido, " + username + "!");
 
-        this.chatPanel = new ChatPanel(loggedInUsername, commandFactory, this::handleDisconnectAndReturnToConnection);
+        this.messageHandler = MessageHandlerFactory.createAsyncMessageHandler();
+
+        this.chatPanel = new ChatPanel(loggedInUsername, commandFactory, this::handleDisconnectAndReturnToConnection, messageHandler);
         mainPanel.add(chatPanel, "CHAT_PANEL");
         cardLayout.show(mainPanel, "CHAT_PANEL");
-
-        this.messageHandler = MessageHandlerFactory.createAsyncMessageHandler();
 
         messageHandler.registerUserConnectionListener(this);
         messageHandler.registerUserDisconnectionListener(this);
@@ -175,7 +171,6 @@ public class MainClientView extends JFrame implements
                     byte[] audioData = Base64.getDecoder().decode(event.audioBase64());
                     chatPanel.receiveAudioMessage(event.sender(), audioData);
                 } catch (IllegalArgumentException e) {
-                    System.err.println("Error decodificando audio: " + e.getMessage());
                 }
             }
         });

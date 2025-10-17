@@ -27,6 +27,9 @@ public class AsyncMessageHandler implements MessageHandler {
     private final List<UserDisconnectionListener> userDisconnectionListeners = new ArrayList<>();
     private final List<PrivateMessageListener> privateMessageListeners = new ArrayList<>();
     private final List<PrivateAudioListener> privateAudioListeners = new ArrayList<>();
+    private final List<ChannelMessageListener> channelMessageListeners = new ArrayList<>();
+    private final List<ChannelAudioListener> channelAudioListeners = new ArrayList<>();
+    private final List<InviteListener> inviteListeners = new ArrayList<>();
     
     @Override
     public void handleAsyncMessage(List<String> parts) {
@@ -44,11 +47,55 @@ public class AsyncMessageHandler implements MessageHandler {
                 case "USER_DISCONNECTED" -> handleUserDisconnection(parts);
                 case "RECEIVE_PRIVATE_MESSAGE" -> handlePrivateMessage(parts);
                 case "RECEIVE_PRIVATE_AUDIO" -> handlePrivateAudio(parts);
+                case "RECEIVE_CHANNEL_MESSAGE" -> handleChannelMessage(parts);
+                case "RECEIVE_CHANNEL_AUDIO" -> handleChannelAudio(parts);
+                case "INVITE_RECEIVED" -> handleInviteReceived(parts);
                 default -> logger.warn("Comando asíncrono desconocido: {}", command);
             }
         } catch (Exception e) {
             logger.error("Error procesando mensaje asíncrono [{}]: {}", command, e.getMessage(), e);
         }
+    }
+
+    private void handleInviteReceived(List<String> parts) {
+        if (parts.size() < 6) { logger.warn("INVITE_RECEIVED malformado: {}", parts); return; }
+        int inviteId = Integer.parseInt(parts.get(1));
+        int channelId = Integer.parseInt(parts.get(2));
+        String channelName = parts.get(3);
+        String visibility = parts.get(4);
+        String inviterUsername = parts.get(5);
+        InviteEvent event = new InviteEvent(inviteId, channelId, channelName, visibility, inviterUsername);
+        List<InviteListener> listenersCopy; synchronized (inviteListeners) { listenersCopy = new ArrayList<>(inviteListeners); }
+        for (InviteListener l : listenersCopy) { try { l.onInvite(event); } catch (Exception e) { logger.error("Error notificando InviteListener", e); } }
+    }
+
+    private void handleChannelMessage(List<String> parts) {
+        if (parts.size() < 4) {
+            logger.warn("Mensaje RECEIVE_CHANNEL_MESSAGE malformado: {}", parts);
+            return;
+        }
+        int channelId = Integer.parseInt(parts.get(1));
+        String sender = parts.get(2);
+        String content = parts.get(3);
+        ChannelMessageEvent event = new ChannelMessageEvent(channelId, sender, content);
+        List<ChannelMessageListener> listenersCopy;
+        synchronized (channelMessageListeners) { listenersCopy = new ArrayList<>(channelMessageListeners); }
+        for (ChannelMessageListener l : listenersCopy) { try { l.onChannelMessage(event); } catch (Exception e) { logger.error("Error notificando ChannelMessageListener", e); } }
+    }
+
+    private void handleChannelAudio(List<String> parts) {
+        if (parts.size() < 4) {
+            logger.warn("Mensaje RECEIVE_CHANNEL_AUDIO malformado: {}", parts);
+            return;
+        }
+        int channelId = Integer.parseInt(parts.get(1));
+        String sender = parts.get(2);
+        String audioBase64 = parts.get(3);
+        try { Base64.getDecoder().decode(audioBase64); } catch (IllegalArgumentException e) { logger.error("Audio base64 inválido de canal {}: {}", channelId, e.getMessage()); return; }
+        ChannelAudioEvent event = new ChannelAudioEvent(channelId, sender, audioBase64);
+        List<ChannelAudioListener> listenersCopy;
+        synchronized (channelAudioListeners) { listenersCopy = new ArrayList<>(channelAudioListeners); }
+        for (ChannelAudioListener l : listenersCopy) { try { l.onChannelAudio(event); } catch (Exception e) { logger.error("Error notificando ChannelAudioListener", e); } }
     }
     
     private void handleUserConnection(List<String> parts) {
@@ -213,4 +260,12 @@ public class AsyncMessageHandler implements MessageHandler {
             logger.debug("PrivateAudioListener registrado: {}", listener.getClass().getSimpleName());
         }
     }
+
+    public void registerChannelMessageListener(ChannelMessageListener listener) {
+        if (listener != null) { synchronized (channelMessageListeners) { channelMessageListeners.add(listener); } }
+    }
+    public void registerChannelAudioListener(ChannelAudioListener listener) {
+        if (listener != null) { synchronized (channelAudioListeners) { channelAudioListeners.add(listener); } }
+    }
+    public void registerInviteListener(InviteListener listener) { if (listener != null) { synchronized (inviteListeners) { inviteListeners.add(listener); } } }
 }

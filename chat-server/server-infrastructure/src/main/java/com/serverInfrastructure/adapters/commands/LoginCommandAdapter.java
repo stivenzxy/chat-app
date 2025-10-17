@@ -41,7 +41,7 @@ public class LoginCommandAdapter implements ProtocolCommandAdapter {
 
         if (userOptional.isPresent()) {
             User user = userOptional.get();
-            connectionContext.setId(user.getUsername().value());
+            connectionContext.setId(user.getId());
             activeUserManager.userLoggedIn(user.getUsername().value(), user);
             if (commandHandler != null && commandHandler.getServer() != null) {
                 // Usamos reflexión mínima: exponemos método público en TcpServer para reenviar evento

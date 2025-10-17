@@ -22,12 +22,17 @@ public class GetUsersCommandAdapter implements ProtocolCommandAdapter {
     @Override
     public String execute(List<String> parts, ProtocolParser parser, ClientConnection connectionContext) {
         try {
-            // Obtener el ID del usuario que hace la petición
-            String requesterId = connectionContext.getId();
+            String requesterUserId = connectionContext.getId();
+
+            String requesterUsername = activeUserManager.getActiveUsers().entrySet().stream()
+                .filter(entry -> entry.getValue().getId().equals(requesterUserId))
+                .map(entry -> entry.getKey())
+                .findFirst()
+                .orElse(null);
 
             // Obtener todos los usuarios activos, filtrarlos para no incluir al solicitante
             String usersPayload = activeUserManager.getActiveUsers().values().stream()
-                    .filter(user -> !user.getUsername().value().equals(requesterId))
+                    .filter(user -> requesterUsername == null || !user.getUsername().value().equals(requesterUsername))
                     .map(u -> u.getId() + "," + u.getUsername().value())
                     .collect(Collectors.joining(";"));
 

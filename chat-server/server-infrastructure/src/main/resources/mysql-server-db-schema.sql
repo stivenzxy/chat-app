@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS channels (
                                         channel_id INT AUTO_INCREMENT PRIMARY KEY,
                                         name VARCHAR(100) NOT NULL,
                                         owner_id VARCHAR(36) NOT NULL,
+                                        visibility ENUM('PUBLIC','PRIVATE') NOT NULL DEFAULT 'PUBLIC',
                                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                         FOREIGN KEY (owner_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
@@ -24,6 +25,18 @@ CREATE TABLE IF NOT EXISTS channel_members (
                                                FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS channel_invites (
+                                               invite_id INT AUTO_INCREMENT PRIMARY KEY,
+                                               channel_id INT NOT NULL,
+                                               inviter_user_id VARCHAR(36) NOT NULL,
+                                               invited_user_id VARCHAR(36) NOT NULL,
+                                               status ENUM('PENDING','ACCEPTED','REJECTED') NOT NULL DEFAULT 'PENDING',
+                                               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                               FOREIGN KEY (channel_id) REFERENCES channels(channel_id) ON DELETE CASCADE,
+                                               FOREIGN KEY (inviter_user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+                                               FOREIGN KEY (invited_user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS messages (
                                         message_id INT AUTO_INCREMENT PRIMARY KEY,
                                         author_id VARCHAR(36) NOT NULL,
@@ -31,8 +44,8 @@ CREATE TABLE IF NOT EXISTS messages (
                                         recipient_channel_id INT,
                                         content TEXT,
                                         message_type ENUM('TEXT', 'AUDIO') NOT NULL,
-                                        audio_path VARCHAR(255),
-                                        sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                        audio_content LONGBLOB,
+                                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                         FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE CASCADE,
                                         FOREIGN KEY (recipient_user_id) REFERENCES users(user_id) ON DELETE SET NULL,
                                         FOREIGN KEY (recipient_channel_id) REFERENCES channels(channel_id) ON DELETE SET NULL

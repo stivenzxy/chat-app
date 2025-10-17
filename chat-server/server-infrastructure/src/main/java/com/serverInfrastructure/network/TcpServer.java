@@ -170,7 +170,6 @@ public class TcpServer implements ActiveUserObserver {
                 List<String> parts = protocolParser.decode(request);
 
                 if (!parts.isEmpty() && "LOGOUT".equalsIgnoreCase(parts.getFirst())) {
-                    System.out.println("DEBUG: Servidor recibió comando LOGOUT de conexión: " + connection.getId());
                 }
 
                 String response = commandHandler.process(parts, connection);
@@ -212,15 +211,13 @@ public class TcpServer implements ActiveUserObserver {
 
         ClientConnection connection = connectionPool.findConnectionById(user.getUsername().value());
         if (connection != null) {
-            //System.out.println("DEBUG: Notificando ClientConnectionObserver para usuario desconectado: " + user.getUsername().value());
             fireClientDisconnected(connection);
         } else {
-            System.out.println("DEBUG: No se encontró conexión para usuario: " + user.getUsername().value());
         }
     }
 
     public boolean sendMessageToUser(String username, String message, String senderInfo) {
-        ClientConnection connection = connectionPool.findConnectionById(username);
+        ClientConnection connection = connectionPool.findConnectionByUsername(username);
         if (connection != null) {
             try {
                 if (connection.getSocket() != null && !connection.getSocket().isClosed()) {

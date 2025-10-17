@@ -37,10 +37,8 @@ public class ActiveUserManager {
     public void userLoggedOut(String username) {
         User user = activeUsers.remove(username);
         if (user != null) {
-            //System.out.println("DEBUG: Usuario " + username + " removido exitosamente. Notificando observers...");
             notifyUserLoggedOut(user);
         } else {
-            System.out.println("DEBUG: Usuario " + username + " no encontrado en activeUsers. Usuarios activos: " + activeUsers.keySet());
         }
     }
 

@@ -77,6 +77,15 @@ public class ConnectionPool {
                 .orElse(null);
     }
     
+    public synchronized ClientConnection findConnectionByUsername(String username) {
+        com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
+        com.serverDomain.entities.User user = aum.getActiveUsers().get(username);
+        if (user != null) {
+            return findConnectionById(user.getId());
+        }
+        return null;
+    }
+    
     public synchronized void forceDisconnect(ClientConnection connection) {
         try {
             if (connection.getSocket() != null && !connection.getSocket().isClosed()) {

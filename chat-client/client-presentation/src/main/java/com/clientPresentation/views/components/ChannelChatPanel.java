@@ -1,0 +1,257 @@
+package com.clientPresentation.views.components;
+
+import com.chatCommon.dto.ChannelDTO;
+import com.chatCommon.dto.MessageDTO;
+import com.clientApplication.commands.GetChannelMembersClientCommand;
+import com.clientApplication.commands.SendChannelAudioClientCommand;
+import com.clientApplication.commands.SendChannelMessageClientCommand;
+import com.clientInfrastructure.services.ChannelMemberService;
+import com.clientInfrastructure.services.ChannelMessageService;
+import com.clientPresentation.services.AudioService;
+import com.clientPresentation.views.components.atoms.ChatInputPanel;
+import com.clientPresentation.views.components.atoms.ChatMessagePanel;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
+
+/**
+ * Panel for displaying and managing a specific channel's chat.
+ * Handles message sending/receiving, member display, and chat history.
+ */
+public class ChannelChatPanel extends JPanel {
+    private final String selfUsername;
+    private final ChannelDTO channel;
+    private final SendChannelMessageClientCommand sendMsgCmd;
+    private final SendChannelAudioClientCommand sendAudioCmd;
+    private final ChannelMessageService messageService;
+    private final ChannelMemberService memberService;
+    private final AudioService audioService = new AudioService();
+    private final DefaultListModel<String> membersModel = new DefaultListModel<>();
+    private final JList<String> membersList = new JList<>(membersModel);
+    
+    private JPanel chatHistoryArea;
+    private ChatInputPanel inputPanel;
+    private boolean historyLoaded = false;
+
+    public ChannelChatPanel(String selfUsername, ChannelDTO channel,
+                            SendChannelMessageClientCommand sendMsgCmd,
+                            SendChannelAudioClientCommand sendAudioCmd,
+                            GetChannelMembersClientCommand getMembersCmd) {
+        this.selfUsername = selfUsername; 
+        this.channel = channel; 
+        this.sendMsgCmd = sendMsgCmd; 
+        this.sendAudioCmd = sendAudioCmd;
+        this.messageService = new ChannelMessageService();
+        this.memberService = new ChannelMemberService(getMembersCmd);
+        
+        initComponents();
+        loadHistory();
+        loadMembers();
+    }
+    
+    private void initComponents() {
+        setLayout(new BorderLayout(5,5));
+        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        JPanel chatPanel = new JPanel(new BorderLayout(5,5));
+        
+        chatHistoryArea = new JPanel();
+        chatHistoryArea.setLayout(new BoxLayout(chatHistoryArea, BoxLayout.Y_AXIS));
+        chatHistoryArea.setBackground(Color.WHITE);
+        JScrollPane scrollPane = new JScrollPane(chatHistoryArea);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        chatPanel.add(scrollPane, BorderLayout.CENTER);
+        
+        inputPanel = new ChatInputPanel();
+        chatPanel.add(inputPanel, BorderLayout.SOUTH);
+        
+        // Panel derecho con miembros
+        JPanel membersPanel = new JPanel(new BorderLayout(5,5));
+        membersPanel.setBorder(BorderFactory.createTitledBorder("Miembros"));
+        membersList.setCellRenderer(new DefaultListCellRenderer(){
+            @Override public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof String username) {
+                    setText("👤 " + username);
+                }
+                return c;
+            }
+        });
+        JScrollPane membersScroll = new JScrollPane(membersList);
+        membersScroll.setPreferredSize(new Dimension(150, 0));
+        membersPanel.add(membersScroll, BorderLayout.CENTER);
+        
+        add(chatPanel, BorderLayout.CENTER);
+        add(membersPanel, BorderLayout.EAST);
+
+        inputPanel.addSendAction(e -> sendText());
+        inputPanel.getRecordButton().addActionListener(this::toggleRecording);
+    }
+
+    private void loadHistory() {
+        new SwingWorker<List<MessageDTO>, Void>() {
+            @Override 
+            protected List<MessageDTO> doInBackground() { 
+                return messageService.getChannelHistory(channel.getId()); 
+            }
+            @Override 
+            protected void done() { 
+                try { 
+                    List<MessageDTO> messages = get();
+                    chatHistoryArea.removeAll();
+                    for (MessageDTO m : messages) {
+                        String displaySender = m.getSenderId().equals(selfUsername) ? 
+                            com.clientPresentation.views.constants.ChatConstants.SELF_DISPLAY_NAME : m.getSenderId();
+                        MessageDTO displayMessage;
+                        
+                        if (m.getMessageType() == com.chatCommon.dto.MessageType.TEXT) {
+                            displayMessage = new MessageDTO(displaySender, m.getRecipientId(), m.getTextContent());
+                        } else {
+                            displayMessage = new MessageDTO(displaySender, m.getRecipientId(), m.getAudioContent());
+                        }
+                        
+                        ChatMessagePanel messagePanel = new ChatMessagePanel(displayMessage, audioService);
+                        chatHistoryArea.add(messagePanel);
+                    }
+                    chatHistoryArea.revalidate();
+                    chatHistoryArea.repaint();
+                    historyLoaded = true;
+                } catch (Exception e) {
+                    // Error loading history
+                } 
+            }
+        }.execute();
+    }
+
+    private void loadMembers() {
+        new SwingWorker<List<String>, Void>() {
+            @Override protected List<String> doInBackground() { 
+                return memberService.getChannelMembers(channel.getId()); 
+            }
+            @Override protected void done() { 
+                try { 
+                    List<String> members = get();
+                    membersModel.clear();
+                    for (String member : members) {
+                        membersModel.addElement(member);
+                    }
+                } catch (Exception e) {
+                    // Error loading members
+                }
+            }
+        }.execute();
+    }
+
+    private void sendText() {
+        String content = inputPanel.getMessageText().trim(); 
+        if (content.isEmpty()) {
+            return;
+        }
+        
+        try {
+            SendChannelMessageClientCommand.Request request = new SendChannelMessageClientCommand.Request(channel.getId(), content);
+            boolean result = sendMsgCmd.execute(request);
+            
+            if (result) {
+                append(selfUsername, content, null);
+                messageService.saveChannelTextMessage(selfUsername, channel.getId(), content);
+                inputPanel.clearMessageText();
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al enviar mensaje: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void toggleRecording(java.awt.event.ActionEvent e) {
+        javax.swing.JToggleButton recordButton = inputPanel.getRecordButton();
+        if (recordButton.isSelected()) {
+            try {
+                audioService.startRecording();
+                recordButton.setText(com.clientPresentation.views.constants.ChatConstants.AUDIO_BUTTON_STOP);
+                recordButton.setForeground(Color.RED);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, 
+                    com.clientPresentation.views.constants.ChatConstants.ERROR_AUDIO_ACCESS + ex.getMessage(), 
+                    com.clientPresentation.views.constants.ChatConstants.ERROR_AUDIO_TITLE, 
+                    JOptionPane.ERROR_MESSAGE);
+                recordButton.setSelected(false);
+            }
+        } else {
+            byte[] audioData = audioService.stopRecording();
+            recordButton.setText(com.clientPresentation.views.constants.ChatConstants.AUDIO_BUTTON_RECORD);
+            recordButton.setForeground(Color.WHITE);
+            
+            if (audioData != null && audioData.length > 0) {
+                sendAudio(audioData);
+            }
+        }
+    }
+
+    private void sendAudio(byte[] data) {
+        try {
+            SendChannelAudioClientCommand.Request request = new SendChannelAudioClientCommand.Request(channel.getId(), data);
+            
+            if (sendAudioCmd.execute(request)) {
+                append(selfUsername, null, data);
+                messageService.saveChannelAudioMessage(selfUsername, channel.getId(), data);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al enviar audio: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void append(String sender, String text, byte[] audio) {
+        MessageDTO message;
+        
+        String displaySender = sender.equals(selfUsername) ? 
+            com.clientPresentation.views.constants.ChatConstants.SELF_DISPLAY_NAME : sender;
+        
+        if (text != null) {
+            message = new MessageDTO(displaySender, channel.getId().toString(), text);
+        } else if (audio != null) {
+            message = new MessageDTO(displaySender, channel.getId().toString(), audio);
+        } else {
+            return;
+        }
+        
+        ChatMessagePanel messagePanel = new ChatMessagePanel(message, audioService);
+        
+        chatHistoryArea.add(messagePanel);
+        chatHistoryArea.revalidate();
+        chatHistoryArea.repaint();
+        
+        SwingUtilities.invokeLater(() -> {
+            JScrollPane scrollPane = (JScrollPane) chatHistoryArea.getParent().getParent();
+            scrollPane.getVerticalScrollBar().setValue(scrollPane.getVerticalScrollBar().getMaximum());
+        });
+    }
+
+    public void receiveText(String sender, String text) { 
+        messageService.saveChannelTextMessage(sender, channel.getId(), text);
+        
+        if (historyLoaded) {
+            append(sender, text, null);
+        }
+    }
+    
+    public void receiveAudio(String sender, String audioBase64) {
+        try { 
+            byte[] data = java.util.Base64.getDecoder().decode(audioBase64); 
+            messageService.saveChannelAudioMessage(sender, channel.getId(), data);
+            
+            if (historyLoaded) {
+                append(sender, null, data);
+            }
+        } catch (IllegalArgumentException ignored) {}
+    }
+    
+    public void refreshMembers() { 
+        loadMembers(); 
+    }
+    
+    public ChannelDTO getChannel() {
+        return channel;
+    }
+}

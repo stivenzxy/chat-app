@@ -65,4 +65,54 @@ public class MessageDAO {
         }
         return history;
     }
+
+    // Guardar mensaje de canal (usa recipient_channel_id)
+    public void saveChannelTextMessage(String senderId, int channelId, String content, LocalDateTime timestamp) {
+        String sql = "INSERT INTO messages (sender_id, recipient_channel_id, content, message_type, sent_at) VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, senderId);
+            stmt.setInt(2, channelId);
+            stmt.setString(3, content);
+            stmt.setString(4, MessageType.TEXT.name());
+            stmt.setTimestamp(5, Timestamp.valueOf(timestamp));
+            stmt.executeUpdate();
+        } catch (SQLException e) { 
+            logger.error("Error al guardar mensaje de canal: {}", e.getMessage());
+        }
+    }
+
+    public void saveChannelAudioMessage(String senderId, int channelId, byte[] audio, LocalDateTime timestamp) {
+        String sql = "INSERT INTO messages (sender_id, recipient_channel_id, message_type, audio_content, sent_at) VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, senderId);
+            stmt.setInt(2, channelId);
+            stmt.setString(3, MessageType.AUDIO.name());
+            stmt.setBytes(4, audio);
+            stmt.setTimestamp(5, Timestamp.valueOf(timestamp));
+            stmt.executeUpdate();
+        } catch (SQLException e) { logger.error("Error al guardar audio de canal: {}", e.getMessage()); }
+    }
+
+    public List<MessageDTO> getChannelHistory(int channelId) {
+        List<MessageDTO> history = new ArrayList<>();
+        String sql = "SELECT * FROM messages WHERE recipient_channel_id = ? ORDER BY sent_at ASC";
+        try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, channelId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                String senderId = rs.getString("sender_id");
+                String textContent = rs.getString("content");
+                byte[] audioContent = rs.getBytes("audio_content");
+                MessageType messageType = MessageType.valueOf(rs.getString("message_type"));
+                if (messageType == MessageType.TEXT) {
+                    history.add(new MessageDTO(senderId, String.valueOf(channelId), textContent));
+                } else {
+                    history.add(new MessageDTO(senderId, String.valueOf(channelId), audioContent));
+                }
+            }
+        } catch (SQLException e) { 
+            logger.error("Error al cargar historial de canal: {}", e.getMessage());
+        }
+        return history;
+    }
 }

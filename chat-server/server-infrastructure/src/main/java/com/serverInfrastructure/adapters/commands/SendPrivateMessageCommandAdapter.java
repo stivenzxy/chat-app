@@ -26,19 +26,32 @@ public class SendPrivateMessageCommandAdapter implements ProtocolCommandAdapter 
             return parser.encode("ERROR", "Argumentos insuficientes para enviar mensaje.");
         }
 
-        // Formato: SEND_PRIVATE_MESSAGE|destinatario_id|contenido_mensaje
-        String senderId = connectionContext.getId();
-        String recipientId = parts.get(1);
+        // Formato: SEND_PRIVATE_MESSAGE|destinatario_username|contenido_mensaje
+        String senderUserId = connectionContext.getId();
+        
+        // Obtener username del usuario que envía el mensaje
+        com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
+        String senderUsername = aum.getActiveUsers().entrySet().stream()
+            .filter(entry -> entry.getValue().getId().equals(senderUserId))
+            .map(entry -> entry.getKey())
+            .findFirst()
+            .orElse(null);
+            
+        if (senderUsername == null) {
+            return parser.encode("ERROR", "Remitente no válido");
+        }
+        
+        String recipientUsername = parts.get(1);
         String content = parts.get(2);
 
         // Mensaje que se enviará al destinatario
-        String forwardMessage = parser.encode("RECEIVE_PRIVATE_MESSAGE", senderId, content);
+        String forwardMessage = parser.encode("RECEIVE_PRIVATE_MESSAGE", senderUsername, content);
 
         // Obtener información adicional del remitente para logs más claros
         String senderInfo = getSenderInfo(connectionContext);
 
         // Pedir al servidor que envíe el mensaje con información del remitente
-        boolean delivered = server.sendMessageToUser(recipientId, forwardMessage, senderInfo);
+        boolean delivered = server.sendMessageToUser(recipientUsername, forwardMessage, senderInfo);
 
         if (delivered) {
             // Confirmación para el remitente
