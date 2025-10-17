@@ -5,6 +5,9 @@ import com.serverApplication.dto.ConnectedClientInfo;
 import com.serverApplication.ports.ServerControl;
 import com.serverApplication.ports.ClientConnectionObserver;
 import com.serverPresentation.views.models.ConnectionTableModel;
+import com.serverInfrastructure.observers.ActiveUserManager;
+import com.serverInfrastructure.observers.ActiveUserObserver;
+import com.serverDomain.entities.User;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -13,7 +16,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
 
-public class ConnectionPanel extends JPanel implements ClientConnectionObserver {
+public class ConnectionPanel extends JPanel implements ClientConnectionObserver, ActiveUserObserver {
     private JTextField portField;
     private JButton toggleServerButton;
     private JLabel statusLabel;
@@ -27,6 +30,9 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver 
     public ConnectionPanel(ServerControl serverControl) {
         this.serverControl = serverControl;
         this.serverControl.addConnectionObserver(this);
+        
+        ActiveUserManager.getInstance().addObserver(this);
+        
         initComponents();
         loadServerIp();
     }
@@ -216,5 +222,19 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver 
 
     private void showError(String message) {
         JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+    
+    @Override
+    public void onUserLoggedIn(User user) {
+        SwingUtilities.invokeLater(() -> {
+            tableModel.updateConnectionUsername(user.getId(), user.getUsername().value());
+        });
+    }
+    
+    @Override
+    public void onUserLoggedOut(User user) {
+        SwingUtilities.invokeLater(() -> {
+            tableModel.updateConnectionUsername(user.getId(), null);
+        });
     }
 }

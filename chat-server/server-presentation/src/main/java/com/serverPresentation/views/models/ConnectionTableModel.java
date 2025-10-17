@@ -38,7 +38,7 @@ public class ConnectionTableModel extends AbstractTableModel {
         return switch (columnIndex) {
             case 0 -> selectedConnections.getOrDefault(clientInfo, false);
             case 1 -> "conexion-" + Long.toHexString(clientInfo.poolSeq());
-            case 2 -> clientInfo.connectionId();
+            case 2 -> clientInfo.username() != null ? clientInfo.username() : "(No identificado)";
             case 3 -> clientInfo.ipAddress();
             case 4 -> clientInfo.reuseCount();
             case 5 -> "Conectado";
@@ -85,5 +85,33 @@ public class ConnectionTableModel extends AbstractTableModel {
     public void clearSelections() {
         selectedConnections.replaceAll((k, v) -> false);
         fireTableDataChanged();
+    }
+    
+    public void updateConnectionUsername(String connectionId, String username) {
+        for (int i = 0; i < connections.size(); i++) {
+            ConnectedClientInfo oldInfo = connections.get(i);
+            if (oldInfo.connectionId().equals(connectionId)) {
+                // Crear nueva instancia con el username actualizado
+                ConnectedClientInfo updatedInfo = new ConnectedClientInfo(
+                    oldInfo.poolSeq(),
+                    oldInfo.connectionId(),
+                    oldInfo.ipAddress(),
+                    oldInfo.reuseCount(),
+                    username
+                );
+                
+                // Reemplazar en la lista
+                connections.set(i, updatedInfo);
+                
+                // Actualizar el mapa de selecciones
+                boolean wasSelected = selectedConnections.getOrDefault(oldInfo, false);
+                selectedConnections.remove(oldInfo);
+                selectedConnections.put(updatedInfo, wasSelected);
+                
+                // Notificar cambio en la fila
+                fireTableRowsUpdated(i, i);
+                break;
+            }
+        }
     }
 }

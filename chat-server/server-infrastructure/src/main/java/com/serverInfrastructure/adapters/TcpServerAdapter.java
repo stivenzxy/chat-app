@@ -7,11 +7,14 @@ import com.serverInfrastructure.factories.InfrastructureFactory;
 import com.serverInfrastructure.network.ClientConnection;
 import com.serverInfrastructure.network.ConnectionListener;
 import com.serverInfrastructure.network.TcpServer;
+import com.serverInfrastructure.observers.ActiveUserManager;
+import com.serverDomain.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class TcpServerAdapter implements ServerControl, ConnectionListener {
 
@@ -87,12 +90,14 @@ public class TcpServerAdapter implements ServerControl, ConnectionListener {
 
     @Override
     public void onClientConnected(ClientConnection connection) {
-    ConnectedClientInfo clientInfo = new ConnectedClientInfo(
-        connection.getPoolSequence(),
-        connection.getId(),
-        connection.getIpAddress(),
-        connection.getReuseCount()
-    );
+        String username = getUsernameForConnection(connection.getId());
+        ConnectedClientInfo clientInfo = new ConnectedClientInfo(
+            connection.getPoolSequence(),
+            connection.getId(),
+            connection.getIpAddress(),
+            connection.getReuseCount(),
+            username
+        );
 
         for (ClientConnectionObserver observer : appObservers) {
             observer.onClientConnected(clientInfo);
@@ -101,11 +106,13 @@ public class TcpServerAdapter implements ServerControl, ConnectionListener {
 
     @Override
     public void onClientDisconnected(ClientConnection connection) {
+        String username = getUsernameForConnection(connection.getId());
         ConnectedClientInfo clientInfo = new ConnectedClientInfo(
                 connection.getPoolSequence(),
                 connection.getId(),
                 connection.getIpAddress(),
-                connection.getReuseCount()
+                connection.getReuseCount(),
+                username
         );
         for (ClientConnectionObserver observer : appObservers) {
             observer.onClientDisconnected(clientInfo);
@@ -114,15 +121,33 @@ public class TcpServerAdapter implements ServerControl, ConnectionListener {
 
     @Override
     public void onClientIdentityUpdated(ClientConnection connection) {
+        String username = getUsernameForConnection(connection.getId());
         ConnectedClientInfo clientInfo = new ConnectedClientInfo(
                 connection.getPoolSequence(),
                 connection.getId(),
                 connection.getIpAddress(),
-                connection.getReuseCount()
+                connection.getReuseCount(),
+                username
         );
         for (ClientConnectionObserver observer : appObservers) {
             observer.onClientDisconnected(clientInfo);
             observer.onClientConnected(clientInfo);
         }
+    }
+    
+    private String getUsernameForConnection(String connectionId) {
+        ActiveUserManager activeUserManager = ActiveUserManager.getInstance();
+        
+        String usernameByUserId = activeUserManager.getActiveUsers().entrySet().stream()
+                .filter(entry -> entry.getValue().getId().equals(connectionId))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
+                
+        if (usernameByUserId != null) {
+            return usernameByUserId;
+        }
+        
+        return null;
     }
 }
