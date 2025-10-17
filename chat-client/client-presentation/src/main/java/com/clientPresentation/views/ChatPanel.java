@@ -202,7 +202,10 @@ public class ChatPanel extends JPanel {
                     if (response.isSuccess()) {
                         userListModel.clear();
                         for (UserDTO user : response.getUsers()) {
-                            userListModel.addElement(user);
+                            // No agregar al propio usuario a la lista
+                            if (!user.getUsername().equals(selfUsername)) {
+                                userListModel.addElement(user);
+                            }
                         }
                     } else {
                         JOptionPane.showMessageDialog(ChatPanel.this,
@@ -220,7 +223,26 @@ public class ChatPanel extends JPanel {
 
     public void addUserToList(UserDTO user) {
         SwingUtilities.invokeLater(() -> {
-            userListModel.addElement(user);
+            // No agregar al propio usuario
+            if (user.getUsername().equals(selfUsername)) {
+                return;
+            }
+            
+            // Verificar si el usuario ya existe en la lista
+            boolean userExists = false;
+            for (int i = 0; i < userListModel.getSize(); i++) {
+                UserDTO existingUser = userListModel.getElementAt(i);
+                if (existingUser.getId().equals(user.getId()) || 
+                    existingUser.getUsername().equals(user.getUsername())) {
+                    userExists = true;
+                    break;
+                }
+            }
+            
+            // Solo agregar si no existe
+            if (!userExists) {
+                userListModel.addElement(user);
+            }
         });
     }
 

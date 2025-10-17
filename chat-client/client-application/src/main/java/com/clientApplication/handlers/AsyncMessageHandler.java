@@ -9,20 +9,10 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
-/**
- * Implementación del handler para procesar mensajes asincrónicos del servidor
- * Aplica principios SOLID:
- * - SRP: Solo se encarga de procesar mensajes asincrónicos
- * - OCP: Abierto para extensión (nuevos tipos de mensaje)
- * - LSP: Implementa correctamente MessageHandler
- * - ISP: Usa interfaces segregadas para listeners
- * - DIP: Depende de abstracciones (interfaces)
- */
 public class AsyncMessageHandler implements MessageHandler {
     
     private static final Logger logger = LoggerFactory.getLogger(AsyncMessageHandler.class);
-    
-    // Listas de listeners (permite múltiples observers por tipo)
+
     private final List<UserConnectionListener> userConnectionListeners = new ArrayList<>();
     private final List<UserDisconnectionListener> userDisconnectionListeners = new ArrayList<>();
     private final List<PrivateMessageListener> privateMessageListeners = new ArrayList<>();
@@ -50,6 +40,7 @@ public class AsyncMessageHandler implements MessageHandler {
                 case "RECEIVE_CHANNEL_MESSAGE" -> handleChannelMessage(parts);
                 case "RECEIVE_CHANNEL_AUDIO" -> handleChannelAudio(parts);
                 case "INVITE_RECEIVED" -> handleInviteReceived(parts);
+                case "CHANNEL_MEMBERS_UPDATED" -> handleChannelMembersUpdated(parts);
                 default -> logger.warn("Comando asíncrono desconocido: {}", command);
             }
         } catch (Exception e) {
@@ -99,8 +90,6 @@ public class AsyncMessageHandler implements MessageHandler {
     }
 
     private void handleUserConnection(List<String> parts) {
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // El formato ahora es USER_CONNECTED|userId|username|photoBase64
         if (parts.size() < 4) {
             logger.warn("Mensaje USER_CONNECTED malformado: {}", parts);
             return;
@@ -173,6 +162,27 @@ public class AsyncMessageHandler implements MessageHandler {
         
         logger.debug("Audio privado recibido de: {}", sender);
         notifyPrivateAudioListeners(event);
+    }
+
+    private void handleChannelMembersUpdated(List<String> parts) {
+        if (parts.size() < 2) {
+            logger.warn("Mensaje CHANNEL_MEMBERS_UPDATED malformado: {}", parts);
+            return;
+        }
+        int channelId = Integer.parseInt(parts.get(1));
+        ChannelMessageEvent event = new ChannelMessageEvent(channelId, "SYSTEM", "MEMBERS_UPDATED");
+
+        List<ChannelMessageListener> listenersCopy;
+        synchronized (channelMessageListeners) {
+            listenersCopy = new ArrayList<>(channelMessageListeners);
+        }
+        for (ChannelMessageListener l : listenersCopy) {
+            try {
+                l.onChannelMessage(event);
+            } catch (Exception e) {
+                logger.error("Error notificando ChannelMessageListener para actualización de miembros", e);
+            }
+        }
     }
 
     private void notifyUserConnectionListeners(UserConnectionEvent event) {
@@ -282,4 +292,30 @@ public class AsyncMessageHandler implements MessageHandler {
         if (listener != null) { synchronized (channelAudioListeners) { channelAudioListeners.add(listener); } }
     }
     public void registerInviteListener(InviteListener listener) { if (listener != null) { synchronized (inviteListeners) { inviteListeners.add(listener); } } }
+    
+    // Métodos para limpiar listeners al desconectar
+    public void clearAllListeners() {
+        synchronized (userConnectionListeners) {
+            userConnectionListeners.clear();
+        }
+        synchronized (userDisconnectionListeners) {
+            userDisconnectionListeners.clear();
+        }
+        synchronized (privateMessageListeners) {
+            privateMessageListeners.clear();
+        }
+        synchronized (privateAudioListeners) {
+            privateAudioListeners.clear();
+        }
+        synchronized (channelMessageListeners) {
+            channelMessageListeners.clear();
+        }
+        synchronized (channelAudioListeners) {
+            channelAudioListeners.clear();
+        }
+        synchronized (inviteListeners) {
+            inviteListeners.clear();
+        }
+        logger.debug("Todos los listeners han sido limpiados");
+    }
 }

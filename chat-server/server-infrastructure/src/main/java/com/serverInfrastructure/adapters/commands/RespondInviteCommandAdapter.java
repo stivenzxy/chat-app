@@ -6,16 +6,20 @@ import com.serverDomain.repositories.ChannelInviteRepository;
 import com.serverDomain.repositories.ChannelRepository;
 import com.serverInfrastructure.adapters.ProtocolCommandAdapter;
 import com.serverInfrastructure.network.ClientConnection;
+import com.serverInfrastructure.observers.ActiveUserManager;
+import com.serverInfrastructure.services.CommandHandler;
 
 import java.util.List;
 
 public class RespondInviteCommandAdapter implements ProtocolCommandAdapter {
     private final ChannelRepository channelRepository;
     private final ChannelInviteRepository inviteRepository;
+    private final CommandHandler handler;
 
-    public RespondInviteCommandAdapter(ChannelRepository channelRepository, ChannelInviteRepository inviteRepository) {
+    public RespondInviteCommandAdapter(ChannelRepository channelRepository, ChannelInviteRepository inviteRepository, CommandHandler handler) {
         this.channelRepository = channelRepository;
         this.inviteRepository = inviteRepository;
+        this.handler = handler;
     }
 
     @Override
@@ -23,7 +27,6 @@ public class RespondInviteCommandAdapter implements ProtocolCommandAdapter {
 
     @Override
     public String execute(List<String> parts, ProtocolParser parser, ClientConnection connectionContext) {
-        // RESPOND_INVITE|inviteId|ACCEPTED|REJECTED|channelId
         if (parts.size() < 4) return parser.encode("ERROR", "Argumentos insuficientes");
         Integer inviteId = Integer.valueOf(parts.get(1));
         ChannelInvite.Status status = ChannelInvite.Status.valueOf(parts.get(2));
@@ -34,9 +37,22 @@ public class RespondInviteCommandAdapter implements ProtocolCommandAdapter {
         inviteRepository.updateStatus(inviteId, status);
         if (status == ChannelInvite.Status.ACCEPTED) {
             channelRepository.addMember(channelId, userId);
+
+            String newMemberUsername = ActiveUserManager.getInstance().getActiveUsers().entrySet().stream()
+                    .filter(entry -> entry.getValue().getId().equals(userId))
+                    .map(java.util.Map.Entry::getKey)
+                    .findFirst()
+                    .orElse(null);
+
+            if (newMemberUsername != null) {
+                List<String> memberUsernames = channelRepository.findMemberUsernames(channelId);
+                String notification = parser.encode("CHANNEL_MEMBERS_UPDATED", String.valueOf(channelId), newMemberUsername);
+
+                for (String memberUsername : memberUsernames) {
+                    handler.getServer().sendMessageToUser(memberUsername, notification, "SERVER_NOTIFICATION");
+                }
+            }
         }
         return parser.encode("OK", "Invitación actualizada");
     }
 }
-
-

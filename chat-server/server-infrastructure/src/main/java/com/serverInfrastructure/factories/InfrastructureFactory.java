@@ -1,7 +1,6 @@
 package com.serverInfrastructure.factories;
 
 import com.chatCommon.protocol.ProtocolParser;
-import com.serverApplication.commands.LoginCommand;
 import com.serverApplication.factories.ServiceFactory;
 import com.serverInfrastructure.network.TcpServer;
 import com.serverInfrastructure.adapters.commands.LoginCommandAdapter;
@@ -19,6 +18,7 @@ import com.serverInfrastructure.adapters.commands.SendChannelMessageCommandAdapt
 import com.serverInfrastructure.adapters.commands.SendChannelAudioCommandAdapter;
 import com.serverInfrastructure.adapters.commands.InviteToChannelCommandAdapter;
 import com.serverInfrastructure.adapters.commands.RespondInviteCommandAdapter;
+import com.serverInfrastructure.adapters.commands.TranscribeAudioCommandAdapter;
 import com.serverInfrastructure.adapters.commands.ListPendingInvitesCommandAdapter;
 import com.serverInfrastructure.adapters.commands.GetChannelMembersCommandAdapter;
 
@@ -47,9 +47,12 @@ public class InfrastructureFactory {
         handler.registerCommand(new SendChannelMessageCommandAdapter(channelRepository, handler));
         handler.registerCommand(new SendChannelAudioCommandAdapter(channelRepository, handler));
         handler.registerCommand(new InviteToChannelCommandAdapter(channelRepository, inviteRepository, handler));
-        handler.registerCommand(new RespondInviteCommandAdapter(channelRepository, inviteRepository));
+        handler.registerCommand(new RespondInviteCommandAdapter(channelRepository, inviteRepository, handler));
         handler.registerCommand(new ListPendingInvitesCommandAdapter(inviteRepository));
         handler.registerCommand(new GetChannelMembersCommandAdapter(channelRepository));
+
+        TranscribeAudioCommandAdapter transcribeAudioAdapter = new TranscribeAudioCommandAdapter(null);
+        handler.registerCommand(transcribeAudioAdapter);
 
         return handler;
     }
@@ -63,6 +66,9 @@ public class InfrastructureFactory {
 
         SendPrivateAudioCommandAdapter sendAudioAdapter = new SendPrivateAudioCommandAdapter(server);
         handler.registerCommand(sendAudioAdapter);
+
+        TranscribeAudioCommandAdapter transcribeAudioAdapter = new TranscribeAudioCommandAdapter(server);
+        handler.registerCommand(transcribeAudioAdapter);
 
         return server;
     }

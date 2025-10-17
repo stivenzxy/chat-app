@@ -12,4 +12,5 @@ public interface MessageHandler {
     void registerChannelMessageListener(ChannelMessageListener listener);
     void registerChannelAudioListener(ChannelAudioListener listener);
     void registerInviteListener(InviteListener listener);
+    void clearAllListeners();
 }

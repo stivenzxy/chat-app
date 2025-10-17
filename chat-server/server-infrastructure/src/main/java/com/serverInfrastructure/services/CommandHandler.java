@@ -26,7 +26,9 @@ public class CommandHandler {
         return this.server;
     }
     public void registerCommand(ProtocolCommandAdapter command) {
-        commands.put(command.getCommandName().toUpperCase(), command);
+        String commandName = command.getCommandName().toUpperCase();
+        commands.put(commandName, command);
+        System.out.println("Registered command: " + commandName);
     }
 
     public String process(List<String> parts, ClientConnection connection) {
@@ -40,7 +42,10 @@ public class CommandHandler {
         
         ProtocolCommandAdapter command = commands.get(name);
 
-        if (command == null) return parser.encode("ERROR", "Comando desconocido");
+        if (command == null) {
+            System.out.println("Command not found: " + name);
+            return parser.encode("ERROR", "Comando desconocido");
+        }
 
         try {
             return command.execute(parts, parser, connection);

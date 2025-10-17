@@ -1,11 +1,11 @@
 package com.clientApplication.commands;
 
-import com.chatCommon.dto.UserDTO; // <<< AÑADIR IMPORT
+import com.chatCommon.dto.UserDTO;
 import com.chatCommon.dto.auth.LoginRequest;
 import com.chatCommon.dto.auth.LoginResponse;
 import com.clientApplication.commands.contract.ClientCommand;
 import com.clientApplication.ports.ServerGatewayPort;
-import java.util.Base64; // <<< AÑADIR IMPORT
+import java.util.Base64;
 import java.util.List;
 
 public class LoginClientCommand implements ClientCommand<LoginRequest, LoginResponse> {

@@ -6,7 +6,7 @@ import com.clientApplication.commands.contract.ClientCommand;
 import com.clientApplication.ports.ServerGatewayPort;
 
 import java.util.ArrayList;
-import java.util.Base64; // <<< AÑADIR IMPORT
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 

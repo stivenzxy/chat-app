@@ -6,6 +6,7 @@ import com.chatCommon.dto.MessageType;
 import com.clientApplication.commands.GetChannelMembersClientCommand;
 import com.clientApplication.commands.SendChannelAudioClientCommand;
 import com.clientApplication.commands.SendChannelMessageClientCommand;
+import com.clientApplication.commands.TranscribeAudioClientCommand;
 import com.clientInfrastructure.services.ChannelMemberService;
 import com.clientInfrastructure.services.ChannelMessageService;
 import com.clientPresentation.services.AudioService;
@@ -22,6 +23,7 @@ public class ChannelChatPanel extends JPanel {
     private final ChannelDTO channel;
     private final SendChannelMessageClientCommand sendMsgCmd;
     private final SendChannelAudioClientCommand sendAudioCmd;
+    private final TranscribeAudioClientCommand transcribeAudioCmd;
     private final ChannelMessageService messageService;
     private final ChannelMemberService memberService;
     private final AudioService audioService = new AudioService();
@@ -35,11 +37,13 @@ public class ChannelChatPanel extends JPanel {
     public ChannelChatPanel(String selfUsername, ChannelDTO channel,
                             SendChannelMessageClientCommand sendMsgCmd,
                             SendChannelAudioClientCommand sendAudioCmd,
-                            GetChannelMembersClientCommand getMembersCmd) {
+                            GetChannelMembersClientCommand getMembersCmd,
+                            TranscribeAudioClientCommand transcribeAudioCmd) {
         this.selfUsername = selfUsername; 
         this.channel = channel; 
         this.sendMsgCmd = sendMsgCmd; 
         this.sendAudioCmd = sendAudioCmd;
+        this.transcribeAudioCmd = transcribeAudioCmd;
         this.messageService = new ChannelMessageService();
         this.memberService = new ChannelMemberService(getMembersCmd);
         
@@ -109,7 +113,7 @@ public class ChannelChatPanel extends JPanel {
                             displayMessage = new MessageDTO(displaySender, m.getRecipientId(), m.getAudioContent());
                         }
                         
-                        ChatMessagePanel messagePanel = new ChatMessagePanel(displayMessage, audioService);
+                        ChatMessagePanel messagePanel = new ChatMessagePanel(displayMessage, audioService, ChannelChatPanel.this::onTranscribeAudio);
                         chatHistoryArea.add(messagePanel);
                     }
                     chatHistoryArea.revalidate();
@@ -213,7 +217,7 @@ public class ChannelChatPanel extends JPanel {
             return;
         }
         
-        ChatMessagePanel messagePanel = new ChatMessagePanel(message, audioService);
+        ChatMessagePanel messagePanel = new ChatMessagePanel(message, audioService, this::onTranscribeAudio);
         
         chatHistoryArea.add(messagePanel);
         chatHistoryArea.revalidate();
@@ -246,5 +250,51 @@ public class ChannelChatPanel extends JPanel {
     
     public void refreshMembers() { 
         loadMembers(); 
+    }
+    
+    public ChannelDTO getChannel() {
+        return channel;
+    }
+
+    public void onTranscribeAudio(byte[] audioData) {
+        MessageDTO transcribingMessage = new MessageDTO("Sistema", "", "⏳ Transcribiendo audio...");
+        ChatMessagePanel tempPanel = new ChatMessagePanel(transcribingMessage, audioService);
+        chatHistoryArea.add(tempPanel);
+        chatHistoryArea.revalidate();
+        chatHistoryArea.repaint();
+
+        new SwingWorker<String, Void>() {
+            @Override
+            protected String doInBackground() throws Exception {
+                return transcribeAudioCmd.execute(audioData);
+            }
+
+            @Override
+            protected void done() {
+                chatHistoryArea.remove(tempPanel);
+                chatHistoryArea.revalidate();
+                chatHistoryArea.repaint();
+
+                try {
+                    String transcribedText = get();
+                    if (transcribedText != null && !transcribedText.trim().isEmpty()) {
+                        append("[TRANSCRIPCIÓN]", transcribedText, null);
+
+                        SendChannelMessageClientCommand.Request request = new SendChannelMessageClientCommand.Request(channel.getId(), "[TRANSCRIPCIÓN] " + transcribedText);
+                        sendMsgCmd.execute(request);
+                    } else {
+                        JOptionPane.showMessageDialog(ChannelChatPanel.this,
+                            "No se pudo transcribir el audio. Verifique que el servidor Vosk esté ejecutándose.",
+                            "Error de Transcripción",
+                            JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(ChannelChatPanel.this,
+                        "Error al transcribir el audio: " + e.getMessage(),
+                        "Error de Transcripción",
+                        JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
     }
 }

@@ -146,7 +146,7 @@ public class ChannelsPanel extends JPanel implements ChannelMessageListener, Cha
             mainChatTabs.setSelectedComponent(panel);
             return;
         }
-        ChannelChatPanel panel = new ChannelChatPanel(selfUsername, channel, sendChannelMessageCommand, sendChannelAudioCommand, commandFactory.createGetChannelMembersCommand());
+        ChannelChatPanel panel = new ChannelChatPanel(selfUsername, channel, sendChannelMessageCommand, sendChannelAudioCommand, commandFactory.createGetChannelMembersCommand(), commandFactory.createTranscribeAudioCommand());
         channelTabsById.put(channel.getId(), panel);
         mainChatTabs.addTab(tabTitle, panel);
         mainChatTabs.setSelectedComponent(panel);
@@ -154,7 +154,16 @@ public class ChannelsPanel extends JPanel implements ChannelMessageListener, Cha
 
     @Override
     public void onChannelMessage(ChannelMessageEvent event) {
-        SwingUtilities.invokeLater(() -> dispatchToChannelTab(event.getChannelId(), event.getSender(), event.getContent(), null));
+        if ("SYSTEM".equals(event.getSender()) && "MEMBERS_UPDATED".equals(event.getContent())) {
+            SwingUtilities.invokeLater(() -> {
+                ChannelChatPanel panel = channelTabsById.get(event.getChannelId());
+                if (panel != null) {
+                    panel.refreshMembers();
+                }
+            });
+        } else {
+            SwingUtilities.invokeLater(() -> dispatchToChannelTab(event.getChannelId(), event.getSender(), event.getContent(), null));
+        }
     }
 
     @Override

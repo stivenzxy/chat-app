@@ -67,6 +67,7 @@ public class MainClientView extends JFrame implements
         add(headerPanel, BorderLayout.NORTH);
 
         add(mainPanel, BorderLayout.CENTER);
+
         cardLayout.show(mainPanel, "CONNECTION_PANEL");
     }
 
@@ -74,12 +75,23 @@ public class MainClientView extends JFrame implements
         if (gateway != null) {
             gateway.disconnect();
         }
+        
+        // Limpiar listeners antes de salir
+        if (this.messageHandler != null) {
+            this.messageHandler.clearAllListeners();
+        }
+        
         System.exit(0);
     }
 
     public void handleDisconnectAndReturnToConnection() {
         if (gateway != null) {
             gateway.disconnect();
+        }
+
+        // Limpiar listeners del messageHandler antes de liberar la referencia
+        if (this.messageHandler != null) {
+            this.messageHandler.clearAllListeners();
         }
 
         this.gateway = null;
@@ -117,7 +129,7 @@ public class MainClientView extends JFrame implements
 
         LoginPanel loginPanel = new LoginPanel(
                 commandFactory.createLoginCommand(),
-                this::onLoginSuccess, 
+                this::onLoginSuccess,
                 this::handleDisconnectAndReturnToConnection
         );
 

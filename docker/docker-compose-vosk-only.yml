@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  vosk-server:
+    image: alphacep/kaldi-es:latest
+    container_name: chat-vosk-server
+    ports:
+      - "2700:2700"
+    volumes:
+      - ../models/vosk-model-es-0.42:/opt/vosk-model/alphacep/kaldi-es
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2700"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

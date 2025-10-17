@@ -90,14 +90,14 @@ public class TcpServer {
 
     private void handleMaxConnectionsReached(Socket socket) {
         logger.warn("Conexión rechazada: se alcanzó el máximo de usuarios permitidos");
-        
+
         try (PrintWriter tempOut = new PrintWriter(socket.getOutputStream(), true)) {
             String rejectMessage = protocolParser.encode("DISCONNECT", "Servidor a máxima capacidad. Intente más tarde.");
             tempOut.println(rejectMessage);
         } catch (Exception ignored) {}
-        
-        try { 
-            socket.close(); 
+
+        try {
+            socket.close();
         } catch (Exception ignored) {}
     }
 

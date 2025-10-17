@@ -18,4 +18,7 @@ Thumbs.db
 # Archivos de base de datos local
 *.mv.db
 *.trace.db
+models/
+
+
 
