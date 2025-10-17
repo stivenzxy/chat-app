@@ -15,7 +15,6 @@ public class TcpClient {
     private final int port;
     private static final Logger logger = LoggerFactory.getLogger(TcpClient.class);
 
-    // 1. Guardamos el estado de la conexión en campos de la clase
     private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
@@ -26,11 +25,6 @@ public class TcpClient {
         this.port = port;
     }
 
-    /**
-     * 2. Establece la conexión e inicia un hilo para escuchar mensajes del servidor.
-     *
-     * @param onMessageReceived Un "notificador" que se ejecuta cada vez que llega un mensaje.
-     */
     public void connect(Consumer<String> onMessageReceived) {
         logger.info("Conectando al servidor en {}:{}", host, port);
 
@@ -40,14 +34,10 @@ public class TcpClient {
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-
-            // 3. Hilo Lector: su única tarea es escuchar al servidor
             listenerThread = new Thread(() -> {
                 try {
                     String serverResponse;
                     while (!Thread.currentThread().isInterrupted() && (serverResponse = in.readLine()) != null) {
-                        logger.info("Recibido <- {}", serverResponse);
-                        // Cuando llega un mensaje, se lo pasamos al notificador
                         onMessageReceived.accept(serverResponse);
                     }
                 } catch (IOException e) {
@@ -75,12 +65,20 @@ public class TcpClient {
         }
     }
 
-    /**
-     * 5. Cierra todos los recursos y detiene el hilo lector.
-     */
     public void disconnect() {
         logger.info("Desconectando del servidor...");
         try {
+            if (socket != null && !socket.isClosed() && out != null) {
+                out.println("LOGOUT");
+                out.flush();
+
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            
             if (listenerThread != null) listenerThread.interrupt();
             if (socket != null && !socket.isClosed()) socket.close();
         } catch (IOException e) {

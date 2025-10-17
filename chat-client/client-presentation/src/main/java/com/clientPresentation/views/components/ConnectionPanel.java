@@ -1,4 +1,4 @@
-package com.clientPresentation.views.actions;
+package com.clientPresentation.views.components;
 
 import com.chatCommon.protocol.ProtocolParser;
 import com.chatCommon.viewResources.UiBuilder;
@@ -11,7 +11,6 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 public class ConnectionPanel extends JPanel {
 

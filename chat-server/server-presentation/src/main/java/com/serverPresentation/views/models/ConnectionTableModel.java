@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ConnectionTableModel extends AbstractTableModel {
-    private final String[] columnNames = {"Seleccionar", "ID Cliente", "Dirección IP", "Estado"};
+    private final String[] columnNames = {"Seleccionar", "UID", "Nombre", "IP", "Reusos", "Estado"};
     private final List<ConnectedClientInfo> connections = new ArrayList<>();
     private final Map<ConnectedClientInfo, Boolean> selectedConnections = new HashMap<>();
 
@@ -37,9 +37,11 @@ public class ConnectionTableModel extends AbstractTableModel {
         ConnectedClientInfo clientInfo = connections.get(rowIndex);
         return switch (columnIndex) {
             case 0 -> selectedConnections.getOrDefault(clientInfo, false);
-            case 1 -> clientInfo.id();
-            case 2 -> clientInfo.ipAddress();
-            case 3 -> "Conectado";
+            case 1 -> "conexion-" + Long.toHexString(clientInfo.poolSeq());
+            case 2 -> clientInfo.connectionId();
+            case 3 -> clientInfo.ipAddress();
+            case 4 -> clientInfo.reuseCount();
+            case 5 -> "Conectado";
             default -> null;
         };
     }
@@ -60,15 +62,16 @@ public class ConnectionTableModel extends AbstractTableModel {
     }
 
     public void removeConnection(ConnectedClientInfo clientInfo) {
+        int rowIndex = -1;
         for (int i = 0; i < connections.size(); i++) {
-            System.out.println("  - [" + i + "] " + connections.get(i).id());
+            if (connections.get(i).poolSeq() == clientInfo.poolSeq()) { // Identificamos por UID estable
+                rowIndex = i;
+                break;
+            }
         }
-        
-        int rowIndex = connections.indexOf(clientInfo);
-        
         if (rowIndex != -1) {
-            connections.remove(rowIndex);
-            selectedConnections.remove(clientInfo);
+            ConnectedClientInfo removed = connections.remove(rowIndex);
+            selectedConnections.remove(removed);
             fireTableRowsDeleted(rowIndex, rowIndex);
         }
     }

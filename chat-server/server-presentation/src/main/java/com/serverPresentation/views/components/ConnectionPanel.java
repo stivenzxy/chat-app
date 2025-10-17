@@ -1,4 +1,4 @@
-package com.serverPresentation.views.actions;
+package com.serverPresentation.views.components;
 
 import com.chatCommon.viewResources.UiBuilder;
 import com.serverApplication.dto.ConnectedClientInfo;
@@ -143,7 +143,6 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver 
     @Override
     public void onClientDisconnected(ConnectedClientInfo clientInfo) {
         SwingUtilities.invokeLater(() -> {
-            System.out.println("UI: Removiendo cliente [" + clientInfo.id() + "] de la tabla");
             tableModel.removeConnection(clientInfo);
             updateConnectionPoolLabel();
         });
@@ -173,7 +172,7 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver 
             
         if (confirmed == JOptionPane.YES_OPTION) {
             for (ConnectedClientInfo client : selectedClients) {
-                serverControl.disconnectClient(client.id());
+                serverControl.disconnectClient(client.connectionId());
             }
             tableModel.clearSelections();
         }

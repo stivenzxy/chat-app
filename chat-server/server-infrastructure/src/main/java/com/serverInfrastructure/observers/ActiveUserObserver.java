@@ -1,4 +1,4 @@
-package com.serverInfrastructure.services;
+package com.serverInfrastructure.observers;
 
 import com.serverDomain.entities.User;
 

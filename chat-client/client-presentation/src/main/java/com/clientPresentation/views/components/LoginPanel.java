@@ -1,9 +1,10 @@
-package com.clientPresentation.views.actions;
+package com.clientPresentation.views.components;
 
 import com.chatCommon.dto.auth.LoginRequest;
 import com.chatCommon.dto.auth.LoginResponse;
 import com.chatCommon.viewResources.UiBuilder;
 import com.clientApplication.commands.contract.ClientCommand;
+import com.clientPresentation.views.components.atoms.DisconnectButton;
 import java.util.function.Consumer;
 
 import javax.swing.*;
@@ -13,14 +14,18 @@ import java.awt.*;
 public class LoginPanel extends JPanel {
     private final ClientCommand<LoginRequest, LoginResponse> loginCommand;
     private final Consumer<String> onLoginSuccessCallback;
+    private final Runnable onDisconnectCallback;
 
     private JTextField usernameField;
     private JPasswordField passwordField;
     private JButton loginButton;
 
-    public LoginPanel(ClientCommand<LoginRequest, LoginResponse> loginCommand, Consumer<String> onLoginSuccessCallback) {
+    public LoginPanel(ClientCommand<LoginRequest, LoginResponse> loginCommand, 
+                     Consumer<String> onLoginSuccessCallback,
+                     Runnable onDisconnectCallback) {
         this.loginCommand = loginCommand;
         this.onLoginSuccessCallback = onLoginSuccessCallback;
+        this.onDisconnectCallback = onDisconnectCallback;
         initComponents();
     }
 
@@ -61,6 +66,11 @@ public class LoginPanel extends JPanel {
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.CENTER;
         add(loginButton, gbc);
+
+        gbc.gridy++;
+        gbc.insets = new Insets(5, 15, 10, 15);
+        DisconnectButton disconnectButton = new DisconnectButton(onDisconnectCallback);
+        add(disconnectButton, gbc);
 
         loginButton.addActionListener(e -> onLogin());
     }

@@ -8,7 +8,6 @@ import com.serverInfrastructure.adapters.commands.LoginCommandAdapter;
 import com.serverInfrastructure.services.CommandHandler;
 import com.serverInfrastructure.adapters.commands.SendPrivateMessageCommandAdapter;
 import com.serverInfrastructure.adapters.commands.SendPrivateAudioCommandAdapter;
-import com.serverApplication.useCases.GetAllUsersService;
 import com.serverInfrastructure.adapters.commands.GetUsersCommandAdapter;
 
 public class InfrastructureFactory {
@@ -23,12 +22,12 @@ public class InfrastructureFactory {
         CommandHandler handler = new CommandHandler(parser);
 
         // Comando de Login existente
-        LoginCommandAdapter loginAdapter = new LoginCommandAdapter(serviceFactory.createLoginService());
-        handler.registerCommand(loginAdapter);
+    LoginCommandAdapter loginAdapter = new LoginCommandAdapter(serviceFactory.createLoginService());
+    loginAdapter.setCommandHandler(handler);
+    handler.registerCommand(loginAdapter);
 
         // Registrar el nuevo comando de obtener usuarios
-        GetAllUsersService getUsersService = serviceFactory.createGetAllUsersService();
-        GetUsersCommandAdapter getUsersAdapter = new GetUsersCommandAdapter();
+    GetUsersCommandAdapter getUsersAdapter = new GetUsersCommandAdapter();
         handler.registerCommand(getUsersAdapter);
 
         return handler;

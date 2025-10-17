@@ -87,7 +87,12 @@ public class TcpServerAdapter implements ServerControl, ConnectionListener {
 
     @Override
     public void onClientConnected(ClientConnection connection) {
-        ConnectedClientInfo clientInfo = new ConnectedClientInfo(connection.getId(), connection.getIpAddress());
+    ConnectedClientInfo clientInfo = new ConnectedClientInfo(
+        connection.getPoolSequence(),
+        connection.getId(),
+        connection.getIpAddress(),
+        connection.getReuseCount()
+    );
 
         for (ClientConnectionObserver observer : appObservers) {
             observer.onClientConnected(clientInfo);
@@ -96,9 +101,29 @@ public class TcpServerAdapter implements ServerControl, ConnectionListener {
 
     @Override
     public void onClientDisconnected(ClientConnection connection) {
-        ConnectedClientInfo clientInfo = new ConnectedClientInfo(connection.getId(), connection.getIpAddress());
+        ConnectedClientInfo clientInfo = new ConnectedClientInfo(
+                connection.getPoolSequence(),
+                connection.getId(),
+                connection.getIpAddress(),
+                connection.getReuseCount()
+        );
         for (ClientConnectionObserver observer : appObservers) {
             observer.onClientDisconnected(clientInfo);
+        }
+    }
+
+    @Override
+    public void onClientIdentityUpdated(ClientConnection connection) {
+        ConnectedClientInfo clientInfo = new ConnectedClientInfo(
+                connection.getPoolSequence(),
+                connection.getId(),
+                connection.getIpAddress(),
+                connection.getReuseCount()
+        );
+        // Reutilizamos onClientConnected semantics para refrescar; podríamos tener un método dedicado en observers si se desea.
+        for (ClientConnectionObserver observer : appObservers) {
+            observer.onClientDisconnected(clientInfo); // quitar fila vieja
+            observer.onClientConnected(clientInfo);    // agregar fila actualizada
         }
     }
 }

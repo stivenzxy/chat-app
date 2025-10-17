@@ -8,9 +8,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.chatCommon.protocol.ProtocolParser;
 import com.serverInfrastructure.network.pool.ConnectionPool;
-import com.serverInfrastructure.services.ActiveUserManager;
+import com.serverInfrastructure.observers.ActiveUserManager;
 import com.serverInfrastructure.services.CommandHandler;
-import com.serverInfrastructure.services.ActiveUserObserver;
+import com.serverInfrastructure.observers.ActiveUserObserver;
 import com.serverDomain.entities.User;
 import com.chatCommon.utils.AppProperties;
 import org.slf4j.Logger;
@@ -37,7 +37,6 @@ public class TcpServer implements ActiveUserObserver {
         this.protocolParser = new ProtocolParser('|', '\\');
 
         AppProperties props = new AppProperties("server-configuration");
-        // ¡Esta línea es correcta! Llama al método desde la instancia 'props'
         int maxConnections = props.getInt("MAX_CONNECTIONS");
 
         this.connectionPool = new ConnectionPool(maxConnections);
@@ -64,6 +63,12 @@ public class TcpServer implements ActiveUserObserver {
                     clientThread.start();
                 } catch (RuntimeException exception) {
                     logger.warn("Conexión rechazada: se alcanzó el máximo de usuarios permitidos");
+                    // Notificar al cliente inmediatamente y cerrar socket
+                    try (PrintWriter tempOut = new PrintWriter(socket.getOutputStream(), true)) {
+                        String rejectMessage = protocolParser.encode("DISCONNECT", "Servidor a máxima capacidad. Intente más tarde.");
+                        tempOut.println(rejectMessage);
+                    } catch (Exception ignored) {}
+                    try { socket.close(); } catch (Exception ignored) {}
                 }
             }
         } catch (SocketException exception) {
@@ -95,6 +100,17 @@ public class TcpServer implements ActiveUserObserver {
         }
     }
 
+    private void fireClientIdentityUpdated(ClientConnection connection) {
+        for (ConnectionListener listener : listeners) {
+            listener.onClientIdentityUpdated(connection);
+        }
+    }
+
+    // Método público de apoyo para adapters de comandos (evita exponer la lista internamente)
+    public void fireClientIdentityUpdatedPublic(ClientConnection connection) {
+        fireClientIdentityUpdated(connection);
+    }
+
     public void stop() {
         try {
             if (serverSocket != null && !serverSocket.isClosed()) {
@@ -112,12 +128,11 @@ public class TcpServer implements ActiveUserObserver {
     public int getCurrentConnections() {
         return connectionPool != null ? connectionPool.getInUseCount() : 0;
     }
-    
+
     public void disconnectClient(String clientId) {
         if (connectionPool != null) {
             ClientConnection connection = connectionPool.findConnectionById(clientId);
             if (connection != null) {
-                logger.info("[{}] Desconectando cliente por solicitud del servidor", clientId);
 
                 try {
                     if (connection.getSocket() != null && !connection.getSocket().isClosed()) {
@@ -131,7 +146,7 @@ public class TcpServer implements ActiveUserObserver {
                 } catch (Exception e) {
                     logger.warn("[{}] Error al enviar notificación de desconexión: {}", clientId, e.getMessage());
                 }
-                
+
                 connectionPool.forceDisconnect(connection);
             } else {
                 logger.warn("No se encontró cliente con ID: {}", clientId);
@@ -150,10 +165,14 @@ public class TcpServer implements ActiveUserObserver {
             String request;
 
             while ((request = in.readLine()) != null) {
-                logger.info("[{}] Petición recibida: {}", connection.getId(), request);
+                // logger.info("[{}] Petición recibida: {}", connection.getId(), request); // Comentado para evitar spam de base64 de audio
 
                 List<String> parts = protocolParser.decode(request);
-                // ¡Aquí está el cambio clave! Pasamos el objeto 'connection'
+
+                if (!parts.isEmpty() && "LOGOUT".equalsIgnoreCase(parts.getFirst())) {
+                    System.out.println("DEBUG: Servidor recibió comando LOGOUT de conexión: " + connection.getId());
+                }
+
                 String response = commandHandler.process(parts, connection);
 
                 logger.info("[{}] Enviando respuesta: {}", connection.getId(), response);
@@ -168,7 +187,6 @@ public class TcpServer implements ActiveUserObserver {
             try {
                 socket.close();
 
-                // Notificar al gestor que el usuario se ha desconectado
                 ActiveUserManager.getInstance().userLoggedOut(connectionId);
 
                 fireClientDisconnected(connection);
@@ -190,17 +208,32 @@ public class TcpServer implements ActiveUserObserver {
     @Override
     public void onUserLoggedOut(User user) {
         String message = protocolParser.encode("USER_DISCONNECTED", user.getId(), user.getUsername().value());
-        broadcastMessage(message, null); // Enviar a todos
+        broadcastMessage(message, null);
+
+        ClientConnection connection = connectionPool.findConnectionById(user.getUsername().value());
+        if (connection != null) {
+            //System.out.println("DEBUG: Notificando ClientConnectionObserver para usuario desconectado: " + user.getUsername().value());
+            fireClientDisconnected(connection);
+        } else {
+            System.out.println("DEBUG: No se encontró conexión para usuario: " + user.getUsername().value());
+        }
     }
 
-    public boolean sendMessageToUser(String username, String message) {
+    public boolean sendMessageToUser(String username, String message, String senderInfo) {
         ClientConnection connection = connectionPool.findConnectionById(username);
         if (connection != null) {
             try {
                 if (connection.getSocket() != null && !connection.getSocket().isClosed()) {
                     PrintWriter out = new PrintWriter(connection.getSocket().getOutputStream(), true);
                     out.println(message);
-                    logger.info("Mensaje directo enviado a [{}]: {}", username, message);
+
+                    if (senderInfo != null) {
+                        String messageContent = extractMessageContent(message);
+                        logger.info("Cliente [{}] envió \"{}\" a cliente [{}]",
+                                senderInfo, messageContent, username);
+                    } else {
+                        logger.info("Mensaje directo enviado a [{}]: {}", username, message);
+                    }
                     return true;
                 }
             } catch (IOException e) {
@@ -208,6 +241,23 @@ public class TcpServer implements ActiveUserObserver {
             }
         }
         return false;
+    }
+
+    private String extractMessageContent(String protocolMessage) {
+        try {
+            List<String> parts = protocolParser.decode(protocolMessage);
+            if (parts.size() >= 3) {
+                String command = parts.get(0);
+                if ("RECEIVE_PRIVATE_MESSAGE".equals(command)) {
+                    return parts.get(2);
+                } else if ("RECEIVE_PRIVATE_AUDIO".equals(command)) {
+                    return "[Audio message]";
+                }
+            }
+            return protocolMessage;
+        } catch (Exception e) {
+            return protocolMessage;
+        }
     }
 
     private void broadcastMessage(String message, String excludeUsername) {
@@ -225,5 +275,4 @@ public class TcpServer implements ActiveUserObserver {
             }
         }
     }
-
 }

@@ -1,13 +1,14 @@
 package com.clientPresentation.views;
 
 import com.chatCommon.dto.GetUsersResponse;
+import com.chatCommon.dto.MessageDTO;
 import com.chatCommon.dto.UserDTO;
 import com.clientApplication.commands.contract.ClientCommand;
 import com.clientApplication.factories.CommandFactory;
+import com.clientPresentation.views.components.atoms.DisconnectButton;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Vector;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -19,15 +20,17 @@ public class ChatPanel extends JPanel {
     private final ClientCommand<Void, GetUsersResponse> getUsersCommand;
     private final CommandFactory commandFactory;
     private final String selfUsername;
+    private final Runnable onDisconnectCallback;
 
     private JList<UserDTO> userList;
     private DefaultListModel<UserDTO> userListModel;
-    private JTabbedPane chatTabs; // El nuevo panel de pestañas
+    private JTabbedPane chatTabs;
     private Map<String, PrivateChatPanel> openChats;
 
-    public ChatPanel(String selfUsername, CommandFactory commandFactory) {
+    public ChatPanel(String selfUsername, CommandFactory commandFactory, Runnable onDisconnectCallback) {
         this.selfUsername = selfUsername;
         this.commandFactory = commandFactory;
+        this.onDisconnectCallback = onDisconnectCallback;
         this.getUsersCommand = commandFactory.createGetUsersCommand();
         this.openChats = new HashMap<>();
         initComponents();
@@ -38,22 +41,28 @@ public class ChatPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Panel de Usuarios (sin cambios)
+        JPanel leftPanel = new JPanel(new BorderLayout(5, 5));
+        
         userListModel = new DefaultListModel<>();
         userList = new JList<>(userListModel);
         JScrollPane userListScrollPane = new JScrollPane(userList);
         userListScrollPane.setBorder(BorderFactory.createTitledBorder("Usuarios Conectados"));
-        userListScrollPane.setPreferredSize(new Dimension(200, 0));
-        add(userListScrollPane, BorderLayout.WEST);
+        leftPanel.add(userListScrollPane, BorderLayout.CENTER);
 
-        // Panel de Chat (AHORA ES UN JTABBEDPANE)
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        DisconnectButton disconnectButton = new DisconnectButton(onDisconnectCallback);
+        buttonPanel.add(disconnectButton);
+        leftPanel.add(buttonPanel, BorderLayout.SOUTH);
+        
+        leftPanel.setPreferredSize(new Dimension(200, 0));
+        add(leftPanel, BorderLayout.WEST);
+
         chatTabs = new JTabbedPane();
         add(chatTabs, BorderLayout.CENTER);
 
-        // AÑADIR LISTENER PARA ABRIR CHATS
         userList.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent evt) {
-                if (evt.getClickCount() == 2) { // Doble clic
+                if (evt.getClickCount() == 2) {
                     int index = userList.locationToIndex(evt.getPoint());
                     UserDTO selectedUser = userListModel.getElementAt(index);
                     openPrivateChat(selectedUser.getUsername());
@@ -63,7 +72,6 @@ public class ChatPanel extends JPanel {
     }
 
     private void loadUsers() {
-        // Ejecutar en un hilo separado para no bloquear la UI
         new SwingWorker<GetUsersResponse, Void>() {
             @Override
             protected GetUsersResponse doInBackground() throws Exception {
@@ -94,12 +102,10 @@ public class ChatPanel extends JPanel {
     }
 
     public void addUserToList(UserDTO user) {
-        // Asegurarse de que se ejecute en el hilo de la UI
         SwingUtilities.invokeLater(() -> {
             userListModel.addElement(user);
         });
     }
-
 
     public void removeUserFromList(String userId) {
         SwingUtilities.invokeLater(() -> {
@@ -113,7 +119,6 @@ public class ChatPanel extends JPanel {
     }
 
     public void openPrivateChat(String username) {
-        // Si la pestaña ya está abierta, la seleccionamos
         if (openChats.containsKey(username)) {
             chatTabs.setSelectedComponent(openChats.get(username));
         } else {
@@ -133,16 +138,19 @@ public class ChatPanel extends JPanel {
             openPrivateChat(sender);
         }
         PrivateChatPanel chatPanel = openChats.get(sender);
-        chatPanel.receiveMessage(sender, content);
+
+        MessageDTO message = new MessageDTO(sender, selfUsername, content);
+        chatPanel.receiveMessage(message);
     }
 
     public void receiveAudioMessage(String sender, byte[] audioData) {
-        // Asegurarnos de que la pestaña de chat existe
         if (!openChats.containsKey(sender)) {
             openPrivateChat(sender);
         }
-        // Añadir el mensaje de audio al panel correcto
+
         PrivateChatPanel chatPanel = openChats.get(sender);
-        chatPanel.appendAudioMessage(sender, audioData);
+
+        MessageDTO audioMessage = new MessageDTO(sender, selfUsername, audioData);
+        chatPanel.receiveMessage(audioMessage);
     }
 }

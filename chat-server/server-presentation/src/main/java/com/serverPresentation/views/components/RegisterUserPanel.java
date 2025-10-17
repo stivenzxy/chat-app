@@ -1,20 +1,14 @@
-package com.serverPresentation.views.actions;
+package com.serverPresentation.views.components;
 
 import com.chatCommon.viewResources.UiBuilder;
 import com.serverApplication.dto.CreateUserRequest;
-import com.serverDomain.valueObjects.Email;
-import com.serverDomain.valueObjects.Username;
 import com.serverPresentation.controllers.UserController;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
 
 public class RegisterUserPanel extends JPanel {
-
-    private static final Logger logger = LoggerFactory.getLogger(RegisterUserPanel.class);
 
     private final UserController userController;
 
@@ -99,8 +93,8 @@ public class RegisterUserPanel extends JPanel {
         }
         try {
             CreateUserRequest request = new CreateUserRequest(
-                    new Username(username).toString(),
-                    new Email(email).toString(),
+                    username,
+                    email,
                     password,
                     photoUrl,
                     ip
