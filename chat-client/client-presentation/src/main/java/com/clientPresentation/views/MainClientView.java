@@ -9,6 +9,7 @@ import com.clientApplication.listeners.*;
 import com.clientApplication.ports.ServerGatewayPort;
 import com.clientPresentation.views.components.ConnectionPanel;
 import com.clientPresentation.views.components.LoginPanel;
+import com.chatCommon.dto.auth.LoginResponse;
 
 import javax.swing.*;
 import java.awt.*;
@@ -29,6 +30,7 @@ public class MainClientView extends JFrame implements
     private String loggedInUsername;
     private ChatPanel chatPanel;
     private MessageHandler messageHandler;
+    private JPanel headerPanel;
 
     public MainClientView() {
         initComponents();
@@ -61,9 +63,11 @@ public class MainClientView extends JFrame implements
         ConnectionPanel connectionPanel = new ConnectionPanel(this::onConnectionSuccess, this::onReturnToConnection);
         mainPanel.add(connectionPanel, "CONNECTION_PANEL");
 
-        add(createHeaderPanel(), BorderLayout.NORTH);
-        add(mainPanel, BorderLayout.CENTER);
+        headerPanel = createHeaderPanel();
+        add(headerPanel, BorderLayout.NORTH);
+        // --- FIN DE MODIFICACIÓN ---
 
+        add(mainPanel, BorderLayout.CENTER);
         cardLayout.show(mainPanel, "CONNECTION_PANEL");
     }
 
@@ -115,7 +119,7 @@ public class MainClientView extends JFrame implements
 
         LoginPanel loginPanel = new LoginPanel(
                 commandFactory.createLoginCommand(),
-                this::onLoginSuccess,
+                this::onLoginSuccess, // Ahora coincide con el Consumer<LoginResponse>
                 this::handleDisconnectAndReturnToConnection
         );
 
@@ -127,13 +131,25 @@ public class MainClientView extends JFrame implements
         cardLayout.show(mainPanel, "CONNECTION_PANEL");
     }
 
-    private void onLoginSuccess(String username) {
-        this.loggedInUsername = username;
-        setTitle("Chat Universitario - ¡Bienvenido, " + username + "!");
+    private void onLoginSuccess(LoginResponse response) {
+        UserDTO loggedInUser = response.getUser();
+        if (loggedInUser == null) {
+            JOptionPane.showMessageDialog(this, "No se recibieron los datos del usuario al iniciar sesión.", "Error de Login", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        setTitle("Chat Universitario - ¡Bienvenido, " + loggedInUser.getUsername() + "!");
+
+        // Eliminar el panel de bienvenida
+        if (headerPanel != null) {
+            remove(headerPanel);
+            headerPanel = null; // Marcar para que no se vuelva a usar
+        }
 
         this.messageHandler = MessageHandlerFactory.createAsyncMessageHandler();
 
-        this.chatPanel = new ChatPanel(loggedInUsername, commandFactory, this::handleDisconnectAndReturnToConnection, messageHandler);
+        // Pasar el DTO completo del usuario al ChatPanel
+        this.chatPanel = new ChatPanel(loggedInUser, commandFactory, this::handleDisconnectAndReturnToConnection, messageHandler);
         mainPanel.add(chatPanel, "CHAT_PANEL");
         cardLayout.show(mainPanel, "CHAT_PANEL");
 
@@ -145,13 +161,19 @@ public class MainClientView extends JFrame implements
         this.gateway.setAsyncMessageListener(parts -> {
             messageHandler.handleAsyncMessage(parts);
         });
+
+        // Actualizar el frame
+        revalidate();
+        repaint();
     }
 
     @Override
     public void onUserConnected(UserConnectionEvent event) {
         SwingUtilities.invokeLater(() -> {
             if (chatPanel != null) {
-                UserDTO newUser = new UserDTO(event.userId(), event.username());
+                // --- INICIO DE LA MODIFICACIÓN ---
+                UserDTO newUser = new UserDTO(event.userId(), event.username(), event.photoData());
+                // --- FIN DE LA MODIFICACIÓN ---
                 chatPanel.addUserToList(newUser);
             }
         });

@@ -9,6 +9,7 @@ import com.serverInfrastructure.network.ClientConnection;
 import com.serverInfrastructure.services.CommandHandler;
 import com.serverInfrastructure.observers.ActiveUserManager;
 
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,6 +44,8 @@ public class LoginCommandAdapter implements ProtocolCommandAdapter {
             User user = userOptional.get();
             connectionContext.setId(user.getId());
             activeUserManager.userLoggedIn(user.getUsername().value(), user);
+
+            // (El código para fireClientIdentityUpdated permanece igual)
             if (commandHandler != null && commandHandler.getServer() != null) {
                 try {
                     commandHandler.getServer().getClass()
@@ -50,7 +53,17 @@ public class LoginCommandAdapter implements ProtocolCommandAdapter {
                             .invoke(commandHandler.getServer(), connectionContext);
                 } catch (Exception ignored) {}
             }
-            return parser.encode("OK", "Login exitoso");
+
+            // --- INICIO DE LA MODIFICACIÓN ---
+            String photoBase64 = "";
+            if (user.getPhotoData() != null && user.getPhotoData().length > 0) {
+                photoBase64 = Base64.getEncoder().encodeToString(user.getPhotoData());
+            }
+
+            // Devolver: OK|mensaje|id|username|foto_en_base64
+            return parser.encode("OK", "Login exitoso", user.getId(), user.getUsername().value(), photoBase64);
+            // --- FIN DE LA MODIFICACIÓN ---
+
         } else {
             return parser.encode("ERROR", "Credenciales inválidas");
         }

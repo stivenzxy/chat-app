@@ -24,8 +24,7 @@ public class MainServerView extends JFrame {
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setSize(950, 600);
         setLocationRelativeTo(null);
-        
-        // Manejar el cierre de ventana correctamente
+
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent windowEvent) {
@@ -114,10 +113,8 @@ public class MainServerView extends JFrame {
         );
         
         if (option == JOptionPane.YES_OPTION) {
-            // Detener el servidor si está corriendo
             factory.getServerControl().stopServer();
-            
-            // Salir de la aplicación
+
             System.exit(0);
         }
     }

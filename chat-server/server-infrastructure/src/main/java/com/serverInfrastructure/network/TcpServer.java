@@ -3,6 +3,7 @@ package com.serverInfrastructure.network;
 import java.io.*;
 import java.net.*;
 import java.util.List;
+import java.util.Base64;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -243,7 +244,13 @@ public class TcpServer implements ActiveUserObserver {
 
     @Override
     public void onUserLoggedIn(User user) {
-        String message = protocolParser.encode("USER_CONNECTED", user.getId(), user.getUsername().value());
+        // --- INICIO DE LA MODIFICACIÓN ---
+        String photoBase64 = "";
+        if (user.getPhotoData() != null && user.getPhotoData().length > 0) {
+            photoBase64 = Base64.getEncoder().encodeToString(user.getPhotoData());
+        }
+        String message = protocolParser.encode("USER_CONNECTED", user.getId(), user.getUsername().value(), photoBase64);
+        // --- FIN DE LA MODIFICACIÓN ---
         broadcastMessage(message, user.getUsername().value());
     }
 

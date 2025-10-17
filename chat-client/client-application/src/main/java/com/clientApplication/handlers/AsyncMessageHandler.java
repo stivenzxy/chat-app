@@ -97,17 +97,31 @@ public class AsyncMessageHandler implements MessageHandler {
         synchronized (channelAudioListeners) { listenersCopy = new ArrayList<>(channelAudioListeners); }
         for (ChannelAudioListener l : listenersCopy) { try { l.onChannelAudio(event); } catch (Exception e) { logger.error("Error notificando ChannelAudioListener", e); } }
     }
-    
+
     private void handleUserConnection(List<String> parts) {
-        if (parts.size() < 3) {
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // El formato ahora es USER_CONNECTED|userId|username|photoBase64
+        if (parts.size() < 4) {
             logger.warn("Mensaje USER_CONNECTED malformado: {}", parts);
             return;
         }
-        
+
         String userId = parts.get(1);
         String username = parts.get(2);
-        UserConnectionEvent event = new UserConnectionEvent(userId, username);
-        
+        String photoBase64 = parts.get(3);
+        byte[] photoData = null;
+
+        if (photoBase64 != null && !photoBase64.isEmpty()) {
+            try {
+                photoData = Base64.getDecoder().decode(photoBase64);
+            } catch (IllegalArgumentException e) {
+                logger.warn("Base64 de foto de perfil inválido para {}: {}", username, e.getMessage());
+            }
+        }
+
+        UserConnectionEvent event = new UserConnectionEvent(userId, username, photoData);
+
+
         logger.info("Usuario conectado: {} ({})", username, userId);
         notifyUserConnectionListeners(event);
     }

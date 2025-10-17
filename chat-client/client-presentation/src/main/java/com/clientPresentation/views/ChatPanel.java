@@ -7,9 +7,9 @@ import com.clientApplication.commands.contract.ClientCommand;
 import com.clientApplication.factories.CommandFactory;
 import com.clientPresentation.views.components.atoms.DisconnectButton;
 
+import com.chatCommon.dto.UserDTO;
 import javax.swing.*;
 import java.awt.*;
-
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.HashMap;
@@ -22,6 +22,7 @@ public class ChatPanel extends JPanel {
     private final String selfUsername;
     private final Runnable onDisconnectCallback;
     private final com.clientApplication.handlers.MessageHandler messageHandler;
+    private final UserDTO selfUser;
 
     private JList<UserDTO> userList;
     private DefaultListModel<UserDTO> userListModel;
@@ -33,8 +34,9 @@ public class ChatPanel extends JPanel {
     private boolean invitesVisible = false;
     private Map<String, PrivateChatPanel> openChats;
 
-    public ChatPanel(String selfUsername, CommandFactory commandFactory, Runnable onDisconnectCallback, com.clientApplication.handlers.MessageHandler messageHandler) {
-        this.selfUsername = selfUsername;
+    public ChatPanel(UserDTO selfUser, CommandFactory commandFactory, Runnable onDisconnectCallback, com.clientApplication.handlers.MessageHandler messageHandler) {
+        this.selfUser = selfUser;
+        this.selfUsername = selfUser.getUsername(); // Conveniencia
         this.commandFactory = commandFactory;
         this.onDisconnectCallback = onDisconnectCallback;
         this.messageHandler = messageHandler;
@@ -57,16 +59,16 @@ public class ChatPanel extends JPanel {
             invitesContainer.setPreferredSize(new Dimension(300, 0));
             add(invitesContainer, BorderLayout.EAST);
         }
-        
+
         invitesVisible = !invitesVisible;
-        
+
         if (invitesVisible) {
             if (invitesPanel != null) invitesPanel.refresh();
             invitesContainer.setVisible(true);
         } else {
             invitesContainer.setVisible(false);
         }
-        
+
         invitesContainer.revalidate();
         invitesContainer.repaint();
     }
@@ -75,31 +77,38 @@ public class ChatPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Columna izquierda como Tabs: Usuarios / Canales
+        // --- INICIO DE MODIFICACIÓN DE LA ESTRUCTURA ---
+        JPanel profilePanel = createProfilePanel();
+
         JTabbedPane leftTabs = new JTabbedPane();
         JPanel usersTab = new JPanel(new BorderLayout(5,5));
         userListModel = new DefaultListModel<>();
         userList = new JList<>(userListModel);
+        userList.setCellRenderer(new UserListRenderer());
         JScrollPane userListScrollPane = new JScrollPane(userList);
         userListScrollPane.setBorder(BorderFactory.createTitledBorder("Usuarios Conectados"));
         usersTab.add(userListScrollPane, BorderLayout.CENTER);
+
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         DisconnectButton disconnectButton = new DisconnectButton(onDisconnectCallback);
         buttonPanel.add(disconnectButton);
         usersTab.add(buttonPanel, BorderLayout.SOUTH);
         leftTabs.addTab("Usuarios", usersTab);
 
-        leftTabs.setPreferredSize(new Dimension(240, 0));
-        
         chatTabs = new JTabbedPane();
-        
         channelsPanel = new ChannelsPanel(selfUsername, commandFactory, messageHandler, chatTabs);
         leftTabs.addTab("Canales", channelsPanel);
-        
-        add(leftTabs, BorderLayout.WEST);
+
+        // Nuevo panel izquierdo que combina perfil y pestañas
+        JPanel leftPanel = new JPanel(new BorderLayout(5, 5));
+        leftPanel.add(profilePanel, BorderLayout.NORTH);
+        leftPanel.add(leftTabs, BorderLayout.CENTER);
+        leftPanel.setPreferredSize(new Dimension(240, 0));
+
+        add(leftPanel, BorderLayout.WEST);
         invitesBtn = new JButton("Invitaciones");
         invitesBtn.addActionListener(e -> showInvitesPanel());
-        
+
         messageHandler.registerInviteListener(event -> SwingUtilities.invokeLater(() -> {
             if (invitesPanel != null && invitesVisible) {
                 invitesPanel.refresh();
@@ -108,11 +117,11 @@ public class ChatPanel extends JPanel {
         JPanel topBar = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         topBar.add(invitesBtn);
         add(topBar, BorderLayout.NORTH);
-        
+
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.add(chatTabs, BorderLayout.CENTER);
         add(centerPanel, BorderLayout.CENTER);
-        
+
 
         userList.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent evt) {
@@ -124,6 +133,60 @@ public class ChatPanel extends JPanel {
             }
         });
     }
+
+    private JPanel createProfilePanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 0));
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Mi Perfil"),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+
+        JLabel nameLabel = new JLabel(selfUser.getUsername());
+        nameLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+        nameLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        JLabel photoLabel = new JLabel();
+        photoLabel.setPreferredSize(new Dimension(64, 64));
+        photoLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        photoLabel.setVerticalAlignment(SwingConstants.CENTER);
+
+        byte[] photoData = selfUser.getPhotoData();
+        if (photoData != null && photoData.length > 0) {
+            ImageIcon icon = new ImageIcon(photoData);
+            Image image = icon.getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH);
+            photoLabel.setIcon(new ImageIcon(image));
+        } else {
+            photoLabel.setIcon(UIManager.getIcon("OptionPane.questionIcon"));
+        }
+
+        panel.add(photoLabel, BorderLayout.WEST);
+        panel.add(nameLabel, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    // --- INICIO DE NUEVA CLASE INTERNA ---
+    class UserListRenderer extends DefaultListCellRenderer {
+        @Override
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            if (value instanceof UserDTO user) {
+                setText(user.getUsername());
+                byte[] photoData = user.getPhotoData();
+                if (photoData != null && photoData.length > 0) {
+                    ImageIcon icon = new ImageIcon(photoData);
+                    Image image = icon.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH);
+                    setIcon(new ImageIcon(image));
+                } else {
+                    // Placeholder icon if no photo
+                    setIcon(UIManager.getIcon("OptionPane.questionIcon"));
+                }
+                setIconTextGap(10);
+            }
+            return this;
+        }
+    }
+    // --- FIN DE NUEVA CLASE INTERNA ---
 
     private void loadUsers() {
         new SwingWorker<GetUsersResponse, Void>() {
@@ -166,7 +229,6 @@ public class ChatPanel extends JPanel {
             String usernameOfDisconnectedUser = null;
             int userIndex = -1;
 
-            // Busca al usuario en el modelo de la lista para obtener su nombre de usuario
             for (int i = 0; i < userListModel.getSize(); i++) {
                 if (userListModel.getElementAt(i).getId().equals(userId)) {
                     usernameOfDisconnectedUser = userListModel.getElementAt(i).getUsername();
@@ -175,12 +237,10 @@ public class ChatPanel extends JPanel {
                 }
             }
 
-            // Si se encontró al usuario, elimínalo de la lista de conectados
             if (userIndex != -1) {
                 userListModel.removeElementAt(userIndex);
             }
 
-            // Si obtuvimos su nombre de usuario, procede a cerrar su pestaña de chat privado
             if (usernameOfDisconnectedUser != null) {
                 closePrivateChatTab(usernameOfDisconnectedUser);
             }
