@@ -4,6 +4,7 @@ import com.chatCommon.protocol.ProtocolParser;
 import com.serverInfrastructure.adapters.ProtocolCommandAdapter;
 import com.serverInfrastructure.network.ClientConnection;
 import com.serverInfrastructure.observers.ActiveUserManager;
+import java.util.Base64; // <<< AÑADIR IMPORT
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -11,7 +12,6 @@ public class GetUsersCommandAdapter implements ProtocolCommandAdapter {
 
     private final ActiveUserManager activeUserManager = ActiveUserManager.getInstance();
 
-    // Ya no necesita GetAllUsersService, puedes eliminarlo del constructor
     public GetUsersCommandAdapter() {}
 
     @Override
@@ -25,16 +25,25 @@ public class GetUsersCommandAdapter implements ProtocolCommandAdapter {
             String requesterUserId = connectionContext.getId();
 
             String requesterUsername = activeUserManager.getActiveUsers().entrySet().stream()
-                .filter(entry -> entry.getValue().getId().equals(requesterUserId))
-                .map(entry -> entry.getKey())
-                .findFirst()
-                .orElse(null);
+                    .filter(entry -> entry.getValue().getId().equals(requesterUserId))
+                    .map(entry -> entry.getKey())
+                    .findFirst()
+                    .orElse(null);
 
-            // Obtener todos los usuarios activos, filtrarlos para no incluir al solicitante
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // Ahora el payload será: id,username,photo_base64
             String usersPayload = activeUserManager.getActiveUsers().values().stream()
                     .filter(user -> requesterUsername == null || !user.getUsername().value().equals(requesterUsername))
-                    .map(u -> u.getId() + "," + u.getUsername().value())
+                    .map(u -> {
+                        String photoBase64 = "";
+                        if (u.getPhotoData() != null && u.getPhotoData().length > 0) {
+                            photoBase64 = Base64.getEncoder().encodeToString(u.getPhotoData());
+                        }
+                        // Unimos las 3 partes
+                        return u.getId() + "," + u.getUsername().value() + "," + photoBase64;
+                    })
                     .collect(Collectors.joining(";"));
+            // --- FIN DE LA MODIFICACIÓN ---
 
             return parser.encode("OK", "Usuarios obtenidos", usersPayload);
         } catch (Exception e) {

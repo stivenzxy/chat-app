@@ -6,6 +6,7 @@ import com.clientApplication.commands.contract.ClientCommand;
 import com.clientApplication.ports.ServerGatewayPort;
 
 import java.util.ArrayList;
+import java.util.Base64; // <<< AÑADIR IMPORT
 import java.util.Collections;
 import java.util.List;
 
@@ -48,10 +49,25 @@ public class GetUsersClientCommand implements ClientCommand<Void, GetUsersRespon
         String[] userEntries = payload.split(";");
 
         for (String entry : userEntries) {
-            String[] parts = entry.split(",", 2);
-            if (parts.length == 2) {
-                users.add(new UserDTO(parts[0], parts[1]));
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // Dividimos en 3 partes: id, username, photo
+            String[] parts = entry.split(",", 3);
+            if (parts.length == 3) {
+                String id = parts[0];
+                String username = parts[1];
+                String photoBase64 = parts[2];
+                byte[] photoData = null;
+
+                if (photoBase64 != null && !photoBase64.isEmpty()) {
+                    try {
+                        photoData = Base64.getDecoder().decode(photoBase64);
+                    } catch (IllegalArgumentException e) {
+                        // Si el Base64 es inválido, la foto será null.
+                    }
+                }
+                users.add(new UserDTO(id, username, photoData));
             }
+            // --- FIN DE LA MODIFICACIÓN ---
         }
         return users;
     }
