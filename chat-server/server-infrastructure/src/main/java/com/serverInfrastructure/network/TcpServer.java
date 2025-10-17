@@ -136,6 +136,12 @@ public class TcpServer {
         return messageBroadcaster.sendMessageToUser(username, message, senderInfo);
     }
 
+    public void sendBroadcastMessage(String message) {
+        if (messageBroadcaster != null) {
+            messageBroadcaster.broadcastMessage(message, null);
+        }
+    }
+
     public void fireClientIdentityUpdatedPublic(ClientConnection connection) {
         fireClientIdentityUpdated(connection);
     }

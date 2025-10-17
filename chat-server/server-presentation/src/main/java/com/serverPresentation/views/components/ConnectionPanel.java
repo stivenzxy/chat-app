@@ -24,6 +24,7 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver,
     private JLabel connectionPoolLabel;
     private JTable connectionsTable;
     private ConnectionTableModel tableModel;
+    private BroadcastPanel broadcastPanel;
 
     private final ServerControl serverControl;
 
@@ -42,7 +43,7 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver,
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         add(createControlPanel(), BorderLayout.NORTH);
-        add(createConnectionsTablePanel(), BorderLayout.CENTER);
+        add(createTabbedPane(), BorderLayout.CENTER);
     }
 
     private JPanel createControlPanel() {
@@ -74,6 +75,18 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver,
         panel.add(statusLabel);
 
         return panel;
+    }
+
+    private JTabbedPane createTabbedPane() {
+        JTabbedPane tabbedPane = new JTabbedPane();
+
+        JPanel connectionsTab = createConnectionsTablePanel();
+        tabbedPane.addTab("Conexiones", connectionsTab);
+
+        broadcastPanel = new BroadcastPanel(serverControl);
+        tabbedPane.addTab("Broadcast", broadcastPanel);
+        
+        return tabbedPane;
     }
 
     private JPanel createConnectionsTablePanel() {
@@ -209,6 +222,10 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver,
             UiBuilder.styleButton(toggleServerButton, new Color(46, 153, 85));
             portField.setEnabled(true);
             connectionPoolLabel.setText("Pool de conexiones: Servidor detenido");
+        }
+
+        if (broadcastPanel != null) {
+            broadcastPanel.setServerRunning(isRunning);
         }
     }
 

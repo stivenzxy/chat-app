@@ -5,6 +5,7 @@ import com.clientApplication.listeners.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -41,6 +42,7 @@ public class AsyncMessageHandler implements MessageHandler {
                 case "RECEIVE_CHANNEL_AUDIO" -> handleChannelAudio(parts);
                 case "INVITE_RECEIVED" -> handleInviteReceived(parts);
                 case "CHANNEL_MEMBERS_UPDATED" -> handleChannelMembersUpdated(parts);
+                case "SERVER_BROADCAST" -> handleServerBroadcast(parts);
                 default -> logger.warn("Comando asíncrono desconocido: {}", command);
             }
         } catch (Exception e) {
@@ -185,6 +187,26 @@ public class AsyncMessageHandler implements MessageHandler {
         }
     }
 
+    private void handleServerBroadcast(List<String> parts) {
+        if (parts.size() < 2) {
+            logger.warn("Mensaje SERVER_BROADCAST malformado: {}", parts);
+            return;
+        }
+        
+        String message = parts.get(1);
+
+        SwingUtilities.invokeLater(() -> {
+            JOptionPane.showMessageDialog(
+                null,
+                message,
+                "Mensaje del Servidor",
+                JOptionPane.INFORMATION_MESSAGE
+            );
+        });
+        
+        logger.info("Mensaje broadcast recibido del servidor: {}", message);
+    }
+
     private void notifyUserConnectionListeners(UserConnectionEvent event) {
         List<UserConnectionListener> listenersCopy;
         synchronized (userConnectionListeners) {
@@ -292,8 +314,7 @@ public class AsyncMessageHandler implements MessageHandler {
         if (listener != null) { synchronized (channelAudioListeners) { channelAudioListeners.add(listener); } }
     }
     public void registerInviteListener(InviteListener listener) { if (listener != null) { synchronized (inviteListeners) { inviteListeners.add(listener); } } }
-    
-    // Métodos para limpiar listeners al desconectar
+
     public void clearAllListeners() {
         synchronized (userConnectionListeners) {
             userConnectionListeners.clear();

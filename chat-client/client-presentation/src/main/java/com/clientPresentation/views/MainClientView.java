@@ -89,7 +89,6 @@ public class MainClientView extends JFrame implements
             gateway.disconnect();
         }
 
-        // Limpiar listeners del messageHandler antes de liberar la referencia
         if (this.messageHandler != null) {
             this.messageHandler.clearAllListeners();
         }

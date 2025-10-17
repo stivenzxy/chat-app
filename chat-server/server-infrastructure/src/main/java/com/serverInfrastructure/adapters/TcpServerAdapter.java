@@ -8,7 +8,6 @@ import com.serverInfrastructure.network.ClientConnection;
 import com.serverInfrastructure.network.ConnectionListener;
 import com.serverInfrastructure.network.TcpServer;
 import com.serverInfrastructure.observers.ActiveUserManager;
-import com.serverDomain.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -87,6 +86,26 @@ public class TcpServerAdapter implements ServerControl, ConnectionListener {
         }
     }
 
+    @Override
+    public boolean sendBroadcastMessage(String message) {
+        if (server == null) {
+            logger.warn("No se puede enviar broadcast: servidor no está en ejecución");
+            return false;
+        }
+        
+        try {
+            String protocolMessage = "SERVER_BROADCAST|" + message;
+
+            server.sendBroadcastMessage(protocolMessage);
+            
+            logger.info("Mensaje broadcast enviado desde servidor: {}", message);
+            return true;
+        } catch (Exception e) {
+            logger.error("Error al enviar mensaje broadcast: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
 
     @Override
     public void onClientConnected(ClientConnection connection) {
@@ -137,17 +156,11 @@ public class TcpServerAdapter implements ServerControl, ConnectionListener {
     
     private String getUsernameForConnection(String connectionId) {
         ActiveUserManager activeUserManager = ActiveUserManager.getInstance();
-        
-        String usernameByUserId = activeUserManager.getActiveUsers().entrySet().stream()
+
+        return activeUserManager.getActiveUsers().entrySet().stream()
                 .filter(entry -> entry.getValue().getId().equals(connectionId))
                 .map(Map.Entry::getKey)
                 .findFirst()
                 .orElse(null);
-                
-        if (usernameByUserId != null) {
-            return usernameByUserId;
-        }
-        
-        return null;
     }
 }

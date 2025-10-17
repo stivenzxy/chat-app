@@ -7,4 +7,5 @@ public interface ServerControl {
     int getMaxConnections();
     int getCurrentConnections();
     void disconnectClient(String clientId);
+    boolean sendBroadcastMessage(String message);
 }
