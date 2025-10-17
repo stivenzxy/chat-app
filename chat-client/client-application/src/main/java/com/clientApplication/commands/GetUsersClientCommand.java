@@ -49,8 +49,6 @@ public class GetUsersClientCommand implements ClientCommand<Void, GetUsersRespon
         String[] userEntries = payload.split(";");
 
         for (String entry : userEntries) {
-            // --- INICIO DE LA MODIFICACIÓN ---
-            // Dividimos en 3 partes: id, username, photo
             String[] parts = entry.split(",", 3);
             if (parts.length == 3) {
                 String id = parts[0];
@@ -62,12 +60,11 @@ public class GetUsersClientCommand implements ClientCommand<Void, GetUsersRespon
                     try {
                         photoData = Base64.getDecoder().decode(photoBase64);
                     } catch (IllegalArgumentException e) {
-                        // Si el Base64 es inválido, la foto será null.
+                        System.err.println("Error parsing photo: " + e.getMessage());
                     }
                 }
                 users.add(new UserDTO(id, username, photoData));
             }
-            // --- FIN DE LA MODIFICACIÓN ---
         }
         return users;
     }

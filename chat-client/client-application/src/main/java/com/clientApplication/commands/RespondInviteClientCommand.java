@@ -8,7 +8,7 @@ import java.util.List;
 public class RespondInviteClientCommand implements ClientCommand<RespondInviteClientCommand.Request, Boolean> {
     public static class Request {
         public final int inviteId;
-        public final String status; // ACCEPTED or REJECTED
+        public final String status;
         public final int channelId;
         public Request(int inviteId, String status, int channelId) {
             this.inviteId = inviteId;

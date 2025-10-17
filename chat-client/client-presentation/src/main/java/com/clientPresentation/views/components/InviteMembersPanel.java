@@ -10,10 +10,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
-/**
- * Panel for inviting members to channels.
- * Handles user selection and invitation sending.
- */
 public class InviteMembersPanel extends JPanel {
     private final String selfUsername;
     private final InviteToChannelClientCommand inviteToChannelClientCommand;

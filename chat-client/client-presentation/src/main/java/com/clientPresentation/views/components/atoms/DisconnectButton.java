@@ -14,8 +14,6 @@ public class DisconnectButton extends JButton {
         setFont(new Font("SansSerif", Font.BOLD, 12));
 
         addActionListener(e -> {
-            // --- INICIO DE LA MODIFICACIÓN ---
-            // Cambiamos 'this.getParent()' por 'null' para centrar el diálogo en la pantalla.
             int confirm = JOptionPane.showConfirmDialog(
                     null,
                     "¿Estás seguro de que quieres desconectarte?",

@@ -2,6 +2,7 @@ package com.clientPresentation.views.components;
 
 import com.chatCommon.dto.ChannelDTO;
 import com.chatCommon.dto.MessageDTO;
+import com.chatCommon.dto.MessageType;
 import com.clientApplication.commands.GetChannelMembersClientCommand;
 import com.clientApplication.commands.SendChannelAudioClientCommand;
 import com.clientApplication.commands.SendChannelMessageClientCommand;
@@ -10,15 +11,12 @@ import com.clientInfrastructure.services.ChannelMessageService;
 import com.clientPresentation.services.AudioService;
 import com.clientPresentation.views.components.atoms.ChatInputPanel;
 import com.clientPresentation.views.components.atoms.ChatMessagePanel;
+import com.clientPresentation.views.constants.ChatConstants;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
-/**
- * Panel for displaying and managing a specific channel's chat.
- * Handles message sending/receiving, member display, and chat history.
- */
 public class ChannelChatPanel extends JPanel {
     private final String selfUsername;
     private final ChannelDTO channel;
@@ -66,8 +64,7 @@ public class ChannelChatPanel extends JPanel {
         
         inputPanel = new ChatInputPanel();
         chatPanel.add(inputPanel, BorderLayout.SOUTH);
-        
-        // Panel derecho con miembros
+
         JPanel membersPanel = new JPanel(new BorderLayout(5,5));
         membersPanel.setBorder(BorderFactory.createTitledBorder("Miembros"));
         membersList.setCellRenderer(new DefaultListCellRenderer(){
@@ -103,10 +100,10 @@ public class ChannelChatPanel extends JPanel {
                     chatHistoryArea.removeAll();
                     for (MessageDTO m : messages) {
                         String displaySender = m.getSenderId().equals(selfUsername) ? 
-                            com.clientPresentation.views.constants.ChatConstants.SELF_DISPLAY_NAME : m.getSenderId();
+                            ChatConstants.SELF_DISPLAY_NAME : m.getSenderId();
                         MessageDTO displayMessage;
                         
-                        if (m.getMessageType() == com.chatCommon.dto.MessageType.TEXT) {
+                        if (m.getMessageType() == MessageType.TEXT) {
                             displayMessage = new MessageDTO(displaySender, m.getRecipientId(), m.getTextContent());
                         } else {
                             displayMessage = new MessageDTO(displaySender, m.getRecipientId(), m.getAudioContent());
@@ -119,7 +116,7 @@ public class ChannelChatPanel extends JPanel {
                     chatHistoryArea.repaint();
                     historyLoaded = true;
                 } catch (Exception e) {
-                    // Error loading history
+                    System.err.println("Error: " + e);
                 } 
             }
         }.execute();
@@ -138,7 +135,7 @@ public class ChannelChatPanel extends JPanel {
                         membersModel.addElement(member);
                     }
                 } catch (Exception e) {
-                    // Error loading members
+                    System.err.println("Error: " + e);
                 }
             }
         }.execute();
@@ -249,9 +246,5 @@ public class ChannelChatPanel extends JPanel {
     
     public void refreshMembers() { 
         loadMembers(); 
-    }
-    
-    public ChannelDTO getChannel() {
-        return channel;
     }
 }

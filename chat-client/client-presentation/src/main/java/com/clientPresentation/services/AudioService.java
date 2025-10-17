@@ -12,11 +12,11 @@ public class AudioService {
     private boolean isRecording = false;
     
     private AudioFormat getAudioFormat() {
-        float sampleRate = 44100; // Frecuencia de muestreo CD
-        int sampleSizeInBits = 16; // Resolución de 16 bits
-        int channels = 1; // Mono para reducir tamaño
+        float sampleRate = 44100;
+        int sampleSizeInBits = 16;
+        int channels = 1;
         boolean signed = true;
-        boolean bigEndian = false; // Cambiado a little-endian para mejor compatibilidad
+        boolean bigEndian = false;
         return new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, sampleRate, sampleSizeInBits, channels, 
                              (sampleSizeInBits / 8) * channels, sampleRate, bigEndian);
     }
@@ -38,7 +38,6 @@ public class AudioService {
         recordStream = new ByteArrayOutputStream();
         isRecording = true;
 
-        // Hilo para capturar el audio
         new Thread(() -> {
             byte[] buffer = new byte[4096]; 
             try {
@@ -47,7 +46,6 @@ public class AudioService {
                     if (bytesRead > 0) {
                         recordStream.write(buffer, 0, bytesRead);
                     }
-                    // Pequeña pausa para evitar sobrecarga del CPU
                     Thread.sleep(1);
                 }
             } catch (InterruptedException e) {
@@ -68,20 +66,15 @@ public class AudioService {
         byte[] rawAudio = recordStream.toByteArray();
         return normalizeAudioVolume(rawAudio);
     }
-    
-    /**
-     * Normaliza el volumen del audio para reducir distorsión y mejorar la calidad
-     */
+
     private byte[] normalizeAudioVolume(byte[] audioData) {
         if (audioData == null || audioData.length == 0) {
             return audioData;
         }
-        
-        // Encontrar el valor máximo en el audio
+
         int maxValue = 0;
         for (int i = 0; i < audioData.length; i += 2) {
             if (i + 1 < audioData.length) {
-                // Convertir bytes a short (16-bit sample)
                 short sample = (short) ((audioData[i + 1] << 8) | (audioData[i] & 0xFF));
                 int absValue = Math.abs(sample);
                 if (absValue > maxValue) {
@@ -89,19 +82,16 @@ public class AudioService {
                 }
             }
         }
-        
-        // Si el volumen es muy bajo, no normalizar
+
         if (maxValue < 1000) {
             return audioData;
         }
-        
-        // Calcular factor de normalización (evitar saturación)
+
         double normalizationFactor = 0.8 * Short.MAX_VALUE / maxValue;
         
         byte[] normalizedAudio = new byte[audioData.length];
         for (int i = 0; i < audioData.length; i += 2) {
             if (i + 1 < audioData.length) {
-                // Convertir bytes a short, normalizar y convertir de vuelta
                 short sample = (short) ((audioData[i + 1] << 8) | (audioData[i] & 0xFF));
                 short normalizedSample = (short) (sample * normalizationFactor);
                 
@@ -130,20 +120,17 @@ public class AudioService {
         speaker.start();
 
         try {
-            // Reproducir audio en chunks para mejor calidad
             int chunkSize = 4096;
             int offset = 0;
-            
+
             while (offset < audioData.length) {
                 int bytesToWrite = Math.min(chunkSize, audioData.length - offset);
                 int bytesWritten = speaker.write(audioData, offset, bytesToWrite);
                 offset += bytesWritten;
-                
-                // Pequeña pausa para sincronización
+
                 Thread.sleep(1);
             }
-            
-            // Esperar a que termine la reproducción
+
             speaker.drain();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

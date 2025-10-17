@@ -30,7 +30,7 @@ public class LoginClientCommand implements ClientCommand<LoginRequest, LoginResp
 
 
             if (success && responseParts.size() >= 5) {
-                // Hay datos de usuario: OK|mensaje|id|username|foto
+                // OK|mensaje|id|username|foto
                 String userId = responseParts.get(2);
                 String username = responseParts.get(3);
                 String photoBase64 = responseParts.get(4);
@@ -39,7 +39,9 @@ public class LoginClientCommand implements ClientCommand<LoginRequest, LoginResp
                 if (photoBase64 != null && !photoBase64.isEmpty()) {
                     try {
                         photoData = Base64.getDecoder().decode(photoBase64);
-                    } catch (IllegalArgumentException e) { /* Ignorar foto inválida */ }
+                    } catch (IllegalArgumentException e) {
+                        System.err.println("Error parsing photoBase64: " + e.getMessage());
+                    }
                 }
 
                 UserDTO user = new UserDTO(userId, username, photoData);

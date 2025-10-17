@@ -13,20 +13,17 @@ import java.awt.*;
 
 public class LoginPanel extends JPanel {
     private final ClientCommand<LoginRequest, LoginResponse> loginCommand;
-    // --- INICIO DE MODIFICACIÓN 1 ---
     private final Consumer<LoginResponse> onLoginSuccessCallback;
-    // --- FIN DE MODIFICACIÓN 1 ---
+
     private final Runnable onDisconnectCallback;
 
     private JTextField usernameField;
     private JPasswordField passwordField;
     private JButton loginButton;
 
-    // --- INICIO DE MODIFICACIÓN 2 ---
     public LoginPanel(ClientCommand<LoginRequest, LoginResponse> loginCommand,
                       Consumer<LoginResponse> onLoginSuccessCallback,
                       Runnable onDisconnectCallback) {
-        // --- FIN DE MODIFICACIÓN 2 ---
         this.loginCommand = loginCommand;
         this.onLoginSuccessCallback = onLoginSuccessCallback;
         this.onDisconnectCallback = onDisconnectCallback;
@@ -93,9 +90,7 @@ public class LoginPanel extends JPanel {
 
         if (response.isSuccess()) {
             if (onLoginSuccessCallback != null) {
-                // --- INICIO DE MODIFICACIÓN 3 ---
                 onLoginSuccessCallback.accept(response);
-                // --- FIN DE MODIFICACIÓN 3 ---
             }
         } else {
             JOptionPane.showMessageDialog(this, response.getMessage(), "Fallo de Autenticación", JOptionPane.ERROR_MESSAGE);

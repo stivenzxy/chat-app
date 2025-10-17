@@ -6,10 +6,6 @@ import com.clientApplication.commands.CreateChannelClientCommand;
 import javax.swing.*;
 import java.awt.*;
 
-/**
- * Panel for creating new channels.
- * Handles channel creation form and submission.
- */
 public class CreateChannelPanel extends JPanel {
     private final CreateChannelClientCommand createChannelCommand;
     private final Runnable onChannelCreated;

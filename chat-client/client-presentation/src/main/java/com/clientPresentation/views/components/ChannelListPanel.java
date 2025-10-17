@@ -6,10 +6,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 
-/**
- * Panel for displaying the list of channels.
- * Handles channel selection and display.
- */
 public class ChannelListPanel extends JPanel {
     private final DefaultListModel<ChannelDTO> channelsModel;
     private final JList<ChannelDTO> channelsList;

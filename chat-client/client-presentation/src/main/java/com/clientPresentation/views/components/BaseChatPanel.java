@@ -10,9 +10,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.List;
 
-/**
- * Base class for chat panels to eliminate code duplication.
- */
 public abstract class BaseChatPanel extends JPanel {
     protected final String selfUsername;
     protected final AudioService audioService;
@@ -82,8 +79,7 @@ public abstract class BaseChatPanel extends JPanel {
         chatHistoryArea.add(messagePanel);
         chatHistoryArea.revalidate();
         chatHistoryArea.repaint();
-        
-        // Auto-scroll to bottom
+
         SwingUtilities.invokeLater(() -> {
             JScrollPane scrollPane = (JScrollPane) chatHistoryArea.getParent().getParent();
             scrollPane.getVerticalScrollBar().setValue(scrollPane.getVerticalScrollBar().getMaximum());
@@ -114,7 +110,6 @@ public abstract class BaseChatPanel extends JPanel {
         historyLoaded = true;
     }
 
-    // Abstract methods to be implemented by subclasses
     protected abstract void sendMessage();
     protected abstract void sendAudio(byte[] audioData);
     protected abstract String getRecipientId();

@@ -21,7 +21,7 @@ public class ChatMessagePanel extends JPanel {
                 BorderFactory.createEmptyBorder(5, 10, 5, 10)
         ));
 
-        final String userColor = message.getSenderId().equals("Yo") ? "#007BFF" : "#28A745"; // Azul para "Yo", Verde para el otro
+        final String userColor = message.getSenderId().equals("Yo") ? "#007BFF" : "#28A745";
 
         if (message.getMessageType() == MessageType.TEXT) {
             String htmlContent = String.format(
