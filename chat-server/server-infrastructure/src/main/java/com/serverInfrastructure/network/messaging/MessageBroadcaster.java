@@ -48,11 +48,7 @@ public class MessageBroadcaster {
 
     public void broadcastMessage(String message, String excludeUsername) {
         String messageContent = extractMessageContent(message);
-        if (excludeUsername != null) {
-            logger.info("Broadcasting: {} (excluyendo a: {})", messageContent, excludeUsername);
-        } else {
-            logger.info("Broadcasting: {}", messageContent);
-        }
+        logger.info("Broadcasting: {}", messageContent);
         
         for (ClientConnection connection : connectionPool.getInUseConnections()) {
             if (connection.getId() != null && !connection.getId().equals(excludeUsername)) {
@@ -92,50 +88,26 @@ public class MessageBroadcaster {
 
     private String extractMessageContent(String protocolMessage) {
         try {
-            List<String> parts = protocolParser.decode(protocolMessage);
+            String cleanMessage = replaceBase64WithPlaceholder(protocolMessage);
+            
+            List<String> parts = protocolParser.decode(cleanMessage);
             if (parts.size() >= 2) {
                 String command = parts.get(0);
-                switch (command) {
-                    case "RECEIVE_PRIVATE_MESSAGE":
-                        if (parts.size() >= 3) {
-                            return parts.get(2);
-                        }
-                        break;
-                    case "RECEIVE_PRIVATE_AUDIO":
-                        return "[Mensaje de audio]";
-                    case "USER_CONNECTED":
-                        if (parts.size() >= 3) {
-                            String username = parts.get(2);
-                            boolean hasPhoto = parts.size() >= 4 && !parts.get(3).isEmpty();
-                            return hasPhoto ? "Usuario conectado: " + username + " [con foto de perfil]" 
-                                           : "Usuario conectado: " + username;
-                        }
-                        break;
-                    case "USER_DISCONNECTED":
-                        if (parts.size() >= 3) {
-                            return "Usuario desconectado: " + parts.get(2);
-                        }
-                        break;
-                    case "SERVER_BROADCAST":
-                        if (parts.size() >= 2) {
-                            return "Broadcast del servidor: " + parts.get(1);
-                        }
-                        break;
-                    case "RECEIVE_CHANNEL_MESSAGE":
-                        if (parts.size() >= 4) {
-                            return "Mensaje de canal [" + parts.get(1) + "] de " + parts.get(2) + ": " + parts.get(3);
-                        }
-                        break;
-                    case "RECEIVE_CHANNEL_AUDIO":
-                        if (parts.size() >= 3) {
-                            return "Audio de canal [" + parts.get(1) + "] de " + parts.get(2) + ": [Mensaje de audio]";
-                        }
-                        break;
+                if ("RECEIVE_PRIVATE_MESSAGE".equals(command) && parts.size() >= 3) {
+                    return parts.get(2);
+                } else if ("RECEIVE_PRIVATE_AUDIO".equals(command)) {
+                    return "[Mensaje de audio]";
+                } else if ("LOGIN".equals(command)) {
+                    return cleanMessage;
                 }
             }
-            return parts.isEmpty() ? protocolMessage : "Comando: " + parts.get(0);
+            return cleanMessage;
         } catch (Exception e) {
-            return "Mensaje de protocolo";
+            return replaceBase64WithPlaceholder(protocolMessage);
         }
+    }
+    
+    private String replaceBase64WithPlaceholder(String message) {
+        return message.replaceAll("[A-Za-z0-9+/]{50,}={0,2}", "[foto de perfil]");
     }
 }

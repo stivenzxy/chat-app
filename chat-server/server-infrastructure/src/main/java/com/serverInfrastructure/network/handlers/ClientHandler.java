@@ -54,7 +54,8 @@ public class ClientHandler implements Runnable {
                 List<String> parts = protocolParser.decode(request);
                 String response = commandHandler.process(parts, connection);
 
-                logger.info("[{}] Enviando respuesta: {}", connectionId, response);
+                String cleanResponse = replaceBase64WithPlaceholder(response);
+                logger.info("[{}] Enviando respuesta: {}", connectionId, cleanResponse);
                 out.println(response);
             }
 
@@ -97,5 +98,9 @@ public class ClientHandler implements Runnable {
         for (ConnectionListener listener : listeners) {
             listener.onClientDisconnected(connection);
         }
+    }
+    
+    private String replaceBase64WithPlaceholder(String message) {
+        return message.replaceAll("[A-Za-z0-9+/]{50,}={0,2}", "[foto de perfil]");
     }
 }
