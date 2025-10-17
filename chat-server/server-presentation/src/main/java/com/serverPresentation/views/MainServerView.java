@@ -3,6 +3,7 @@ package com.serverPresentation.views;
 import com.serverPresentation.factories.PresentationFactory;
 import com.serverPresentation.views.components.ConnectionPanel;
 import com.serverPresentation.views.components.RegisterUserPanel;
+import com.serverPresentation.views.components.ReportsPanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -72,6 +73,7 @@ public class MainServerView extends JFrame {
 
         userTabs.addTab("Registrar Usuario", new RegisterUserPanel(factory.createUserController()));
         userTabs.addTab("Listado de Usuarios", factory.createUserListPanel());
+        userTabs.addTab("Generar Informes", new ReportsPanel(factory));
         panel.add(userTabs, BorderLayout.CENTER);
 
         return panel;

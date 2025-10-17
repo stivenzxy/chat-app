@@ -4,6 +4,9 @@ import com.serverInfrastructure.persistence.config.ConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
+import java.util.HashMap;
 import java.sql.*;
 import java.time.LocalDateTime;
 
@@ -81,5 +84,28 @@ public class MessageDAO {
         } catch (SQLException e) {
             logger.error("Error al guardar mensaje privado de audio: {}", e.getMessage());
         }
+    }
+
+    public Map<String, String> getAllTranscriptions() {
+        Map<String, String> transcriptions = new HashMap<>();
+        String sql = "SELECT u.username, m.content, m.created_at FROM messages m " +
+                "JOIN users u ON m.recipient_user_id = u.user_id " +
+                "WHERE m.author_id = 'System-Transcription' ORDER BY m.created_at DESC";
+
+        try (Connection conn = connectionManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                String username = rs.getString("username");
+                String content = rs.getString("content");
+                Timestamp createdAt = rs.getTimestamp("created_at");
+                String key = username + " (" + createdAt.toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) + ")";
+                transcriptions.put(key, content);
+            }
+        } catch (SQLException e) {
+            logger.error("Error al obtener las transcripciones: {}", e.getMessage());
+        }
+        return transcriptions;
     }
 }
