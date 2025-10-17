@@ -1,4 +1,5 @@
 package com.clientApplication.events;
 
-public record UserConnectionEvent(String userId, String username) {
+
+public record UserConnectionEvent(String userId, String username, byte[] photoData) {
 }

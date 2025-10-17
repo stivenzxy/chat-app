@@ -44,10 +44,8 @@ public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
         String recipientUsername = parts.get(1);
         String audioBase64 = parts.get(2);
 
-        // Mensaje que se reenviará al destinatario
         String forwardMessage = parser.encode("RECEIVE_PRIVATE_AUDIO", senderUsername, audioBase64);
 
-        // Obtener información del remitente para logs más claros
         String senderInfo = getSenderInfo(connectionContext) + " [AUDIO]";
 
         boolean delivered = server.sendMessageToUser(recipientUsername, forwardMessage, senderInfo);

@@ -17,7 +17,7 @@ public class UserDAO {
     private final ConnectionManager connectionManager = ConnectionManager.getInstance();
 
     public void insert(User user) {
-        String sql = "INSERT INTO users (user_id, username, password_hash, email, photo_path, ip_address, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO users (user_id, username, password_hash, email, photo_data, ip_address, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = connectionManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
@@ -25,7 +25,7 @@ public class UserDAO {
             stmt.setString(2, user.getUsername().value());
             stmt.setString(3, user.getPasswordHash());
             stmt.setString(4, user.getEmail().value());
-            stmt.setString(5, user.getPhotoUrl());
+            stmt.setBytes(5, user.getPhotoData()); // <<< CAMBIO A setBytes
             stmt.setString(6, user.getIpAddress());
             stmt.setTimestamp(7, Timestamp.valueOf(user.getCreatedAt()));
             stmt.executeUpdate();
@@ -33,6 +33,7 @@ public class UserDAO {
             logger.error("Error al insertar usuario: {}", exception.getMessage());
         }
     }
+
 
     public Optional<User> findByUsername(Username username) {
         String sql = "SELECT * FROM users WHERE BINARY username = ?";
@@ -61,8 +62,7 @@ public class UserDAO {
 
     public List<User> selectAll() {
         List<User> users = new ArrayList<>();
-        // Consulta corregida para incluir todas las columnas necesarias con los nombres correctos
-        String sql = "SELECT user_id, username, email, password_hash, photo_path, ip_address, created_at FROM users";
+        String sql = "SELECT user_id, username, email, password_hash, photo_data, ip_address, created_at FROM users";
 
         try (Connection conn = connectionManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -99,12 +99,13 @@ public class UserDAO {
                     new Username(rs.getString("username")),
                     new Email(rs.getString("email")),
                     rs.getString("password_hash"),
-                    rs.getString("photo_path"),
+                    rs.getBytes("photo_data"),
                     rs.getString("ip_address"),
                     rs.getTimestamp("created_at").toLocalDateTime()
             );
         } catch (SQLException exception) {
-            logger.error("Error al insertar el audio: {}", exception.getMessage());
+            // Corregido el mensaje de log para ser más genérico
+            logger.error("Error al mapear ResultSet a User: {}", exception.getMessage());
             return null;
         }
     }

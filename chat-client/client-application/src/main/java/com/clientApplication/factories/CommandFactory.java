@@ -16,6 +16,7 @@ import com.clientApplication.commands.SendChannelAudioClientCommand;
 import com.clientApplication.commands.InviteToChannelClientCommand;
 import com.clientApplication.commands.RespondInviteClientCommand;
 import com.clientApplication.commands.ListPendingInvitesClientCommand;
+import com.clientApplication.commands.TranscribeAudioClientCommand;
 import com.clientApplication.commands.GetChannelMembersClientCommand;
 import com.clientApplication.ports.ServerGatewayPort;
 
@@ -51,4 +52,5 @@ public class CommandFactory {
     public RespondInviteClientCommand createRespondInviteCommand() { return new RespondInviteClientCommand(gateway); }
     public ListPendingInvitesClientCommand createListPendingInvitesCommand() { return new ListPendingInvitesClientCommand(gateway); }
     public GetChannelMembersClientCommand createGetChannelMembersCommand() { return new GetChannelMembersClientCommand(gateway); }
+    public TranscribeAudioClientCommand createTranscribeAudioCommand() { return new TranscribeAudioClientCommand(gateway); }
 }

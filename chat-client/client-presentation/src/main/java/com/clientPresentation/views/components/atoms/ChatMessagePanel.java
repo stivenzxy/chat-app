@@ -7,10 +7,15 @@ import com.clientPresentation.services.AudioService;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.function.Consumer;
 
 public class ChatMessagePanel extends JPanel {
 
     public ChatMessagePanel(MessageDTO message, AudioService audioService) {
+        this(message, audioService, null);
+    }
+
+    public ChatMessagePanel(MessageDTO message, AudioService audioService, Consumer<byte[]> onTranscribeRequest) {
         super(new BorderLayout());
         setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -33,11 +38,11 @@ public class ChatMessagePanel extends JPanel {
             JLabel messageLabel = new JLabel(htmlContent);
             add(messageLabel, BorderLayout.CENTER);
         } else if (message.getMessageType() == MessageType.AUDIO) {
-            add(createAudioMessagePanel(message.getSenderId(), userColor, message.getAudioContent(), audioService), BorderLayout.CENTER);
+            add(createAudioMessagePanel(message.getSenderId(), userColor, message.getAudioContent(), audioService, onTranscribeRequest), BorderLayout.CENTER);
         }
     }
 
-    private JPanel createAudioMessagePanel(String sender, String userColor,byte[] audioData, AudioService audioService) {
+    private JPanel createAudioMessagePanel(String sender, String userColor, byte[] audioData, AudioService audioService, Consumer<byte[]> onTranscribeRequest) {
         JPanel audioPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         audioPanel.setOpaque(false);
         String htmlContent = String.format(
@@ -89,6 +94,46 @@ public class ChatMessagePanel extends JPanel {
         });
 
         audioPanel.add(playButton);
+
+        // Agregar botón de transcripción si hay callback
+        if (onTranscribeRequest != null) {
+            JButton transcribeButton = new JButton("📝 Transcribir");
+            UiBuilder.styleButton(transcribeButton, new Color(52, 144, 220));
+            transcribeButton.setPreferredSize(new Dimension(140, 30));
+
+            transcribeButton.addActionListener(e -> {
+                transcribeButton.setEnabled(false);
+                transcribeButton.setText("⏳ Transcribiendo...");
+                
+                new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        onTranscribeRequest.accept(audioData);
+                        return null;
+                    }
+
+                    @Override
+                    protected void done() {
+                        try {
+                            get();
+                        } catch (Exception ex) {
+                            JOptionPane.showMessageDialog(
+                                    ChatMessagePanel.this,
+                                    "Error al transcribir el audio: " + ex.getMessage(),
+                                    "Error de Transcripción",
+                                    JOptionPane.ERROR_MESSAGE
+                            );
+                        } finally {
+                            transcribeButton.setEnabled(true);
+                            transcribeButton.setText("📝 Transcribir");
+                        }
+                    }
+                }.execute();
+            });
+
+            audioPanel.add(transcribeButton);
+        }
+
         return audioPanel;
     }
 }

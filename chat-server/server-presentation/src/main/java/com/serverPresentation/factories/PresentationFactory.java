@@ -39,4 +39,8 @@ public class PresentationFactory {
     public MainServerView createMainServerView() {
         return new MainServerView(this);
     }
+    
+    public ServerControl getServerControl() {
+        return serverControl;
+    }
 }

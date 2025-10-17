@@ -34,8 +34,7 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
         String invitedUsername = parts.get(2);
 
         var aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
-        
-        // Obtener username del usuario que invita
+
         String inviterUsername = aum.getActiveUsers().entrySet().stream()
             .filter(entry -> entry.getValue().getId().equals(inviterUserId))
             .map(entry -> entry.getKey())
@@ -45,11 +44,15 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
         if (inviterUsername == null) {
             return parser.encode("ERROR", "Usuario que invita no está en línea");
         }
-        
+
         var invitedUser = aum.getActiveUsers().get(invitedUsername);
         if (invitedUser == null) return parser.encode("ERROR", "Usuario invitado no está en línea");
 
         String invitedUserId = invitedUser.getId();
+
+        if (channelRepository.isMember(channelId, invitedUserId)) {
+            return parser.encode("ERROR", "El usuario ya es miembro de este canal");
+        }
 
         if (!channelRepository.isMember(channelId, inviterUserId)) {
             return parser.encode("ERROR", "No eres miembro del canal");

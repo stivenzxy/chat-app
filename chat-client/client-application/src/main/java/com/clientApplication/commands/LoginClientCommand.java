@@ -1,14 +1,12 @@
 package com.clientApplication.commands;
 
+import com.chatCommon.dto.UserDTO; // <<< AÑADIR IMPORT
 import com.chatCommon.dto.auth.LoginRequest;
 import com.chatCommon.dto.auth.LoginResponse;
 import com.clientApplication.commands.contract.ClientCommand;
 import com.clientApplication.ports.ServerGatewayPort;
-
-import java.util.Arrays;
-import java.util.LinkedHashMap;
+import java.util.Base64; // <<< AÑADIR IMPORT
 import java.util.List;
-import java.util.Map;
 
 public class LoginClientCommand implements ClientCommand<LoginRequest, LoginResponse> {
 
@@ -30,7 +28,28 @@ public class LoginClientCommand implements ClientCommand<LoginRequest, LoginResp
             boolean success = !responseParts.isEmpty() && "OK".equalsIgnoreCase(responseParts.get(0));
             String message = responseParts.size() > 1 ? responseParts.get(1) : (success ? "Éxito" : "Respuesta desconocida");
 
-            return new LoginResponse(success, message);
+
+            if (success && responseParts.size() >= 5) {
+                // Hay datos de usuario: OK|mensaje|id|username|foto
+                String userId = responseParts.get(2);
+                String username = responseParts.get(3);
+                String photoBase64 = responseParts.get(4);
+                byte[] photoData = null;
+
+                if (photoBase64 != null && !photoBase64.isEmpty()) {
+                    try {
+                        photoData = Base64.getDecoder().decode(photoBase64);
+                    } catch (IllegalArgumentException e) { /* Ignorar foto inválida */ }
+                }
+
+                UserDTO user = new UserDTO(userId, username, photoData);
+                return new LoginResponse(true, message, user);
+            } else if (success) {
+                return new LoginResponse(true, message, null);
+            } else {
+                return new LoginResponse(false, message);
+            }
+
         } catch (Exception exception) {
             return new LoginResponse(false, "Error de comunicación: " + exception.getMessage());
         }

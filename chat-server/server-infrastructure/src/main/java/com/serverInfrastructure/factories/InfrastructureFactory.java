@@ -19,6 +19,7 @@ import com.serverInfrastructure.adapters.commands.SendChannelMessageCommandAdapt
 import com.serverInfrastructure.adapters.commands.SendChannelAudioCommandAdapter;
 import com.serverInfrastructure.adapters.commands.InviteToChannelCommandAdapter;
 import com.serverInfrastructure.adapters.commands.RespondInviteCommandAdapter;
+import com.serverInfrastructure.adapters.commands.TranscribeAudioCommandAdapter;
 import com.serverInfrastructure.adapters.commands.ListPendingInvitesCommandAdapter;
 import com.serverInfrastructure.adapters.commands.GetChannelMembersCommandAdapter;
 
@@ -33,16 +34,13 @@ public class InfrastructureFactory {
         ProtocolParser parser = new ProtocolParser('|', '\\');
         CommandHandler handler = new CommandHandler(parser);
 
-        // Comando de Login existente
     LoginCommandAdapter loginAdapter = new LoginCommandAdapter(serviceFactory.createLoginService());
     loginAdapter.setCommandHandler(handler);
     handler.registerCommand(loginAdapter);
 
-        // Registrar el nuevo comando de obtener usuarios
     GetUsersCommandAdapter getUsersAdapter = new GetUsersCommandAdapter();
         handler.registerCommand(getUsersAdapter);
 
-        // Channels
         ChannelRepository channelRepository = new ChannelRepositoryImpl();
         ChannelInviteRepository inviteRepository = new ChannelInviteRepositoryImpl();
         handler.registerCommand(new CreateChannelCommandAdapter(channelRepository));
@@ -50,9 +48,12 @@ public class InfrastructureFactory {
         handler.registerCommand(new SendChannelMessageCommandAdapter(channelRepository, handler));
         handler.registerCommand(new SendChannelAudioCommandAdapter(channelRepository, handler));
         handler.registerCommand(new InviteToChannelCommandAdapter(channelRepository, inviteRepository, handler));
-        handler.registerCommand(new RespondInviteCommandAdapter(channelRepository, inviteRepository));
+        handler.registerCommand(new RespondInviteCommandAdapter(channelRepository, inviteRepository, handler));
         handler.registerCommand(new ListPendingInvitesCommandAdapter(inviteRepository));
         handler.registerCommand(new GetChannelMembersCommandAdapter(channelRepository));
+        
+        TranscribeAudioCommandAdapter transcribeAudioAdapter = new TranscribeAudioCommandAdapter(null);
+        handler.registerCommand(transcribeAudioAdapter);
 
         return handler;
     }
@@ -61,13 +62,16 @@ public class InfrastructureFactory {
         CommandHandler handler = createCommandHandler();
         TcpServer server = new TcpServer(port, handler);
 
-        // Adaptador de mensajes de texto
         SendPrivateMessageCommandAdapter sendMessageAdapter = new SendPrivateMessageCommandAdapter(server);
         handler.registerCommand(sendMessageAdapter);
 
-        // NUEVO: Adaptador de mensajes de audio
+        // Adaptador de mensajes de audio
         SendPrivateAudioCommandAdapter sendAudioAdapter = new SendPrivateAudioCommandAdapter(server);
         handler.registerCommand(sendAudioAdapter);
+
+        // Actualizar el adaptador de transcripción con el servidor correcto
+        TranscribeAudioCommandAdapter transcribeAudioAdapter = new TranscribeAudioCommandAdapter(server);
+        handler.registerCommand(transcribeAudioAdapter);
 
         return server;
     }

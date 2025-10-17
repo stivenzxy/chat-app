@@ -1,9 +1,11 @@
+CREATE DATABASE IF NOT EXISTS server_db;
+
 CREATE TABLE IF NOT EXISTS users (
                                      user_id VARCHAR(36) PRIMARY KEY,
                                      username VARCHAR(50) NOT NULL UNIQUE,
                                      email VARCHAR(100) NOT NULL UNIQUE,
                                      password_hash VARCHAR(255) NOT NULL,
-                                     photo_path VARCHAR(255),
+                                     photo_data LONGBLOB,
                                      ip_address VARCHAR(45),
                                      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

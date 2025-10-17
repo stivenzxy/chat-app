@@ -19,7 +19,7 @@ public class CreateUserMapper {
                 new Username(dto.getUsername()),
                 new Email(dto.getEmail()),
                 dto.getPassword(),
-                dto.getPhotoUrl(),
+                dto.getPhotoData(),
                 dto.getIpAddress(),
                 passwordHasher
         );

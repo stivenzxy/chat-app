@@ -26,22 +26,26 @@ public class CommandHandler {
         return this.server;
     }
     public void registerCommand(ProtocolCommandAdapter command) {
-        commands.put(command.getCommandName().toUpperCase(), command);
+        String commandName = command.getCommandName().toUpperCase();
+        commands.put(commandName, command);
+        System.out.println("Registered command: " + commandName);
     }
 
-    public String process(List<String> parts, ClientConnection connection) { // Añadir parámetro
+    public String process(List<String> parts, ClientConnection connection) {
         if (parts.isEmpty()) return parser.encode("ERROR", "Comando vacío");
 
         String name = parts.getFirst().toUpperCase();
-        
-        // Manejar LOGOUT de manera especial
+
         if ("LOGOUT".equals(name)) {
             return handleLogout(connection);
         }
         
         ProtocolCommandAdapter command = commands.get(name);
 
-        if (command == null) return parser.encode("ERROR", "Comando desconocido");
+        if (command == null) {
+            System.out.println("Command not found: " + name);
+            return parser.encode("ERROR", "Comando desconocido");
+        }
 
         try {
             return command.execute(parts, parser, connection);
@@ -53,13 +57,11 @@ public class CommandHandler {
     private String handleLogout(ClientConnection connection) {
         try {
             String connectionId = connection.getId();
-            
-            // Notificar al ActiveUserManager que el usuario se ha desconectado
+
             ActiveUserManager.getInstance().userLoggedOut(connectionId);
             
             return parser.encode("LOGOUT_SUCCESS", "Logout exitoso");
         } catch (Exception e) {
-            e.printStackTrace();
             return parser.encode("ERROR", "Error durante logout: " + e.getMessage());
         }
     }

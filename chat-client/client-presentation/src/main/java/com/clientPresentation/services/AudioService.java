@@ -53,7 +53,7 @@ public class AudioService {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } catch (Exception e) {
-                System.err.println("Error durante la grabación de audio: " + e.getMessage());
+                // Silently handle recording errors
             }
         }).start();
     }
@@ -66,7 +66,33 @@ public class AudioService {
         microphone.close();
         
         byte[] rawAudio = recordStream.toByteArray();
-        return normalizeAudioVolume(rawAudio);
+        byte[] normalizedAudio = normalizeAudioVolume(rawAudio);
+        
+        // Convertir PCM a WAV con encabezados
+        return convertPcmToWav(normalizedAudio);
+    }
+    
+    /**
+     * Convierte datos PCM crudos a formato WAV con encabezados
+     */
+    private byte[] convertPcmToWav(byte[] pcmData) {
+        if (pcmData == null || pcmData.length == 0) {
+            return pcmData;
+        }
+        
+        try {
+            AudioFormat format = getAudioFormat();
+            ByteArrayInputStream pcmStream = new ByteArrayInputStream(pcmData);
+            AudioInputStream audioInputStream = new AudioInputStream(pcmStream, format, pcmData.length / format.getFrameSize());
+            
+            ByteArrayOutputStream wavOutputStream = new ByteArrayOutputStream();
+            AudioSystem.write(audioInputStream, AudioFileFormat.Type.WAVE, wavOutputStream);
+            
+            audioInputStream.close();
+            return wavOutputStream.toByteArray();
+        } catch (Exception e) {
+            return pcmData;
+        }
     }
     
     /**
@@ -118,6 +144,51 @@ public class AudioService {
             throw new IOException("Datos de audio vacíos");
         }
         
+        try {
+            // Intentar leer como archivo WAV primero
+            ByteArrayInputStream byteStream = new ByteArrayInputStream(audioData);
+            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(byteStream);
+            AudioFormat format = audioInputStream.getFormat();
+            
+            DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
+            
+            if (!AudioSystem.isLineSupported(info)) {
+                throw new LineUnavailableException("El altavoz no es compatible con el formato de audio.");
+            }
+            
+            SourceDataLine speaker = (SourceDataLine) AudioSystem.getLine(info);
+            speaker.open(format);
+            speaker.start();
+
+            try {
+                // Reproducir audio en chunks para mejor calidad
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                
+                while ((bytesRead = audioInputStream.read(buffer, 0, buffer.length)) != -1) {
+                    speaker.write(buffer, 0, bytesRead);
+                    Thread.sleep(1); // Pequeña pausa para sincronización
+                }
+                
+                // Esperar a que termine la reproducción
+                speaker.drain();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Reproducción de audio interrumpida");
+            } finally {
+                speaker.close();
+                audioInputStream.close();
+            }
+        } catch (UnsupportedAudioFileException e) {
+            // Si no es un archivo WAV válido, intentar reproducir como PCM crudo
+            playRawPcmAudio(audioData);
+        }
+    }
+    
+    /**
+     * Reproduce audio PCM crudo sin encabezados WAV (fallback)
+     */
+    private void playRawPcmAudio(byte[] audioData) throws LineUnavailableException, IOException {
         AudioFormat format = getAudioFormat();
         DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
         
@@ -130,7 +201,6 @@ public class AudioService {
         speaker.start();
 
         try {
-            // Reproducir audio en chunks para mejor calidad
             int chunkSize = 4096;
             int offset = 0;
             
@@ -138,12 +208,9 @@ public class AudioService {
                 int bytesToWrite = Math.min(chunkSize, audioData.length - offset);
                 int bytesWritten = speaker.write(audioData, offset, bytesToWrite);
                 offset += bytesWritten;
-                
-                // Pequeña pausa para sincronización
                 Thread.sleep(1);
             }
             
-            // Esperar a que termine la reproducción
             speaker.drain();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

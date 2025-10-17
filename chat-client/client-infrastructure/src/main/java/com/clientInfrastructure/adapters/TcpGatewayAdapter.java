@@ -51,7 +51,7 @@ public class TcpGatewayAdapter implements ServerGatewayPort {
                 }
             });
         } catch (Exception e) {
-            throw new RuntimeException("No se pudo conectar al servidor al iniciar el gateway.", e);
+            throw new RuntimeException("El servidor se encuentra inactivo.", e);
         }
     }
 
@@ -67,7 +67,9 @@ public class TcpGatewayAdapter implements ServerGatewayPort {
             responseQueue.clear();
             tcpClient.sendRequest(requestToSend);
 
-            String rawResponse = responseQueue.poll(5, TimeUnit.SECONDS);
+            // Usar timeout más largo para comandos de transcripción
+            int timeoutSeconds = getTimeoutForCommand(command);
+            String rawResponse = responseQueue.poll(timeoutSeconds, TimeUnit.SECONDS);
 
             if (rawResponse == null) {
                 return List.of("ERROR", "El servidor no respondió a tiempo.");
@@ -78,6 +80,20 @@ public class TcpGatewayAdapter implements ServerGatewayPort {
             Thread.currentThread().interrupt();
             return List.of("ERROR", "La espera de respuesta fue interrumpida.");
         }
+    }
+    
+    /**
+     * Obtiene el timeout apropiado según el tipo de comando
+     * @param command El comando a ejecutar
+     * @return Timeout en segundos
+     */
+    private int getTimeoutForCommand(String command) {
+        // Comandos que requieren más tiempo de procesamiento
+        if ("TRANSCRIBE_AUDIO".equalsIgnoreCase(command)) {
+            return 30;
+        }
+        // Timeout por defecto para otros comandos
+        return 5;
     }
 
     public void setAsyncMessageListener(Consumer<List<String>> listener) {
@@ -91,12 +107,15 @@ public class TcpGatewayAdapter implements ServerGatewayPort {
     private boolean isResponse(List<String> parts) {
         if (parts.isEmpty()) return false;
         String first = parts.getFirst().toUpperCase();
-        return first.equals("OK") || first.equals("ERROR") || first.equals("ACK") || first.equals("LOGOUT_SUCCESS");
+        return first.equals("OK") || first.equals("ERROR") || first.equals("ACK") || 
+               first.equals("LOGOUT_SUCCESS") || first.equals("TRANSCRIPTION_RESULT") || 
+               first.equals("TEST_RESULT");
     }
     
     private boolean isDisconnectMessage(List<String> parts) {
         if (parts.isEmpty()) return false;
-        return parts.getFirst().equalsIgnoreCase("DISCONNECT");
+        String first = parts.getFirst().toUpperCase();
+        return first.equals("DISCONNECT") || first.equals("SERVER_SHUTDOWN");
     }
 
     @Override

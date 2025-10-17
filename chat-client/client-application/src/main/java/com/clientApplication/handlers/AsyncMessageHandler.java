@@ -50,6 +50,7 @@ public class AsyncMessageHandler implements MessageHandler {
                 case "RECEIVE_CHANNEL_MESSAGE" -> handleChannelMessage(parts);
                 case "RECEIVE_CHANNEL_AUDIO" -> handleChannelAudio(parts);
                 case "INVITE_RECEIVED" -> handleInviteReceived(parts);
+                case "CHANNEL_MEMBERS_UPDATED" -> handleChannelMembersUpdated(parts);
                 default -> logger.warn("Comando asíncrono desconocido: {}", command);
             }
         } catch (Exception e) {
@@ -97,17 +98,29 @@ public class AsyncMessageHandler implements MessageHandler {
         synchronized (channelAudioListeners) { listenersCopy = new ArrayList<>(channelAudioListeners); }
         for (ChannelAudioListener l : listenersCopy) { try { l.onChannelAudio(event); } catch (Exception e) { logger.error("Error notificando ChannelAudioListener", e); } }
     }
-    
+
     private void handleUserConnection(List<String> parts) {
-        if (parts.size() < 3) {
+        if (parts.size() < 4) {
             logger.warn("Mensaje USER_CONNECTED malformado: {}", parts);
             return;
         }
-        
+
         String userId = parts.get(1);
         String username = parts.get(2);
-        UserConnectionEvent event = new UserConnectionEvent(userId, username);
-        
+        String photoBase64 = parts.get(3);
+        byte[] photoData = null;
+
+        if (photoBase64 != null && !photoBase64.isEmpty()) {
+            try {
+                photoData = Base64.getDecoder().decode(photoBase64);
+            } catch (IllegalArgumentException e) {
+                logger.warn("Base64 de foto de perfil inválido para {}: {}", username, e.getMessage());
+            }
+        }
+
+        UserConnectionEvent event = new UserConnectionEvent(userId, username, photoData);
+
+
         logger.info("Usuario conectado: {} ({})", username, userId);
         notifyUserConnectionListeners(event);
     }
@@ -159,6 +172,27 @@ public class AsyncMessageHandler implements MessageHandler {
         
         logger.debug("Audio privado recibido de: {}", sender);
         notifyPrivateAudioListeners(event);
+    }
+
+    private void handleChannelMembersUpdated(List<String> parts) {
+        if (parts.size() < 2) {
+            logger.warn("Mensaje CHANNEL_MEMBERS_UPDATED malformado: {}", parts);
+            return;
+        }
+        int channelId = Integer.parseInt(parts.get(1));
+        ChannelMessageEvent event = new ChannelMessageEvent(channelId, "SYSTEM", "MEMBERS_UPDATED");
+
+        List<ChannelMessageListener> listenersCopy;
+        synchronized (channelMessageListeners) {
+            listenersCopy = new ArrayList<>(channelMessageListeners);
+        }
+        for (ChannelMessageListener l : listenersCopy) {
+            try {
+                l.onChannelMessage(event);
+            } catch (Exception e) {
+                logger.error("Error notificando ChannelMessageListener para actualización de miembros", e);
+            }
+        }
     }
 
     private void notifyUserConnectionListeners(UserConnectionEvent event) {

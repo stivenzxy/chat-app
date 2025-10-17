@@ -30,16 +30,13 @@ public class GetChannelMembersCommandAdapter implements ProtocolCommandAdapter {
 
             int channelId = Integer.parseInt(parts.get(1));
             String requesterId = connectionContext.getId();
-            
 
-            // Verificar que el usuario es miembro del canal
             boolean isMember = channelRepository.isMember(channelId, requesterId);
             
             if (!isMember) {
                 return parser.encode("ERROR", "No eres miembro de este canal");
             }
 
-            // Obtener los nombres de usuario de los miembros
             List<String> memberUsernames = channelRepository.findMemberUsernames(channelId);
 
             String membersPayload = String.join(",", memberUsernames);

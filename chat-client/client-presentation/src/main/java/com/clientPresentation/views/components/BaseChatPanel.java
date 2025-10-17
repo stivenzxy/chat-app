@@ -78,7 +78,7 @@ public abstract class BaseChatPanel extends JPanel {
             return;
         }
         
-        ChatMessagePanel messagePanel = new ChatMessagePanel(message, audioService);
+        ChatMessagePanel messagePanel = new ChatMessagePanel(message, audioService, this::onTranscribeAudio);
         chatHistoryArea.add(messagePanel);
         chatHistoryArea.revalidate();
         chatHistoryArea.repaint();
@@ -105,7 +105,7 @@ public abstract class BaseChatPanel extends JPanel {
                 displayMessage = new MessageDTO(displaySender, getRecipientId(), msg.getAudioContent());
             }
             
-            ChatMessagePanel messagePanel = new ChatMessagePanel(displayMessage, audioService);
+            ChatMessagePanel messagePanel = new ChatMessagePanel(displayMessage, audioService, this::onTranscribeAudio);
             chatHistoryArea.add(messagePanel);
         }
         
@@ -118,4 +118,8 @@ public abstract class BaseChatPanel extends JPanel {
     protected abstract void sendMessage();
     protected abstract void sendAudio(byte[] audioData);
     protected abstract String getRecipientId();
+    
+    // Method to handle audio transcription - can be overridden by subclasses
+    protected void onTranscribeAudio(byte[] audioData) {
+    }
 }

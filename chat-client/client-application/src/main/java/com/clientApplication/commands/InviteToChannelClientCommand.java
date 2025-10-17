@@ -5,7 +5,7 @@ import com.clientApplication.ports.ServerGatewayPort;
 
 import java.util.List;
 
-public class InviteToChannelClientCommand implements ClientCommand<InviteToChannelClientCommand.Request, Boolean> {
+public class InviteToChannelClientCommand implements ClientCommand<InviteToChannelClientCommand.Request, String> {
     public static class Request {
         public final int channelId;
         public final String invitedUserId;
@@ -20,14 +20,20 @@ public class InviteToChannelClientCommand implements ClientCommand<InviteToChann
     public InviteToChannelClientCommand(ServerGatewayPort gateway) { this.gateway = gateway; }
 
     @Override
-    public Boolean execute(Request request) {
+    public String execute(Request request) {
         try {
             List<String> parts = gateway.sendAndReceive("INVITE_TO_CHANNEL", String.valueOf(request.channelId), request.invitedUserId);
-            return !parts.isEmpty() && "OK".equalsIgnoreCase(parts.getFirst());
+            if (parts.isEmpty()) {
+                return "Error de comunicación con el servidor.";
+            }
+
+            if ("OK".equalsIgnoreCase(parts.getFirst())) {
+                return "OK";
+            } else {
+                return parts.size() > 1 ? parts.get(1) : "Error desconocido del servidor.";
+            }
         } catch (Exception e) {
-            return false;
+            return "Excepción de comunicación: " + e.getMessage();
         }
     }
 }
-
-

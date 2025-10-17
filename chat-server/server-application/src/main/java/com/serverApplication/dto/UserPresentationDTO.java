@@ -12,16 +12,16 @@ public class UserPresentationDTO {
     private final String email;
     private final String ipAddress;
     private final LocalDateTime createdAt;
-    private final String photoUrl;
+    private byte[] photoData;
     
     public UserPresentationDTO(String id, String username, String email, String ipAddress, 
-                              LocalDateTime createdAt, String photoUrl) {
+                              LocalDateTime createdAt, byte[] photoData) {
         this.id = id;
         this.username = username;
         this.email = email;
         this.ipAddress = ipAddress;
         this.createdAt = createdAt;
-        this.photoUrl = photoUrl;
+        this.photoData = photoData;
     }
     
     public String getId() {
@@ -43,10 +43,8 @@ public class UserPresentationDTO {
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
-    
-    public String getPhotoUrl() {
-        return photoUrl;
-    }
+
+    public byte[] getPhotoData() { return photoData; }
     
     @Override
     public String toString() {
