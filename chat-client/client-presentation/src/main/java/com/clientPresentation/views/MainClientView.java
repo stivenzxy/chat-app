@@ -65,7 +65,6 @@ public class MainClientView extends JFrame implements
 
         headerPanel = createHeaderPanel();
         add(headerPanel, BorderLayout.NORTH);
-        // --- FIN DE MODIFICACIÓN ---
 
         add(mainPanel, BorderLayout.CENTER);
         cardLayout.show(mainPanel, "CONNECTION_PANEL");
@@ -139,15 +138,13 @@ public class MainClientView extends JFrame implements
 
         setTitle("Chat Universitario - ¡Bienvenido, " + loggedInUser.getUsername() + "!");
 
-        // Eliminar el panel de bienvenida
         if (headerPanel != null) {
             remove(headerPanel);
-            headerPanel = null; // Marcar para que no se vuelva a usar
+            headerPanel = null;
         }
 
         this.messageHandler = MessageHandlerFactory.createAsyncMessageHandler();
 
-        // Pasar el DTO completo del usuario al ChatPanel
         this.chatPanel = new ChatPanel(loggedInUser, commandFactory, this::handleDisconnectAndReturnToConnection, messageHandler);
         mainPanel.add(chatPanel, "CHAT_PANEL");
         cardLayout.show(mainPanel, "CHAT_PANEL");
@@ -161,7 +158,6 @@ public class MainClientView extends JFrame implements
             messageHandler.handleAsyncMessage(parts);
         });
 
-        // Actualizar el frame
         revalidate();
         repaint();
     }
@@ -170,9 +166,7 @@ public class MainClientView extends JFrame implements
     public void onUserConnected(UserConnectionEvent event) {
         SwingUtilities.invokeLater(() -> {
             if (chatPanel != null) {
-                // --- INICIO DE LA MODIFICACIÓN ---
                 UserDTO newUser = new UserDTO(event.userId(), event.username(), event.photoData());
-                // --- FIN DE LA MODIFICACIÓN ---
                 chatPanel.addUserToList(newUser);
             }
         });
@@ -203,7 +197,7 @@ public class MainClientView extends JFrame implements
                 try {
                     byte[] audioData = Base64.getDecoder().decode(event.audioBase64());
                     chatPanel.receiveAudioMessage(event.sender(), audioData);
-                } catch (IllegalArgumentException e) {
+                } catch (IllegalArgumentException ignored) {
                 }
             }
         });
