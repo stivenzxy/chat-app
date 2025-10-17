@@ -14,26 +14,26 @@ public class User {
     private final Username username;
     private final Email email;
     private String passwordHash;
-    private String photoUrl;
+    private byte[] photoData;
     private String ipAddress;
     private LocalDateTime createdAt;
 
-    public User(String id, Username username, Email email, String passwordHash, String photoUrl, String ipAddress
+    public User(String id, Username username, Email email, String passwordHash, byte[] photoData, String ipAddress
     ,LocalDateTime createdAt) {
         this.id = id;
         this.username = username;
         this.passwordHash = passwordHash;
         this.email = email;
-        this.photoUrl = photoUrl;
+        this.photoData = photoData;
         this.ipAddress = ipAddress;
         this.createdAt = createdAt;
     }
 
     public static User create(Username username, Email email, String plainPassword,
-                              String photoUrl, String ipAddress, PasswordHasher hasher) {
+                              byte[] photoData, String ipAddress, PasswordHasher hasher) {
         validatePassword(plainPassword);
         String passwordHash = hasher.hash(plainPassword);
-        return new User(UUID.randomUUID().toString(), username, email, passwordHash, photoUrl, ipAddress, LocalDateTime.now());
+        return new User(UUID.randomUUID().toString(), username, email, passwordHash, photoData, ipAddress, LocalDateTime.now());
     }
 
 
@@ -58,9 +58,8 @@ public class User {
         return email;
     }
 
-    public String getPhotoUrl() {
-        return photoUrl;
-    }
+    public byte[] getPhotoData() {return photoData;}
+
 
     public String getIpAddress() {
         return ipAddress;

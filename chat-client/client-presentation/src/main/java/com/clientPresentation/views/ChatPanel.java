@@ -163,13 +163,48 @@ public class ChatPanel extends JPanel {
 
     public void removeUserFromList(String userId) {
         SwingUtilities.invokeLater(() -> {
+            String usernameOfDisconnectedUser = null;
+            int userIndex = -1;
+
+            // Busca al usuario en el modelo de la lista para obtener su nombre de usuario
             for (int i = 0; i < userListModel.getSize(); i++) {
                 if (userListModel.getElementAt(i).getId().equals(userId)) {
-                    userListModel.removeElementAt(i);
+                    usernameOfDisconnectedUser = userListModel.getElementAt(i).getUsername();
+                    userIndex = i;
                     break;
                 }
             }
+
+            // Si se encontró al usuario, elimínalo de la lista de conectados
+            if (userIndex != -1) {
+                userListModel.removeElementAt(userIndex);
+            }
+
+            // Si obtuvimos su nombre de usuario, procede a cerrar su pestaña de chat privado
+            if (usernameOfDisconnectedUser != null) {
+                closePrivateChatTab(usernameOfDisconnectedUser);
+            }
         });
+    }
+
+    private void closePrivateChatTab(String username) {
+        if (openChats.containsKey(username)) {
+            Component chatComponent = openChats.get(username);
+            int tabIndex = chatTabs.indexOfComponent(chatComponent);
+
+            if (tabIndex != -1) {
+                chatTabs.removeTabAt(tabIndex);
+            }
+
+            openChats.remove(username);
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "El usuario '" + username + "' se ha desconectado. El chat se ha cerrado.",
+                    "Usuario Desconectado",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+        }
     }
 
     public void openPrivateChat(String username) {

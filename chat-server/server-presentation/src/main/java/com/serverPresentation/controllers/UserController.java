@@ -30,7 +30,7 @@ public class UserController {
                     createUserRequest.getUsername(),
                     createUserRequest.getEmail(),
                     createUserRequest.getPassword(),
-                    createUserRequest.getPhotoUrl(),
+                    createUserRequest.getPhotoData(),
                     createUserRequest.getIpAddress()
             );
             createUserService.execute(request);

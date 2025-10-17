@@ -154,6 +154,8 @@ public class TcpServer implements ActiveUserObserver {
         }
     }
 
+    // Dentro de la clase TcpServer
+
     private void handleClient(ClientConnection connection) {
         Socket socket = connection.getSocket();
 
@@ -165,11 +167,10 @@ public class TcpServer implements ActiveUserObserver {
             String request;
 
             while ((request = in.readLine()) != null) {
-                // logger.info("[{}] Petición recibida: {}", connection.getId(), request); // Comentado para evitar spam de base64 de audio
-
                 List<String> parts = protocolParser.decode(request);
 
                 if (!parts.isEmpty() && "LOGOUT".equalsIgnoreCase(parts.getFirst())) {
+                    // El logout se gestionará en el finally para cubrir todos los casos
                 }
 
                 String response = commandHandler.process(parts, connection);
@@ -186,7 +187,23 @@ public class TcpServer implements ActiveUserObserver {
             try {
                 socket.close();
 
-                ActiveUserManager.getInstance().userLoggedOut(connectionId);
+                // --- INICIO DE LA CORRECCIÓN ---
+                // Buscamos el nombre de usuario asociado al ID de la conexión que se está cerrando
+                String usernameToLogOut = ActiveUserManager.getInstance().getActiveUsers().entrySet().stream()
+                        .filter(entry -> entry.getValue().getId().equals(connectionId))
+                        .map(java.util.Map.Entry::getKey)
+                        .findFirst()
+                        .orElse(null);
+
+                // Si encontramos un nombre de usuario, significa que el usuario estaba logueado
+                if (usernameToLogOut != null) {
+                    // Notificamos al ActiveUserManager usando el NOMBRE DE USUARIO
+                    ActiveUserManager.getInstance().userLoggedOut(usernameToLogOut);
+                } else {
+                    // Si no hay nombre, es porque el cliente se desconectó antes de hacer login.
+                    logger.info("[{}] desconectado antes de completar login. No se notifica.", connectionId);
+                }
+                // --- FIN DE LA CORRECCIÓN ---
 
                 fireClientDisconnected(connection);
                 connectionPool.releaseConnection(connection);

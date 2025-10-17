@@ -18,7 +18,7 @@ public class UserListMapper {
                 user.getEmail().value(),
                 user.getIpAddress(),
                 user.getCreatedAt(),
-                user.getPhotoUrl()
+                user.getPhotoData()
         );
     }
 
