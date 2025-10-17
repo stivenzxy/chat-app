@@ -50,7 +50,7 @@ public class InfrastructureFactory {
         handler.registerCommand(new SendChannelMessageCommandAdapter(channelRepository, handler));
         handler.registerCommand(new SendChannelAudioCommandAdapter(channelRepository, handler));
         handler.registerCommand(new InviteToChannelCommandAdapter(channelRepository, inviteRepository, handler));
-        handler.registerCommand(new RespondInviteCommandAdapter(channelRepository, inviteRepository));
+        handler.registerCommand(new RespondInviteCommandAdapter(channelRepository, inviteRepository, handler));
         handler.registerCommand(new ListPendingInvitesCommandAdapter(inviteRepository));
         handler.registerCommand(new GetChannelMembersCommandAdapter(channelRepository));
 

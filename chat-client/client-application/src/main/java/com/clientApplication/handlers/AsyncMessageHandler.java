@@ -50,6 +50,7 @@ public class AsyncMessageHandler implements MessageHandler {
                 case "RECEIVE_CHANNEL_MESSAGE" -> handleChannelMessage(parts);
                 case "RECEIVE_CHANNEL_AUDIO" -> handleChannelAudio(parts);
                 case "INVITE_RECEIVED" -> handleInviteReceived(parts);
+                case "CHANNEL_MEMBERS_UPDATED" -> handleChannelMembersUpdated(parts);
                 default -> logger.warn("Comando asíncrono desconocido: {}", command);
             }
         } catch (Exception e) {
@@ -99,8 +100,6 @@ public class AsyncMessageHandler implements MessageHandler {
     }
 
     private void handleUserConnection(List<String> parts) {
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // El formato ahora es USER_CONNECTED|userId|username|photoBase64
         if (parts.size() < 4) {
             logger.warn("Mensaje USER_CONNECTED malformado: {}", parts);
             return;
@@ -173,6 +172,27 @@ public class AsyncMessageHandler implements MessageHandler {
         
         logger.debug("Audio privado recibido de: {}", sender);
         notifyPrivateAudioListeners(event);
+    }
+
+    private void handleChannelMembersUpdated(List<String> parts) {
+        if (parts.size() < 2) {
+            logger.warn("Mensaje CHANNEL_MEMBERS_UPDATED malformado: {}", parts);
+            return;
+        }
+        int channelId = Integer.parseInt(parts.get(1));
+        ChannelMessageEvent event = new ChannelMessageEvent(channelId, "SYSTEM", "MEMBERS_UPDATED");
+
+        List<ChannelMessageListener> listenersCopy;
+        synchronized (channelMessageListeners) {
+            listenersCopy = new ArrayList<>(channelMessageListeners);
+        }
+        for (ChannelMessageListener l : listenersCopy) {
+            try {
+                l.onChannelMessage(event);
+            } catch (Exception e) {
+                logger.error("Error notificando ChannelMessageListener para actualización de miembros", e);
+            }
+        }
     }
 
     private void notifyUserConnectionListeners(UserConnectionEvent event) {

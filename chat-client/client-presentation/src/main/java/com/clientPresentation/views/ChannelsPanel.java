@@ -154,7 +154,16 @@ public class ChannelsPanel extends JPanel implements ChannelMessageListener, Cha
 
     @Override
     public void onChannelMessage(ChannelMessageEvent event) {
-        SwingUtilities.invokeLater(() -> dispatchToChannelTab(event.getChannelId(), event.getSender(), event.getContent(), null));
+        if ("SYSTEM".equals(event.getSender()) && "MEMBERS_UPDATED".equals(event.getContent())) {
+            SwingUtilities.invokeLater(() -> {
+                ChannelChatPanel panel = channelTabsById.get(event.getChannelId());
+                if (panel != null) {
+                    panel.refreshMembers();
+                }
+            });
+        } else {
+            SwingUtilities.invokeLater(() -> dispatchToChannelTab(event.getChannelId(), event.getSender(), event.getContent(), null));
+        }
     }
 
     @Override
