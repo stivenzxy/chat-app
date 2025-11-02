@@ -10,6 +10,7 @@ import com.clientApplication.ports.ServerGatewayPort;
 import com.clientPresentation.views.components.ConnectionPanel;
 import com.clientPresentation.views.components.LoginPanel;
 import com.chatCommon.dto.auth.LoginResponse;
+import com.clientInfrastructure.persistence.config.ConnectionManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -148,6 +149,7 @@ public class MainClientView extends JFrame implements
         }
 
         setTitle("Chat Universitario - ¡Bienvenido, " + loggedInUser.getUsername() + "!");
+        ConnectionManager.configureForUser(loggedInUser.getUsername());
 
         if (headerPanel != null) {
             remove(headerPanel);

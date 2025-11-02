@@ -141,14 +141,12 @@ public class PrivateChatPanel extends BaseChatPanel {
 
     public void receiveMessage(MessageDTO message ) {
         messageDAO.saveMessage(message);
-        
-        if (historyLoaded) {
-            String displaySender = message.getSenderId().equals(selfUsername) ? com.clientPresentation.views.constants.ChatConstants.SELF_DISPLAY_NAME : message.getSenderId();
-            if (message.getMessageType() == com.chatCommon.dto.MessageType.TEXT) {
-                appendMessage(displaySender, message.getTextContent(), null);
-            } else {
-                appendMessage(displaySender, null, message.getAudioContent());
-            }
+
+        String displaySender = message.getSenderId().equals(selfUsername) ? com.clientPresentation.views.constants.ChatConstants.SELF_DISPLAY_NAME : message.getSenderId();
+        if (message.getMessageType() == com.chatCommon.dto.MessageType.TEXT) {
+            appendMessage(displaySender, message.getTextContent(), null);
+        } else {
+            appendMessage(displaySender, null, message.getAudioContent());
         }
     }
 }

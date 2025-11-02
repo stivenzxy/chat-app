@@ -16,18 +16,21 @@ import org.slf4j.LoggerFactory;
 public class ConnectionManager {
     private static volatile ConnectionManager instance;
     private static final Logger logger = LoggerFactory.getLogger(ConnectionManager.class);
-    private final String url, user, pass, driver;
+    private final String user, pass, driver;
+    private String urlTemplate;
+    private static String activeUserId = "TEMP";
+    private volatile boolean isInitialized = false;
 
     private ConnectionManager() {
         AppProperties props = new AppProperties("client-configuration");
-        this.url = props.getProperty("URL");
+        this.urlTemplate = props.getProperty("URL_TEMPLATE");
         this.user = props.getProperty("USER");
         this.pass = props.getProperty("PASSWORD");
         this.driver = props.getProperty("DRIVER");
 
         try {
             Class.forName(driver);
-            initDatabase();
+            // initDatabase() no se llama aquí, se llama después de configurar el usuario.
         } catch (ClassNotFoundException e) {
             logger.error("Error al cargar el driver de H2: {}", e.getMessage());
         }
@@ -44,8 +47,18 @@ public class ConnectionManager {
         return instance;
     }
 
+    public static void configureForUser(String userId) {
+        ConnectionManager manager = getInstance();
+        if (manager.isInitialized && manager.activeUserId.equals(userId)) return;
+
+        manager.activeUserId = userId;
+        manager.initDatabase();
+        manager.isInitialized = true;
+    }
+
     public Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(url, user, pass);
+        String finalUrl = urlTemplate.replace("{USER_ID}", activeUserId);
+        return DriverManager.getConnection(finalUrl, user, pass);
     }
 
     private void initDatabase() {
@@ -58,10 +71,10 @@ public class ConnectionManager {
 
             try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
                 stmt.execute(scriptSql);
-                logger.info("Base de datos H2 del cliente inicializada correctamente.");
+                logger.info("Base de datos H2 del cliente inicializada correctamente para usuario: {}.", activeUserId);
             }
         } catch (Exception e) {
-            logger.error("Error al inicializar la base de datos H2 del cliente", e);
+            logger.error("Error al inicializar la base de datos H2 del cliente para {}", activeUserId, e);
             throw new RuntimeException(e);
         }
     }
