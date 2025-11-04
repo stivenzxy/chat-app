@@ -48,31 +48,8 @@ public class SendPrivateMessageCommandAdapter implements ProtocolCommandAdapter 
         String recipientUsername = parts.get(1);
         String content = parts.get(2);
         
-        String senderUserId = aum.getActiveUsers().entrySet().stream()
-            .filter(entry -> entry.getKey().equals(senderUsername))
-            .map(entry -> entry.getValue().getId())
-            .findFirst()
-            .orElse(null);
+        String senderUserId = aum.getUserIdFromConnection(senderConnectionId);
         
-        String recipientUserId = aum.getActiveUsers().entrySet().stream()
-            .filter(entry -> entry.getKey().equals(recipientUsername))
-            .map(entry -> entry.getValue().getId())
-            .findFirst()
-            .orElse(null);
-        
-        if (recipientUserId == null) {
-            return parser.encode("ERROR", "El usuario no está conectado o no existe.");
-        }
-
-        if (!content.startsWith("[TRANSCRIPCIÓN]")) {
-            try {
-                messageDAO.savePrivateTextMessage(senderUserId, recipientUserId, content);
-            } catch (Exception e) {
-                org.slf4j.LoggerFactory.getLogger(SendPrivateMessageCommandAdapter.class)
-                    .error("Error al guardar mensaje de texto: {}", e.getMessage());
-            }
-        }
-
         String forwardMessage = parser.encode("RECEIVE_PRIVATE_MESSAGE", senderUsername, content);
 
         String senderInfo = getSenderInfo(connectionContext);
@@ -80,6 +57,25 @@ public class SendPrivateMessageCommandAdapter implements ProtocolCommandAdapter 
         boolean delivered = server.sendMessageToUser(recipientUsername, forwardMessage, senderInfo);
 
         if (delivered) {
+            String recipientConnectionId = aum.getUserSessions(recipientUsername).stream()
+                .findFirst()
+                .map(user -> user.getId())
+                .orElse(null);
+            
+            String recipientUserId = null;
+            if (recipientConnectionId != null) {
+                recipientUserId = aum.getUserIdFromConnection(recipientConnectionId);
+            }
+            
+            if (!content.startsWith("[TRANSCRIPCIÓN]") && senderUserId != null && recipientUserId != null) {
+                try {
+                    messageDAO.savePrivateTextMessage(senderUserId, recipientUserId, content);
+                } catch (Exception e) {
+                    org.slf4j.LoggerFactory.getLogger(SendPrivateMessageCommandAdapter.class)
+                        .error("Error al guardar mensaje de texto: {}", e.getMessage());
+                }
+            }
+            
             String echoMessage = parser.encode("ECHO_SENT_MESSAGE", recipientUsername, content);
             server.sendMessageToUserExceptSession(senderUsername, echoMessage, senderConnectionId, null);
             
