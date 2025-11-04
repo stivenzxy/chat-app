@@ -25,6 +25,7 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver,
     private JTable connectionsTable;
     private ConnectionTableModel tableModel;
     private BroadcastPanel broadcastPanel;
+    private ServerNetworkPanel serverNetworkPanel;
 
     private final ServerControl serverControl;
 
@@ -85,6 +86,9 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver,
 
         broadcastPanel = new BroadcastPanel(serverControl);
         tabbedPane.addTab("Broadcast", broadcastPanel);
+        
+        serverNetworkPanel = new ServerNetworkPanel();
+        tabbedPane.addTab("Red de Servidores", serverNetworkPanel);
         
         return tabbedPane;
     }
