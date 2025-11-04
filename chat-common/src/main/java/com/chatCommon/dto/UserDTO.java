@@ -6,7 +6,6 @@ import java.util.Arrays;
 public class UserDTO implements Serializable {
     private final String id;
     private final String username;
-    // --- INICIO DE LA MODIFICACIÓN ---
     private final byte[] photoData;
 
     public UserDTO(String id, String username, byte[] photoData) {
@@ -18,7 +17,6 @@ public class UserDTO implements Serializable {
     public UserDTO(String id, String username) {
         this(id, username, null);
     }
-    // --- FIN DE LA MODIFICACIÓN ---
 
     public String getId() {
         return id;
@@ -28,18 +26,15 @@ public class UserDTO implements Serializable {
         return username;
     }
 
-    // --- INICIO DE NUEVO MÉTODO ---
     public byte[] getPhotoData() {
         return photoData;
     }
-    // --- FIN DE NUEVO MÉTODO ---
 
     @Override
     public String toString() {
         return username;
     }
 
-    // --- INICIO DE MODIFICACIÓN DE EQUALS Y HASHCODE ---
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

@@ -26,12 +26,11 @@ public class LoginService implements AuthService {
 
             Optional<User> userOptional = userRepository.findByUsername(username);
 
-            // Verifica si el usuario existe Y si la contraseña coincide
             if (userOptional.isPresent() && userOptional.get().verifyPassword(plainTextPassword, passwordHasher)) {
-                return userOptional; // Éxito, devuelve el usuario
+                return userOptional;
             }
 
-            return Optional.empty(); // Fracaso
+            return Optional.empty();
 
         } catch (Exception exception) {
             return Optional.empty();

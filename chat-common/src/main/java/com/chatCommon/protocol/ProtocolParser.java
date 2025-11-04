@@ -34,17 +34,6 @@ public class ProtocolParser {
         return parts;
     }
 
-    public Map<String, String> decodeMap(String message) {
-        Map<String, String> map = new LinkedHashMap<>();
-        for (String part : decode(message)) {
-            String[] kv = part.split("=", 2);
-            if (kv.length == 2) {
-                map.put(kv[0], kv[1]);
-            }
-        }
-        return map;
-    }
-
     public String encode(String... parts) {
         StringJoiner joiner = new StringJoiner(String.valueOf(delimiter));
         for (String part : parts) {
