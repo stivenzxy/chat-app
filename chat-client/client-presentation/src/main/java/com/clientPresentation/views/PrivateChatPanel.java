@@ -9,6 +9,7 @@ import com.clientPresentation.views.components.BaseChatPanel;
 import com.clientPresentation.views.components.atoms.ChatMessagePanel;
 
 import javax.swing.*;
+import java.awt.Component;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,7 +21,6 @@ public class PrivateChatPanel extends BaseChatPanel {
     private final TranscribeAudioClientCommand transcribeAudioCommand;
     private final MessageDAO messageDAO;
     
-    // Set para rastrear mensajes enviados desde ESTA sesión (evitar duplicados en UI)
     private final Set<String> recentlySentMessages = ConcurrentHashMap.newKeySet();
 
     public PrivateChatPanel(String selfUsername, String otherUsername, CommandFactory commandFactory) {
@@ -45,11 +45,9 @@ public class PrivateChatPanel extends BaseChatPanel {
         MessageDTO messageForNetwork = new MessageDTO(selfUsername, otherUsername, content);
         messageDAO.saveMessage(messageForNetwork);
         
-        // Marcar mensaje como enviado desde esta sesión
         String messageKey = createMessageKey(messageForNetwork);
         recentlySentMessages.add(messageKey);
         
-        // Limpiar el set después de 5 segundos
         new javax.swing.Timer(5000, e -> recentlySentMessages.remove(messageKey)).start();
 
         new SwingWorker<Void, Void>() {
@@ -72,11 +70,9 @@ public class PrivateChatPanel extends BaseChatPanel {
         MessageDTO audioMessageForNetwork = new MessageDTO(selfUsername, otherUsername, audioData);
         messageDAO.saveMessage(audioMessageForNetwork);
         
-        // Marcar audio como enviado desde esta sesión
         String messageKey = createMessageKey(audioMessageForNetwork);
         recentlySentMessages.add(messageKey);
         
-        // Limpiar el set después de 5 segundos
         new javax.swing.Timer(5000, e -> recentlySentMessages.remove(messageKey)).start();
 
         new SwingWorker<Void, Void>() {
@@ -94,10 +90,15 @@ public class PrivateChatPanel extends BaseChatPanel {
     }
 
     @Override
-    protected void onTranscribeAudio(byte[] audioData) {
+    protected void onTranscribeAudioAt(ChatMessagePanel sourcePanel, byte[] audioData) {
+        if (hasTranscriptionAfterPanel(sourcePanel)) {
+            return;
+        }
+        
         MessageDTO transcribingMessage = new MessageDTO("Sistema", "", "⏳ Transcribiendo audio...");
         ChatMessagePanel tempPanel = new ChatMessagePanel(transcribingMessage, audioService);
-        chatHistoryArea.add(tempPanel);
+        int insertIndex = Math.min(chatHistoryArea.getComponentZOrder(sourcePanel) + 1, chatHistoryArea.getComponentCount());
+        chatHistoryArea.add(tempPanel, insertIndex);
         chatHistoryArea.revalidate();
         chatHistoryArea.repaint();
         
@@ -116,11 +117,14 @@ public class PrivateChatPanel extends BaseChatPanel {
                 try {
                     String transcribedText = get();
                     if (transcribedText != null && !transcribedText.trim().isEmpty()) {
-                        appendMessage("[TRANSCRIPCIÓN]", transcribedText, null);
-                        
-                        MessageDTO transcriptionMessage = new MessageDTO(selfUsername, otherUsername, "[TRANSCRIPCIÓN] " + transcribedText);
-                        messageDAO.saveMessage(transcriptionMessage);
-                        sendMessageCommand.execute(transcriptionMessage);
+                        if (!hasTranscriptionAfterPanel(sourcePanel)) {
+                            MessageDTO transcriptionMessage = new MessageDTO("[TRANSCRIPCIÓN]", otherUsername, transcribedText);
+                            ChatMessagePanel transcriptionPanel = new ChatMessagePanel(transcriptionMessage, audioService);
+                            int idx = Math.min(chatHistoryArea.getComponentZOrder(sourcePanel) + 1, chatHistoryArea.getComponentCount());
+                            chatHistoryArea.add(transcriptionPanel, idx);
+                            chatHistoryArea.revalidate();
+                            chatHistoryArea.repaint();
+                        }
                     } else {
                         JOptionPane.showMessageDialog(PrivateChatPanel.this,
                             "No se pudo transcribir el audio. Verifique que el servidor Vosk esté ejecutándose.",
@@ -135,6 +139,26 @@ public class PrivateChatPanel extends BaseChatPanel {
                 }
             }
         }.execute();
+    }
+    
+    private boolean hasTranscriptionAfterPanel(ChatMessagePanel audioPanel) {
+        int audioPanelIndex = chatHistoryArea.getComponentZOrder(audioPanel);
+        if (audioPanelIndex < 0) {
+            return false;
+        }
+        
+        int nextIndex = audioPanelIndex + 1;
+        if (nextIndex < chatHistoryArea.getComponentCount()) {
+            Component nextComp = chatHistoryArea.getComponent(nextIndex);
+            if (nextComp instanceof ChatMessagePanel) {
+                ChatMessagePanel nextPanel = (ChatMessagePanel) nextComp;
+                if (nextPanel.isTranscription()) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
 
 
@@ -169,16 +193,11 @@ public class PrivateChatPanel extends BaseChatPanel {
         }
     }
     
-    // NUEVO: Muestra un mensaje echo (enviado desde otra sesión) Y lo guarda en BD
     public void displayEchoMessage(MessageDTO message) {
-        // SÍ guardar en BD para sincronizar con otras sesiones
-        // messageDAO.saveMessage() usa messageExists() para evitar duplicados
         messageDAO.saveMessage(message);
         
-        // Verificar si el mensaje fue enviado desde ESTA sesión
         String messageKey = createMessageKey(message);
         if (recentlySentMessages.contains(messageKey)) {
-            // El mensaje ya está en la UI, no lo agregamos de nuevo
             return;
         }
         
@@ -190,7 +209,6 @@ public class PrivateChatPanel extends BaseChatPanel {
         }
     }
     
-    // Crea una clave única para identificar un mensaje
     private String createMessageKey(MessageDTO message) {
         if (message.getMessageType() == com.chatCommon.dto.MessageType.TEXT) {
             return message.getSenderId() + ":" + message.getRecipientId() + ":" + 

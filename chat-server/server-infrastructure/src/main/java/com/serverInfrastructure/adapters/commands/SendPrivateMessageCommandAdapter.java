@@ -3,7 +3,9 @@ package com.serverInfrastructure.adapters.commands;
 import com.chatCommon.protocol.ProtocolParser;
 import com.serverInfrastructure.adapters.ProtocolCommandAdapter;
 import com.serverInfrastructure.network.ClientConnection;
-import com.serverInfrastructure.network.TcpServer; // Necesitaremos una referencia al servidor
+import com.serverInfrastructure.network.TcpServer;
+import com.serverInfrastructure.persistence.dao.MessageDAO;
+import com.serverInfrastructure.observers.ActiveUserManager;
 
 import java.util.List;
 import java.util.Map;
@@ -11,6 +13,7 @@ import java.util.Map;
 public class SendPrivateMessageCommandAdapter implements ProtocolCommandAdapter {
 
     private final TcpServer server;
+    private final MessageDAO messageDAO = new MessageDAO();
 
     public SendPrivateMessageCommandAdapter(TcpServer server) {
         this.server = server;
@@ -31,7 +34,6 @@ public class SendPrivateMessageCommandAdapter implements ProtocolCommandAdapter 
         String senderConnectionId = connectionContext.getId();
 
         com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
-        // Buscar el username en TODAS las sesiones activas
         String senderUsername = aum.getAllUserSessions().entrySet().stream()
             .filter(entry -> entry.getValue().stream()
                 .anyMatch(user -> user.getId().equals(senderConnectionId)))
@@ -45,7 +47,9 @@ public class SendPrivateMessageCommandAdapter implements ProtocolCommandAdapter 
         
         String recipientUsername = parts.get(1);
         String content = parts.get(2);
-
+        
+        String senderUserId = aum.getUserIdFromConnection(senderConnectionId);
+        
         String forwardMessage = parser.encode("RECEIVE_PRIVATE_MESSAGE", senderUsername, content);
 
         String senderInfo = getSenderInfo(connectionContext);
@@ -53,9 +57,25 @@ public class SendPrivateMessageCommandAdapter implements ProtocolCommandAdapter 
         boolean delivered = server.sendMessageToUser(recipientUsername, forwardMessage, senderInfo);
 
         if (delivered) {
-            // NUEVO: Sincronizar con las otras sesiones del remitente
-            // Usar un formato especial: ECHO_SENT_MESSAGE para indicar que es un mensaje enviado por ellos
-            // Formato: ECHO_SENT_MESSAGE|destinatario|contenido
+            String recipientConnectionId = aum.getUserSessions(recipientUsername).stream()
+                .findFirst()
+                .map(user -> user.getId())
+                .orElse(null);
+            
+            String recipientUserId = null;
+            if (recipientConnectionId != null) {
+                recipientUserId = aum.getUserIdFromConnection(recipientConnectionId);
+            }
+            
+            if (!content.startsWith("[TRANSCRIPCIÓN]") && senderUserId != null && recipientUserId != null) {
+                try {
+                    messageDAO.savePrivateTextMessage(senderUserId, recipientUserId, content);
+                } catch (Exception e) {
+                    org.slf4j.LoggerFactory.getLogger(SendPrivateMessageCommandAdapter.class)
+                        .error("Error al guardar mensaje de texto: {}", e.getMessage());
+                }
+            }
+            
             String echoMessage = parser.encode("ECHO_SENT_MESSAGE", recipientUsername, content);
             server.sendMessageToUserExceptSession(senderUsername, echoMessage, senderConnectionId, null);
             

@@ -6,14 +6,20 @@ import com.serverInfrastructure.adapters.ProtocolCommandAdapter;
 import com.serverInfrastructure.network.ClientConnection;
 import com.serverInfrastructure.services.CommandHandler;
 import com.serverInfrastructure.persistence.dao.MessageDAO;
+import com.serverInfrastructure.services.AudioTranscriptionService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 
 public class SendChannelAudioCommandAdapter implements ProtocolCommandAdapter {
+    private static final Logger logger = LoggerFactory.getLogger(SendChannelAudioCommandAdapter.class);
+    
     private final ChannelRepository channelRepository;
     private final CommandHandler handler;
     private final MessageDAO messageDAO;
+    private final AudioTranscriptionService audioTranscriptionService = new AudioTranscriptionService();
 
     public SendChannelAudioCommandAdapter(ChannelRepository channelRepository, CommandHandler handler) {
         this.channelRepository = channelRepository;
@@ -59,7 +65,22 @@ public class SendChannelAudioCommandAdapter implements ProtocolCommandAdapter {
 
         byte[] audioData = java.util.Base64.getDecoder().decode(audioBase64);
         
-        messageDAO.saveChannelAudioMessage(senderUserId, channelId, audioData);
+        int messageId = messageDAO.saveChannelAudioMessage(senderUserId, channelId, audioData);
+        
+        final int finalMessageId = messageId;
+        final byte[] finalAudioData = audioData;
+        if (finalMessageId > 0 && finalAudioData != null) {
+            new Thread(() -> {
+                try {
+                    String transcribedText = audioTranscriptionService.transcribeAudio(finalAudioData);
+                    
+                    if (transcribedText != null && !transcribedText.trim().isEmpty()) {
+                        messageDAO.saveTranscription(finalMessageId, "WAV", transcribedText);
+                    }
+                } catch (Exception e) {
+                }
+            }).start();
+        }
 
         List<String> memberUsernames = channelRepository.findMemberUsernames(channelId);
         

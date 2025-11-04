@@ -113,7 +113,7 @@ public class ChannelChatPanel extends JPanel {
                             displayMessage = new MessageDTO(displaySender, m.getRecipientId(), m.getAudioContent());
                         }
                         
-                        ChatMessagePanel messagePanel = new ChatMessagePanel(displayMessage, audioService, ChannelChatPanel.this::onTranscribeAudio);
+                        ChatMessagePanel messagePanel = new ChatMessagePanel(displayMessage, audioService, ChannelChatPanel.this::onTranscribeAudioAt);
                         chatHistoryArea.add(messagePanel);
                     }
                     chatHistoryArea.revalidate();
@@ -217,7 +217,7 @@ public class ChannelChatPanel extends JPanel {
             return;
         }
         
-        ChatMessagePanel messagePanel = new ChatMessagePanel(message, audioService, this::onTranscribeAudio);
+        ChatMessagePanel messagePanel = new ChatMessagePanel(message, audioService, this::onTranscribeAudioAt);
         
         chatHistoryArea.add(messagePanel);
         chatHistoryArea.revalidate();
@@ -264,10 +264,15 @@ public class ChannelChatPanel extends JPanel {
         return channel;
     }
 
-    public void onTranscribeAudio(byte[] audioData) {
+    public void onTranscribeAudioAt(ChatMessagePanel sourcePanel, byte[] audioData) {
+        if (hasTranscriptionAfterPanel(sourcePanel)) {
+            return;
+        }
+        
         MessageDTO transcribingMessage = new MessageDTO("Sistema", "", "⏳ Transcribiendo audio...");
         ChatMessagePanel tempPanel = new ChatMessagePanel(transcribingMessage, audioService);
-        chatHistoryArea.add(tempPanel);
+        int insertIndex = Math.min(chatHistoryArea.getComponentZOrder(sourcePanel) + 1, chatHistoryArea.getComponentCount());
+        chatHistoryArea.add(tempPanel, insertIndex);
         chatHistoryArea.revalidate();
         chatHistoryArea.repaint();
 
@@ -286,10 +291,14 @@ public class ChannelChatPanel extends JPanel {
                 try {
                     String transcribedText = get();
                     if (transcribedText != null && !transcribedText.trim().isEmpty()) {
-                        append("[TRANSCRIPCIÓN]", transcribedText, null);
-
-                        SendChannelMessageClientCommand.Request request = new SendChannelMessageClientCommand.Request(channel.getId(), "[TRANSCRIPCIÓN] " + transcribedText);
-                        sendMsgCmd.execute(request);
+                        if (!hasTranscriptionAfterPanel(sourcePanel)) {
+                            MessageDTO transcriptionMessage = new MessageDTO("[TRANSCRIPCIÓN]", channel.getId().toString(), transcribedText);
+                            ChatMessagePanel transcriptionPanel = new ChatMessagePanel(transcriptionMessage, audioService);
+                            int idx = Math.min(chatHistoryArea.getComponentZOrder(sourcePanel) + 1, chatHistoryArea.getComponentCount());
+                            chatHistoryArea.add(transcriptionPanel, idx);
+                            chatHistoryArea.revalidate();
+                            chatHistoryArea.repaint();
+                        }
                     } else {
                         JOptionPane.showMessageDialog(ChannelChatPanel.this,
                             "No se pudo transcribir el audio. Verifique que el servidor Vosk esté ejecutándose.",
@@ -304,5 +313,25 @@ public class ChannelChatPanel extends JPanel {
                 }
             }
         }.execute();
+    }
+    
+    private boolean hasTranscriptionAfterPanel(ChatMessagePanel audioPanel) {
+        int audioPanelIndex = chatHistoryArea.getComponentZOrder(audioPanel);
+        if (audioPanelIndex < 0) {
+            return false;
+        }
+        
+        int nextIndex = audioPanelIndex + 1;
+        if (nextIndex < chatHistoryArea.getComponentCount()) {
+            Component nextComp = chatHistoryArea.getComponent(nextIndex);
+            if (nextComp instanceof ChatMessagePanel) {
+                ChatMessagePanel nextPanel = (ChatMessagePanel) nextComp;
+                if (nextPanel.isTranscription()) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
 }

@@ -4,13 +4,22 @@ import com.chatCommon.protocol.ProtocolParser;
 import com.serverInfrastructure.adapters.ProtocolCommandAdapter;
 import com.serverInfrastructure.network.ClientConnection;
 import com.serverInfrastructure.network.TcpServer;
+import com.serverInfrastructure.persistence.dao.MessageDAO;
+import com.serverInfrastructure.observers.ActiveUserManager;
+import com.serverInfrastructure.services.AudioTranscriptionService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
 public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
+    private static final Logger logger = LoggerFactory.getLogger(SendPrivateAudioCommandAdapter.class);
 
     private final TcpServer server;
+    private final MessageDAO messageDAO = new MessageDAO();
+    private final AudioTranscriptionService audioTranscriptionService = new AudioTranscriptionService();
 
     public SendPrivateAudioCommandAdapter(TcpServer server) {
         this.server = server;
@@ -32,7 +41,6 @@ public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
         
         // Obtener username del usuario que envía el audio
         com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
-        // Buscar el username en TODAS las sesiones activas
         String senderUsername = aum.getAllUserSessions().entrySet().stream()
             .filter(entry -> entry.getValue().stream()
                 .anyMatch(user -> user.getId().equals(senderConnectionId)))
@@ -46,7 +54,9 @@ public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
         
         String recipientUsername = parts.get(1);
         String audioBase64 = parts.get(2);
-
+        
+        String senderUserId = aum.getUserIdFromConnection(senderConnectionId);
+        
         String forwardMessage = parser.encode("RECEIVE_PRIVATE_AUDIO", senderUsername, audioBase64);
 
         String senderInfo = getSenderInfo(connectionContext) + " [AUDIO]";
@@ -54,8 +64,42 @@ public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
         boolean delivered = server.sendMessageToUser(recipientUsername, forwardMessage, senderInfo);
 
         if (delivered) {
-            // NUEVO: Sincronizar con las otras sesiones del remitente
-            // Usar formato especial para indicar que es un audio enviado por ellos
+            String recipientConnectionId = aum.getUserSessions(recipientUsername).stream()
+                .findFirst()
+                .map(user -> user.getId())
+                .orElse(null);
+            
+            String recipientUserId = null;
+            if (recipientConnectionId != null) {
+                recipientUserId = aum.getUserIdFromConnection(recipientConnectionId);
+            }
+            
+            if (senderUserId != null && recipientUserId != null) {
+                int messageId = -1;
+                byte[] audioData = null;
+                try {
+                    audioData = Base64.getDecoder().decode(audioBase64);
+                    messageId = messageDAO.savePrivateAudioMessage(senderUserId, recipientUserId, audioData);
+                    
+                    final int finalMessageId = messageId;
+                    final byte[] finalAudioData = audioData;
+                    if (finalMessageId > 0 && finalAudioData != null) {
+                        new Thread(() -> {
+                            try {
+                                String transcribedText = audioTranscriptionService.transcribeAudio(finalAudioData);
+                                
+                                if (transcribedText != null && !transcribedText.trim().isEmpty()) {
+                                    messageDAO.saveTranscription(finalMessageId, "WAV", transcribedText);
+                                }
+                            } catch (Exception e) {
+                            }
+                        }).start();
+                    }
+                } catch (Exception e) {
+                    logger.error("Error al guardar mensaje de audio: {}", e.getMessage());
+                }
+            }
+            
             String echoAudio = parser.encode("ECHO_SENT_AUDIO", recipientUsername, audioBase64);
             server.sendMessageToUserExceptSession(senderUsername, echoAudio, senderConnectionId, null);
             

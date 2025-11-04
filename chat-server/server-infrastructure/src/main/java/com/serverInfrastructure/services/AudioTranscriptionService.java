@@ -148,12 +148,12 @@ public class AudioTranscriptionService {
             float frameRate = durStream.getFormat().getFrameRate();
             if (frames > 0 && frameRate > 0) {
                 double durationSec = frames / frameRate;
-                return Math.max(180, (int) Math.ceil(durationSec * 8.0 + 120));
+                return Math.max(45, (int) Math.ceil(durationSec * 3.0 + 10));
             }
         } catch (Exception e) {
             // Use default timeout
         }
-        return 180;
+        return 60;
     }
     
     private String processAudioWithVosk(File audioFile, int timeoutSeconds) throws Exception {
@@ -171,41 +171,22 @@ public class AudioTranscriptionService {
                     String config = "{\"config\": {\"sample_rate\": " + SAMPLE_RATE + ", \"words\": true, \"partial\": true, \"max_alternatives\": 0}}";
                     send(config);
                     
-                    Thread.sleep(200);
-
-                    byte[] buffer = new byte[2048];
+                    byte[] buffer = new byte[4096];
                     int read;
-                    int totalSent = 0;
-                    int chunkCount = 0;
                     
                     while ((read = pcmStream.read(buffer)) != -1) {
                         if (read > 0) {
                             byte[] chunk = new byte[read];
                             System.arraycopy(buffer, 0, chunk, 0, read);
                             send(chunk);
-                            totalSent += read;
-                            
-                            if (++chunkCount % 5 == 0) {
-                                Thread.sleep(100);
-                            }
                         }
                     }
                     
-                    byte[] silence = new byte[1024];
-                    for (int i = 0; i < 3; i++) {
-                        send(silence);
-                        Thread.sleep(100);
-                    }
-                    
-                    Thread.sleep(1000);
                     send("{\"eof\": 1}");
                     eofSent[0] = true;
                     
-                    Thread.sleep(3000);
-                    
+                    Thread.sleep(500);
                     send("{\"flush\": true}");
-                    
-                    Thread.sleep(2000);
                     
                     String currentResult = result.toString().trim();
                     String finalResult = concatenatePartialResult(currentResult, lastPartialResult[0]);
@@ -251,7 +232,7 @@ public class AudioTranscriptionService {
                             }
                         }
                         
-                        if (System.currentTimeMillis() - lastMessageTime[0] > 5000) {
+                        if (System.currentTimeMillis() - lastMessageTime[0] > 2000) {
                             if (!processingResult.isDone()) {
                                 String confirmedResult = result.toString().trim();
                                 String finalResult = concatenatePartialResult(confirmedResult, lastPartialResult[0]);
@@ -267,12 +248,6 @@ public class AudioTranscriptionService {
             @Override
             public void onClose(int code, String reason, boolean remote) {
                 if (!processingResult.isDone()) {
-                    try {
-                        Thread.sleep(3000);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                    
                     String confirmedResult = result.toString().trim();
                     String finalResult = concatenatePartialResult(confirmedResult, lastPartialResult[0]);
                     
@@ -291,22 +266,10 @@ public class AudioTranscriptionService {
         
         try {
             String finalResult = processingResult.get(timeoutSeconds, TimeUnit.SECONDS);
-            
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            
             return finalResult;
         } finally {
             if (client.isOpen()) {
                 client.close();
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
             }
         }
     }

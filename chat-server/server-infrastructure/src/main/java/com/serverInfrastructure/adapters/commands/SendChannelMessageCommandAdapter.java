@@ -57,7 +57,9 @@ public class SendChannelMessageCommandAdapter implements ProtocolCommandAdapter 
             return parser.encode("ERROR", "No eres miembro del canal");
         }
 
-        messageDAO.saveChannelTextMessage(senderUserId, channelId, content);
+        if (!content.startsWith("[TRANSCRIPCIÓN]")) {
+            messageDAO.saveChannelTextMessage(senderUserId, channelId, content);
+        }
 
         List<String> memberUsernames = channelRepository.findMemberUsernames(channelId);
         
