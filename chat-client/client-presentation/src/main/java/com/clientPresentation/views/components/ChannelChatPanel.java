@@ -321,12 +321,12 @@ public class ChannelChatPanel extends JPanel {
             return false;
         }
         
-        int maxSearch = Math.min(audioPanelIndex + 3, chatHistoryArea.getComponentCount());
-        for (int i = audioPanelIndex + 1; i < maxSearch; i++) {
-            Component comp = chatHistoryArea.getComponent(i);
-            if (comp instanceof ChatMessagePanel) {
-                ChatMessagePanel panel = (ChatMessagePanel) comp;
-                if (panel.isTranscription()) {
+        int nextIndex = audioPanelIndex + 1;
+        if (nextIndex < chatHistoryArea.getComponentCount()) {
+            Component nextComp = chatHistoryArea.getComponent(nextIndex);
+            if (nextComp instanceof ChatMessagePanel) {
+                ChatMessagePanel nextPanel = (ChatMessagePanel) nextComp;
+                if (nextPanel.isTranscription()) {
                     return true;
                 }
             }

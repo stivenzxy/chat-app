@@ -34,7 +34,6 @@ public class SendPrivateMessageCommandAdapter implements ProtocolCommandAdapter 
         String senderConnectionId = connectionContext.getId();
 
         com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
-        // Buscar el username en TODAS las sesiones activas
         String senderUsername = aum.getAllUserSessions().entrySet().stream()
             .filter(entry -> entry.getValue().stream()
                 .anyMatch(user -> user.getId().equals(senderConnectionId)))
@@ -48,6 +47,12 @@ public class SendPrivateMessageCommandAdapter implements ProtocolCommandAdapter 
         
         String recipientUsername = parts.get(1);
         String content = parts.get(2);
+        
+        String senderUserId = aum.getActiveUsers().entrySet().stream()
+            .filter(entry -> entry.getKey().equals(senderUsername))
+            .map(entry -> entry.getValue().getId())
+            .findFirst()
+            .orElse(null);
         
         String recipientUserId = aum.getActiveUsers().entrySet().stream()
             .filter(entry -> entry.getKey().equals(recipientUsername))
@@ -75,9 +80,6 @@ public class SendPrivateMessageCommandAdapter implements ProtocolCommandAdapter 
         boolean delivered = server.sendMessageToUser(recipientUsername, forwardMessage, senderInfo);
 
         if (delivered) {
-            // NUEVO: Sincronizar con las otras sesiones del remitente
-            // Usar un formato especial: ECHO_SENT_MESSAGE para indicar que es un mensaje enviado por ellos
-            // Formato: ECHO_SENT_MESSAGE|destinatario|contenido
             String echoMessage = parser.encode("ECHO_SENT_MESSAGE", recipientUsername, content);
             server.sendMessageToUserExceptSession(senderUsername, echoMessage, senderConnectionId, null);
             

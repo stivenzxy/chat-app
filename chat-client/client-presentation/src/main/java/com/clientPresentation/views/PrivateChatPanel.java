@@ -21,7 +21,6 @@ public class PrivateChatPanel extends BaseChatPanel {
     private final TranscribeAudioClientCommand transcribeAudioCommand;
     private final MessageDAO messageDAO;
     
-    // Set para rastrear mensajes enviados desde ESTA sesión (evitar duplicados en UI)
     private final Set<String> recentlySentMessages = ConcurrentHashMap.newKeySet();
 
     public PrivateChatPanel(String selfUsername, String otherUsername, CommandFactory commandFactory) {
@@ -46,11 +45,9 @@ public class PrivateChatPanel extends BaseChatPanel {
         MessageDTO messageForNetwork = new MessageDTO(selfUsername, otherUsername, content);
         messageDAO.saveMessage(messageForNetwork);
         
-        // Marcar mensaje como enviado desde esta sesión
         String messageKey = createMessageKey(messageForNetwork);
         recentlySentMessages.add(messageKey);
         
-        // Limpiar el set después de 5 segundos
         new javax.swing.Timer(5000, e -> recentlySentMessages.remove(messageKey)).start();
 
         new SwingWorker<Void, Void>() {
@@ -73,11 +70,9 @@ public class PrivateChatPanel extends BaseChatPanel {
         MessageDTO audioMessageForNetwork = new MessageDTO(selfUsername, otherUsername, audioData);
         messageDAO.saveMessage(audioMessageForNetwork);
         
-        // Marcar audio como enviado desde esta sesión
         String messageKey = createMessageKey(audioMessageForNetwork);
         recentlySentMessages.add(messageKey);
         
-        // Limpiar el set después de 5 segundos
         new javax.swing.Timer(5000, e -> recentlySentMessages.remove(messageKey)).start();
 
         new SwingWorker<Void, Void>() {
@@ -152,12 +147,12 @@ public class PrivateChatPanel extends BaseChatPanel {
             return false;
         }
         
-        int maxSearch = Math.min(audioPanelIndex + 3, chatHistoryArea.getComponentCount());
-        for (int i = audioPanelIndex + 1; i < maxSearch; i++) {
-            Component comp = chatHistoryArea.getComponent(i);
-            if (comp instanceof ChatMessagePanel) {
-                ChatMessagePanel panel = (ChatMessagePanel) comp;
-                if (panel.isTranscription()) {
+        int nextIndex = audioPanelIndex + 1;
+        if (nextIndex < chatHistoryArea.getComponentCount()) {
+            Component nextComp = chatHistoryArea.getComponent(nextIndex);
+            if (nextComp instanceof ChatMessagePanel) {
+                ChatMessagePanel nextPanel = (ChatMessagePanel) nextComp;
+                if (nextPanel.isTranscription()) {
                     return true;
                 }
             }
@@ -198,16 +193,11 @@ public class PrivateChatPanel extends BaseChatPanel {
         }
     }
     
-    // NUEVO: Muestra un mensaje echo (enviado desde otra sesión) Y lo guarda en BD
     public void displayEchoMessage(MessageDTO message) {
-        // SÍ guardar en BD para sincronizar con otras sesiones
-        // messageDAO.saveMessage() usa messageExists() para evitar duplicados
         messageDAO.saveMessage(message);
         
-        // Verificar si el mensaje fue enviado desde ESTA sesión
         String messageKey = createMessageKey(message);
         if (recentlySentMessages.contains(messageKey)) {
-            // El mensaje ya está en la UI, no lo agregamos de nuevo
             return;
         }
         
@@ -219,7 +209,6 @@ public class PrivateChatPanel extends BaseChatPanel {
         }
     }
     
-    // Crea una clave única para identificar un mensaje
     private String createMessageKey(MessageDTO message) {
         if (message.getMessageType() == com.chatCommon.dto.MessageType.TEXT) {
             return message.getSenderId() + ":" + message.getRecipientId() + ":" + 

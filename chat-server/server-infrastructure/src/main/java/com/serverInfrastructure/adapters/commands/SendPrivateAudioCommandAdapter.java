@@ -41,7 +41,6 @@ public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
         
         // Obtener username del usuario que envía el audio
         com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
-        // Buscar el username en TODAS las sesiones activas
         String senderUsername = aum.getAllUserSessions().entrySet().stream()
             .filter(entry -> entry.getValue().stream()
                 .anyMatch(user -> user.getId().equals(senderConnectionId)))
@@ -55,6 +54,12 @@ public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
         
         String recipientUsername = parts.get(1);
         String audioBase64 = parts.get(2);
+        
+        String senderUserId = aum.getActiveUsers().entrySet().stream()
+            .filter(entry -> entry.getKey().equals(senderUsername))
+            .map(entry -> entry.getValue().getId())
+            .findFirst()
+            .orElse(null);
         
         String recipientUserId = aum.getActiveUsers().entrySet().stream()
             .filter(entry -> entry.getKey().equals(recipientUsername))
@@ -97,8 +102,6 @@ public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
         boolean delivered = server.sendMessageToUser(recipientUsername, forwardMessage, senderInfo);
 
         if (delivered) {
-            // NUEVO: Sincronizar con las otras sesiones del remitente
-            // Usar formato especial para indicar que es un audio enviado por ellos
             String echoAudio = parser.encode("ECHO_SENT_AUDIO", recipientUsername, audioBase64);
             server.sendMessageToUserExceptSession(senderUsername, echoAudio, senderConnectionId, null);
             
