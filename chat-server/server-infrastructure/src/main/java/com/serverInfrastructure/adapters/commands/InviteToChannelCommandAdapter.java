@@ -29,15 +29,21 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
     public String execute(List<String> parts, ProtocolParser parser, ClientConnection connectionContext) {
         // INVITE_TO_CHANNEL|channelId|invitedUsername
         if (parts.size() < 3) return parser.encode("ERROR", "Argumentos insuficientes");
-        String inviterUserId = connectionContext.getId();
+        
+        var aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
+        String inviterUserId = aum.getUserIdFromConnection(connectionContext.getId());
+        
+        if (inviterUserId == null) {
+            return parser.encode("ERROR", "Usuario no autenticado");
+        }
         Integer channelId = Integer.valueOf(parts.get(1));
         String invitedUsername = parts.get(2);
 
-        var aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
-
-        String inviterUsername = aum.getActiveUsers().entrySet().stream()
-            .filter(entry -> entry.getValue().getId().equals(inviterUserId))
-            .map(entry -> entry.getKey())
+        String inviterUsername = aum.getAllUserSessions().entrySet().stream()
+            .filter(entry -> entry.getValue().stream()
+                .anyMatch(u -> aum.getUserIdFromConnection(u.getId()) != null && 
+                              aum.getUserIdFromConnection(u.getId()).equals(inviterUserId)))
+            .map(java.util.Map.Entry::getKey)
             .findFirst()
             .orElse(null);
             
@@ -45,10 +51,16 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
             return parser.encode("ERROR", "Usuario que invita no está en línea");
         }
 
-        var invitedUser = aum.getActiveUsers().get(invitedUsername);
-        if (invitedUser == null) return parser.encode("ERROR", "Usuario invitado no está en línea");
+        var invitedUserSessions = aum.getUserSessions(invitedUsername);
+        if (invitedUserSessions == null || invitedUserSessions.isEmpty()) {
+            return parser.encode("ERROR", "Usuario invitado no está en línea");
+        }
 
-        String invitedUserId = invitedUser.getId();
+        // Obtener el userId real del primer sesión del usuario invitado
+        String invitedUserId = aum.getUserIdFromConnection(invitedUserSessions.get(0).getId());
+        if (invitedUserId == null) {
+            return parser.encode("ERROR", "No se pudo obtener ID del usuario invitado");
+        }
 
         if (channelRepository.isMember(channelId, invitedUserId)) {
             return parser.encode("ERROR", "El usuario ya es miembro de este canal");

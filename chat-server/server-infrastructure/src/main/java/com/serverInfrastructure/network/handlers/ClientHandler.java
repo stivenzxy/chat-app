@@ -73,14 +73,17 @@ public class ClientHandler implements Runnable {
         try {
             connection.getSocket().close();
 
-            String usernameToLogOut = ActiveUserManager.getInstance().getActiveUsers().entrySet().stream()
-                    .filter(entry -> entry.getValue().getId().equals(connectionId))
+            // Buscar el username correspondiente a este connectionId
+            String usernameToLogOut = ActiveUserManager.getInstance().getAllUserSessions().entrySet().stream()
+                    .filter(entry -> entry.getValue().stream()
+                            .anyMatch(user -> user.getId().equals(connectionId)))
                     .map(java.util.Map.Entry::getKey)
                     .findFirst()
                     .orElse(null);
 
             if (usernameToLogOut != null) {
-                ActiveUserManager.getInstance().userLoggedOut(usernameToLogOut);
+                // Usar el nuevo método que recibe connectionId para desconectar solo esta sesión
+                ActiveUserManager.getInstance().userLoggedOut(usernameToLogOut, connectionId);
             } else {
                 logger.info("[{}] desconectado antes de completar login. No se notifica.", connectionId);
             }

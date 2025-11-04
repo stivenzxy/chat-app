@@ -36,7 +36,6 @@ public abstract class BaseChatPanel extends JPanel {
         inputPanel = new ChatInputPanel();
         add(inputPanel, BorderLayout.SOUTH);
 
-        // Common actions
         inputPanel.addSendAction(e -> sendMessage());
         inputPanel.getRecordButton().addActionListener(this::toggleRecording);
     }

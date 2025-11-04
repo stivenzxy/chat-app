@@ -189,7 +189,7 @@ public class MainClientView extends JFrame implements
     public void onUserDisconnected(UserDisconnectionEvent event) {
         SwingUtilities.invokeLater(() -> {
             if (chatPanel != null) {
-                chatPanel.removeUserFromList(event.userId());
+                chatPanel.removeUserFromList(event.username());
             }
         });
     }
@@ -198,7 +198,11 @@ public class MainClientView extends JFrame implements
     public void onPrivateMessageReceived(PrivateMessageEvent event) {
         SwingUtilities.invokeLater(() -> {
             if (chatPanel != null) {
-                chatPanel.receiveMessage(event.sender(), event.content());
+                if (event.isEcho()) {
+                    chatPanel.receiveEchoMessage(event.sender(), event.content());
+                } else {
+                    chatPanel.receiveMessage(event.sender(), event.content());
+                }
             }
         });
     }
@@ -209,7 +213,11 @@ public class MainClientView extends JFrame implements
             if (chatPanel != null) {
                 try {
                     byte[] audioData = Base64.getDecoder().decode(event.audioBase64());
-                    chatPanel.receiveAudioMessage(event.sender(), audioData);
+                    if (event.isEcho()) {
+                        chatPanel.receiveEchoAudioMessage(event.sender(), audioData);
+                    } else {
+                        chatPanel.receiveAudioMessage(event.sender(), audioData);
+                    }
                 } catch (IllegalArgumentException ignored) {
                 }
             }

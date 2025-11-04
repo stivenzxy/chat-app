@@ -38,6 +38,8 @@ public class AsyncMessageHandler implements MessageHandler {
                 case "USER_DISCONNECTED" -> handleUserDisconnection(parts);
                 case "RECEIVE_PRIVATE_MESSAGE" -> handlePrivateMessage(parts);
                 case "RECEIVE_PRIVATE_AUDIO" -> handlePrivateAudio(parts);
+                case "ECHO_SENT_MESSAGE" -> handleEchoSentMessage(parts);
+                case "ECHO_SENT_AUDIO" -> handleEchoSentAudio(parts);
                 case "RECEIVE_CHANNEL_MESSAGE" -> handleChannelMessage(parts);
                 case "RECEIVE_CHANNEL_AUDIO" -> handleChannelAudio(parts);
                 case "INVITE_RECEIVED" -> handleInviteReceived(parts);
@@ -118,15 +120,17 @@ public class AsyncMessageHandler implements MessageHandler {
     }
     
     private void handleUserDisconnection(List<String> parts) {
-        if (parts.size() < 2) {
+        if (parts.size() < 3) {
             logger.warn("Mensaje USER_DISCONNECTED malformado: {}", parts);
             return;
         }
         
-        String userId = parts.get(1);
-        UserDisconnectionEvent event = new UserDisconnectionEvent(userId);
+        // Formato: USER_DISCONNECTED|userId|username
+        // Usar el username (campo 2) para identificar al usuario desconectado
+        String username = parts.get(2);
+        UserDisconnectionEvent event = new UserDisconnectionEvent(username);
         
-        logger.info("Usuario desconectado: {}", userId);
+        logger.info("Usuario desconectado: {}", username);
         notifyUserDisconnectionListeners(event);
     }
     
@@ -163,6 +167,49 @@ public class AsyncMessageHandler implements MessageHandler {
         PrivateAudioEvent event = new PrivateAudioEvent(sender, audioBase64);
         
         logger.debug("Audio privado recibido de: {}", sender);
+        notifyPrivateAudioListeners(event);
+    }
+    
+    // NUEVO: Maneja mensajes enviados desde otra sesión del mismo usuario
+    private void handleEchoSentMessage(List<String> parts) {
+        if (parts.size() < 3) {
+            logger.warn("Mensaje ECHO_SENT_MESSAGE malformado: {}", parts);
+            return;
+        }
+        
+        String recipient = parts.get(1);
+        String content = parts.get(2);
+        
+        // Crear un evento de mensaje privado con el destinatario como "sender"
+        // y marcarlo como echo=true para que NO se guarde en la BD
+        PrivateMessageEvent event = new PrivateMessageEvent(recipient, content, true);
+        
+        logger.debug("Eco de mensaje enviado a: {}", recipient);
+        notifyPrivateMessageListeners(event);
+    }
+    
+    // NUEVO: Maneja audios enviados desde otra sesión del mismo usuario
+    private void handleEchoSentAudio(List<String> parts) {
+        if (parts.size() < 3) {
+            logger.warn("Mensaje ECHO_SENT_AUDIO malformado: {}", parts);
+            return;
+        }
+        
+        String recipient = parts.get(1);
+        String audioBase64 = parts.get(2);
+        
+        try {
+            Base64.getDecoder().decode(audioBase64);
+        } catch (IllegalArgumentException e) {
+            logger.error("Audio base64 inválido en eco: {}", e.getMessage());
+            return;
+        }
+        
+        // Crear un evento de audio privado con el destinatario como "sender"
+        // y marcarlo como echo=true para que NO se guarde en la BD
+        PrivateAudioEvent event = new PrivateAudioEvent(recipient, audioBase64, true);
+        
+        logger.debug("Eco de audio enviado a: {}", recipient);
         notifyPrivateAudioListeners(event);
     }
 

@@ -249,7 +249,7 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver,
     }
     
     @Override
-    public void onUserLoggedOut(User user) {
+    public void onUserLoggedOut(User user, boolean isLastSession) {
         SwingUtilities.invokeLater(() -> {
             tableModel.updateConnectionUsername(user.getId(), null);
         });

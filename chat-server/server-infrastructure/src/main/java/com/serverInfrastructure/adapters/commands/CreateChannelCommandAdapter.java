@@ -25,7 +25,16 @@ public class CreateChannelCommandAdapter implements ProtocolCommandAdapter {
     public String execute(List<String> parts, ProtocolParser parser, ClientConnection connectionContext) {
         // CREATE_CHANNEL|name|visibility(PUBLIC|PRIVATE)
         if (parts.size() < 3) return parser.encode("ERROR", "Argumentos insuficientes");
-        String ownerUserId = connectionContext.getId();
+        
+        // Obtener el userId REAL del usuario desde el connectionId
+        String connectionId = connectionContext.getId();
+        com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
+        
+        String ownerUserId = aum.getUserIdFromConnection(connectionId);
+        
+        if (ownerUserId == null) {
+            return parser.encode("ERROR", "Usuario no autenticado");
+        }
         String name = parts.get(1);
         Channel.Visibility visibility = Channel.Visibility.valueOf(parts.get(2));
 

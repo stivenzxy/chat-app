@@ -45,15 +45,24 @@ public class UserEventHandler implements ActiveUserObserver {
     }
 
     @Override
-    public void onUserLoggedOut(User user) {
-        logger.info("Usuario fuera de sesión: {}", user.getUsername().value());
+    public void onUserLoggedOut(User user, boolean isLastSession) {
+        logger.info("Sesión cerrada: {} (connectionId: {})", user.getUsername().value(), user.getId());
         
-        String message = protocolParser.encode("USER_DISCONNECTED", user.getId(), user.getUsername().value());
-        messageBroadcaster.broadcastMessage(message, null);
+        // Solo notificar USER_DISCONNECTED si era la última sesión del usuario
+        if (isLastSession) {
+            // Ya no hay más sesiones de este usuario, notificar desconexión total
+            logger.info("Usuario completamente desconectado: {}", user.getUsername().value());
+            String message = protocolParser.encode("USER_DISCONNECTED", user.getId(), user.getUsername().value());
+            messageBroadcaster.broadcastMessage(message, null);
 
-        ClientConnection connection = connectionPool.findConnectionById(user.getUsername().value());
-        if (connection != null) {
-            fireClientDisconnected(connection);
+            ClientConnection connection = connectionPool.findConnectionById(user.getId());
+            if (connection != null) {
+                fireClientDisconnected(connection);
+            }
+        } else {
+            // Aún hay otras sesiones activas, solo log informativo
+            logger.info("Usuario {} aún tiene otra(s) sesión(es) activa(s)", 
+                    user.getUsername().value());
         }
     }
 

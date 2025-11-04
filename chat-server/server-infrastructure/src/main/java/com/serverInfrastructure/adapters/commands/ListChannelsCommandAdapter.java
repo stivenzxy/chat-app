@@ -23,7 +23,12 @@ public class ListChannelsCommandAdapter implements ProtocolCommandAdapter {
 
     @Override
     public String execute(List<String> parts, ProtocolParser parser, ClientConnection connectionContext) {
-        String userId = connectionContext.getId();
+        var aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
+        String userId = aum.getUserIdFromConnection(connectionContext.getId());
+        
+        if (userId == null) {
+            return parser.encode("ERROR", "Usuario no autenticado");
+        }
         
         List<Channel> channels = channelRepository.findAllForUser(userId);
         

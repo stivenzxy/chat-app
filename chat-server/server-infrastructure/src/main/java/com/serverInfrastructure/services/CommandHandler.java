@@ -57,8 +57,19 @@ public class CommandHandler {
     private String handleLogout(ClientConnection connection) {
         try {
             String connectionId = connection.getId();
-
-            ActiveUserManager.getInstance().userLoggedOut(connectionId);
+            
+            // Buscar el username asociado a este connectionId
+            ActiveUserManager aum = ActiveUserManager.getInstance();
+            String username = aum.getAllUserSessions().entrySet().stream()
+                .filter(entry -> entry.getValue().stream()
+                    .anyMatch(u -> u.getId().equals(connectionId)))
+                .map(java.util.Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
+            
+            if (username != null) {
+                aum.userLoggedOut(username, connectionId);
+            }
             
             return parser.encode("LOGOUT_SUCCESS", "Logout exitoso");
         } catch (Exception e) {

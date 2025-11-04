@@ -10,6 +10,8 @@ import com.clientPresentation.views.components.atoms.ChatMessagePanel;
 
 import javax.swing.*;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PrivateChatPanel extends BaseChatPanel {
     private final String otherUsername;
@@ -17,6 +19,9 @@ public class PrivateChatPanel extends BaseChatPanel {
     private final ClientCommand<MessageDTO, Boolean> sendAudioCommand;
     private final TranscribeAudioClientCommand transcribeAudioCommand;
     private final MessageDAO messageDAO;
+    
+    // Set para rastrear mensajes enviados desde ESTA sesión (evitar duplicados en UI)
+    private final Set<String> recentlySentMessages = ConcurrentHashMap.newKeySet();
 
     public PrivateChatPanel(String selfUsername, String otherUsername, CommandFactory commandFactory) {
         super(selfUsername);
@@ -39,6 +44,13 @@ public class PrivateChatPanel extends BaseChatPanel {
 
         MessageDTO messageForNetwork = new MessageDTO(selfUsername, otherUsername, content);
         messageDAO.saveMessage(messageForNetwork);
+        
+        // Marcar mensaje como enviado desde esta sesión
+        String messageKey = createMessageKey(messageForNetwork);
+        recentlySentMessages.add(messageKey);
+        
+        // Limpiar el set después de 5 segundos
+        new javax.swing.Timer(5000, e -> recentlySentMessages.remove(messageKey)).start();
 
         new SwingWorker<Void, Void>() {
             @Override
@@ -59,6 +71,13 @@ public class PrivateChatPanel extends BaseChatPanel {
 
         MessageDTO audioMessageForNetwork = new MessageDTO(selfUsername, otherUsername, audioData);
         messageDAO.saveMessage(audioMessageForNetwork);
+        
+        // Marcar audio como enviado desde esta sesión
+        String messageKey = createMessageKey(audioMessageForNetwork);
+        recentlySentMessages.add(messageKey);
+        
+        // Limpiar el set después de 5 segundos
+        new javax.swing.Timer(5000, e -> recentlySentMessages.remove(messageKey)).start();
 
         new SwingWorker<Void, Void>() {
             @Override
@@ -147,6 +166,40 @@ public class PrivateChatPanel extends BaseChatPanel {
             appendMessage(displaySender, message.getTextContent(), null);
         } else {
             appendMessage(displaySender, null, message.getAudioContent());
+        }
+    }
+    
+    // NUEVO: Muestra un mensaje echo (enviado desde otra sesión) Y lo guarda en BD
+    public void displayEchoMessage(MessageDTO message) {
+        // SÍ guardar en BD para sincronizar con otras sesiones
+        // messageDAO.saveMessage() usa messageExists() para evitar duplicados
+        messageDAO.saveMessage(message);
+        
+        // Verificar si el mensaje fue enviado desde ESTA sesión
+        String messageKey = createMessageKey(message);
+        if (recentlySentMessages.contains(messageKey)) {
+            // El mensaje ya está en la UI, no lo agregamos de nuevo
+            return;
+        }
+        
+        String displaySender = message.getSenderId().equals(selfUsername) ? com.clientPresentation.views.constants.ChatConstants.SELF_DISPLAY_NAME : message.getSenderId();
+        if (message.getMessageType() == com.chatCommon.dto.MessageType.TEXT) {
+            appendMessage(displaySender, message.getTextContent(), null);
+        } else {
+            appendMessage(displaySender, null, message.getAudioContent());
+        }
+    }
+    
+    // Crea una clave única para identificar un mensaje
+    private String createMessageKey(MessageDTO message) {
+        if (message.getMessageType() == com.chatCommon.dto.MessageType.TEXT) {
+            return message.getSenderId() + ":" + message.getRecipientId() + ":" + 
+                   message.getTextContent() + ":" + message.getTimestamp().toLocalDate() + 
+                   message.getTimestamp().toLocalTime().getHour() + message.getTimestamp().toLocalTime().getMinute();
+        } else {
+            return message.getSenderId() + ":" + message.getRecipientId() + ":AUDIO:" + 
+                   message.getAudioContent().length + ":" + message.getTimestamp().toLocalDate() + 
+                   message.getTimestamp().toLocalTime().getHour() + message.getTimestamp().toLocalTime().getMinute();
         }
     }
 }
