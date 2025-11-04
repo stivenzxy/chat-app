@@ -157,8 +157,9 @@ public class TcpServerAdapter implements ServerControl, ConnectionListener {
     private String getUsernameForConnection(String connectionId) {
         ActiveUserManager activeUserManager = ActiveUserManager.getInstance();
 
-        return activeUserManager.getActiveUsers().entrySet().stream()
-                .filter(entry -> entry.getValue().getId().equals(connectionId))
+        return activeUserManager.getAllUserSessions().entrySet().stream()
+                .filter(entry -> entry.getValue().stream()
+                        .anyMatch(user -> user.getId().equals(connectionId)))
                 .map(Map.Entry::getKey)
                 .findFirst()
                 .orElse(null);

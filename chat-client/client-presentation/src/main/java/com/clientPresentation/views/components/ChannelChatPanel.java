@@ -232,6 +232,10 @@ public class ChannelChatPanel extends JPanel {
     public void receiveText(String sender, String text) { 
         messageService.saveChannelTextMessage(sender, channel.getId(), text);
         
+        if (sender.equals(selfUsername)) {
+            return;
+        }
+        
         if (historyLoaded) {
             append(sender, text, null);
         }
@@ -241,6 +245,10 @@ public class ChannelChatPanel extends JPanel {
         try { 
             byte[] data = java.util.Base64.getDecoder().decode(audioBase64); 
             messageService.saveChannelAudioMessage(sender, channel.getId(), data);
+            
+            if (sender.equals(selfUsername)) {
+                return;
+            }
             
             if (historyLoaded) {
                 append(sender, null, data);

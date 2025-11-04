@@ -135,6 +135,10 @@ public class TcpServer {
     public boolean sendMessageToUser(String username, String message, String senderInfo) {
         return messageBroadcaster.sendMessageToUser(username, message, senderInfo);
     }
+    
+    public boolean sendMessageToUserExceptSession(String username, String message, String excludeConnectionId, String senderInfo) {
+        return messageBroadcaster.sendMessageToUserExceptSession(username, message, excludeConnectionId, senderInfo);
+    }
 
     public void sendBroadcastMessage(String message) {
         if (messageBroadcaster != null) {

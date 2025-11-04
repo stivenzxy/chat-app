@@ -15,6 +15,11 @@ public class MessageDAO {
     private final ConnectionManager connectionManager = ConnectionManager.getInstance();
 
     public void saveMessage(MessageDTO message) {
+        if (messageExists(message)) {
+            logger.debug("Mensaje duplicado detectado, no se guardará: {} -> {}", message.getSenderId(), message.getRecipientId());
+            return;
+        }
+        
         String sql = "INSERT INTO messages (sender_id, recipient_id, content, message_type, audio_content, sent_at) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, message.getSenderId());
@@ -27,6 +32,43 @@ public class MessageDAO {
         } catch (SQLException e) {
             logger.error("Error al guardar el mensaje: {}", e.getMessage());
         }
+    }
+    
+    private boolean messageExists(MessageDTO message) {
+        String sql;
+        if (message.getMessageType() == MessageType.TEXT) {
+            sql = "SELECT COUNT(*) FROM messages WHERE sender_id = ? AND recipient_id = ? AND message_type = ? " +
+                  "AND content = ? AND ABS(DATEDIFF('SECOND', sent_at, ?)) <= 2";
+        } else {
+            sql = "SELECT COUNT(*) FROM messages WHERE sender_id = ? AND recipient_id = ? AND message_type = ? " +
+                  "AND length(audio_content) = ? AND ABS(DATEDIFF('SECOND', sent_at, ?)) <= 2";
+        }
+        
+        try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, message.getSenderId());
+            stmt.setString(2, message.getRecipientId());
+            stmt.setString(3, message.getMessageType().name());
+            
+            if (message.getMessageType() == MessageType.TEXT) {
+                stmt.setString(4, message.getTextContent());
+            } else {
+                stmt.setInt(4, message.getAudioContent() != null ? message.getAudioContent().length : 0);
+            }
+            stmt.setTimestamp(5, Timestamp.valueOf(message.getTimestamp()));
+            
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                int count = rs.getInt(1);
+                if (count > 0) {
+                    logger.debug("Mensaje duplicado encontrado: {} -> {} (count: {})", 
+                               message.getSenderId(), message.getRecipientId(), count);
+                }
+                return count > 0;
+            }
+        } catch (SQLException e) {
+            logger.error("Error al verificar existencia del mensaje: {}", e.getMessage(), e);
+        }
+        return false;
     }
 
     public List<MessageDTO> getChatHistory(String user1, String user2) {

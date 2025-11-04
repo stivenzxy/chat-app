@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
     private static final Logger logger = LoggerFactory.getLogger(SendPrivateAudioCommandAdapter.class);
@@ -36,13 +37,15 @@ public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
         }
 
         // Formato: SEND_PRIVATE_AUDIO|destinatario_username|audio_en_base64
-        String senderUserId = connectionContext.getId();
+        String senderConnectionId = connectionContext.getId();
         
         // Obtener username del usuario que envía el audio
-        ActiveUserManager aum = ActiveUserManager.getInstance();
-        String senderUsername = aum.getActiveUsers().entrySet().stream()
-            .filter(entry -> entry.getValue().getId().equals(senderUserId))
-            .map(entry -> entry.getKey())
+        com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
+        // Buscar el username en TODAS las sesiones activas
+        String senderUsername = aum.getAllUserSessions().entrySet().stream()
+            .filter(entry -> entry.getValue().stream()
+                .anyMatch(user -> user.getId().equals(senderConnectionId)))
+            .map(java.util.Map.Entry::getKey)
             .findFirst()
             .orElse(null);
             
@@ -94,6 +97,11 @@ public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
         boolean delivered = server.sendMessageToUser(recipientUsername, forwardMessage, senderInfo);
 
         if (delivered) {
+            // NUEVO: Sincronizar con las otras sesiones del remitente
+            // Usar formato especial para indicar que es un audio enviado por ellos
+            String echoAudio = parser.encode("ECHO_SENT_AUDIO", recipientUsername, audioBase64);
+            server.sendMessageToUserExceptSession(senderUsername, echoAudio, senderConnectionId, null);
+            
             return parser.encode("OK", "Audio enviado.");
         } else {
             return parser.encode("ERROR", "El usuario no está conectado o no existe.");

@@ -8,6 +8,7 @@ import com.serverInfrastructure.persistence.dao.MessageDAO;
 import com.serverInfrastructure.observers.ActiveUserManager;
 
 import java.util.List;
+import java.util.Map;
 
 public class SendPrivateMessageCommandAdapter implements ProtocolCommandAdapter {
 
@@ -30,12 +31,14 @@ public class SendPrivateMessageCommandAdapter implements ProtocolCommandAdapter 
         }
 
         // SEND_PRIVATE_MESSAGE|destinatario_username|contenido_mensaje
-        String senderUserId = connectionContext.getId();
+        String senderConnectionId = connectionContext.getId();
 
-        ActiveUserManager aum = ActiveUserManager.getInstance();
-        String senderUsername = aum.getActiveUsers().entrySet().stream()
-            .filter(entry -> entry.getValue().getId().equals(senderUserId))
-            .map(entry -> entry.getKey())
+        com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
+        // Buscar el username en TODAS las sesiones activas
+        String senderUsername = aum.getAllUserSessions().entrySet().stream()
+            .filter(entry -> entry.getValue().stream()
+                .anyMatch(user -> user.getId().equals(senderConnectionId)))
+            .map(Map.Entry::getKey)
             .findFirst()
             .orElse(null);
             
@@ -72,6 +75,12 @@ public class SendPrivateMessageCommandAdapter implements ProtocolCommandAdapter 
         boolean delivered = server.sendMessageToUser(recipientUsername, forwardMessage, senderInfo);
 
         if (delivered) {
+            // NUEVO: Sincronizar con las otras sesiones del remitente
+            // Usar un formato especial: ECHO_SENT_MESSAGE para indicar que es un mensaje enviado por ellos
+            // Formato: ECHO_SENT_MESSAGE|destinatario|contenido
+            String echoMessage = parser.encode("ECHO_SENT_MESSAGE", recipientUsername, content);
+            server.sendMessageToUserExceptSession(senderUsername, echoMessage, senderConnectionId, null);
+            
             return parser.encode("OK", "Mensaje enviado.");
         } else {
             return parser.encode("ERROR", "El usuario no está conectado o no existe.");

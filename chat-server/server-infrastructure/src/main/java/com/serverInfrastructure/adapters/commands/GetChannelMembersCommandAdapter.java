@@ -29,7 +29,11 @@ public class GetChannelMembersCommandAdapter implements ProtocolCommandAdapter {
             }
 
             int channelId = Integer.parseInt(parts.get(1));
-            String requesterId = connectionContext.getId();
+            String requesterId = ActiveUserManager.getInstance().getUserIdFromConnection(connectionContext.getId());
+            
+            if (requesterId == null) {
+                return parser.encode("ERROR", "Usuario no autenticado");
+            }
 
             boolean isMember = channelRepository.isMember(channelId, requesterId);
             

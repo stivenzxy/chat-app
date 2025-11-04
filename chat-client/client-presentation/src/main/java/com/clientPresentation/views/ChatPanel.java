@@ -239,21 +239,18 @@ public class ChatPanel extends JPanel {
                 }
             }
             
-            // Solo agregar si no existe
             if (!userExists) {
                 userListModel.addElement(user);
             }
         });
     }
 
-    public void removeUserFromList(String userId) {
+    public void removeUserFromList(String username) {
         SwingUtilities.invokeLater(() -> {
-            String usernameOfDisconnectedUser = null;
             int userIndex = -1;
 
             for (int i = 0; i < userListModel.getSize(); i++) {
-                if (userListModel.getElementAt(i).getId().equals(userId)) {
-                    usernameOfDisconnectedUser = userListModel.getElementAt(i).getUsername();
+                if (userListModel.getElementAt(i).getUsername().equals(username)) {
                     userIndex = i;
                     break;
                 }
@@ -261,10 +258,7 @@ public class ChatPanel extends JPanel {
 
             if (userIndex != -1) {
                 userListModel.removeElementAt(userIndex);
-            }
-
-            if (usernameOfDisconnectedUser != null) {
-                closePrivateChatTab(usernameOfDisconnectedUser);
+                closePrivateChatTab(username);
             }
         });
     }
@@ -323,5 +317,26 @@ public class ChatPanel extends JPanel {
 
         MessageDTO audioMessage = new MessageDTO(sender, selfUsername, audioData);
         chatPanel.receiveMessage(audioMessage);
+    }
+    
+    public void receiveEchoMessage(String recipient, String content) {
+        if (!openChats.containsKey(recipient)) {
+            openPrivateChat(recipient);
+        }
+        PrivateChatPanel chatPanel = openChats.get(recipient);
+
+        MessageDTO message = new MessageDTO(selfUsername, recipient, content);
+        chatPanel.displayEchoMessage(message);
+    }
+    
+    public void receiveEchoAudioMessage(String recipient, byte[] audioData) {
+        if (!openChats.containsKey(recipient)) {
+            openPrivateChat(recipient);
+        }
+
+        PrivateChatPanel chatPanel = openChats.get(recipient);
+
+        MessageDTO audioMessage = new MessageDTO(selfUsername, recipient, audioData);
+        chatPanel.displayEchoMessage(audioMessage);
     }
 }

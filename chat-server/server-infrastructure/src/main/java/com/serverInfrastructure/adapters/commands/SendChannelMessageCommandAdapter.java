@@ -28,14 +28,24 @@ public class SendChannelMessageCommandAdapter implements ProtocolCommandAdapter 
     public String execute(List<String> parts, ProtocolParser parser, ClientConnection connectionContext) {
         // SEND_CHANNEL_MESSAGE|channelId|content
         if (parts.size() < 3) return parser.encode("ERROR", "Argumentos insuficientes");
-        String senderUserId = connectionContext.getId();
+        
+        com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
+        String senderUserId = aum.getUserIdFromConnection(connectionContext.getId());
+        
+        if (senderUserId == null) {
+            return parser.encode("ERROR", "Usuario no autenticado");
+        }
+        
         Integer channelId = Integer.valueOf(parts.get(1));
         String content = parts.get(2);
 
-        com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
-        String senderUsername = aum.getActiveUsers().entrySet().stream()
-            .filter(entry -> entry.getValue().getId().equals(senderUserId))
-            .map(Map.Entry::getKey)
+        String senderUsername = aum.getAllUserSessions().entrySet().stream()
+            .filter(entry -> entry.getValue().stream()
+                .anyMatch(u -> {
+                    String realUserId = aum.getUserIdFromConnection(u.getId());
+                    return realUserId != null && realUserId.equals(senderUserId);
+                }))
+            .map(java.util.Map.Entry::getKey)
             .findFirst()
             .orElse(null);
             
@@ -55,11 +65,10 @@ public class SendChannelMessageCommandAdapter implements ProtocolCommandAdapter 
         
         String forward = parser.encode("RECEIVE_CHANNEL_MESSAGE", String.valueOf(channelId), senderUsername, content);
 
-        memberUsernames.stream()
-            .filter(u -> !u.equals(senderUsername)) // Excluir al remitente
-            .forEach(u -> {
-                boolean sent = handler.getServer().sendMessageToUser(u, forward, senderUsername);
-            });
+        // Enviar a todos los miembros del canal
+        for (String username : memberUsernames) {
+            handler.getServer().sendMessageToUser(username, forward, senderUsername);
+        }
         
         return parser.encode("OK", "Mensaje enviado");
     }

@@ -22,28 +22,81 @@ public class MessageBroadcaster {
     }
 
     public boolean sendMessageToUser(String username, String message, String senderInfo) {
-        ClientConnection connection = connectionPool.findConnectionByUsername(username);
-        if (connection != null) {
+        // Obtener TODAS las conexiones activas del usuario (múltiples sesiones)
+        List<ClientConnection> connections = connectionPool.findAllConnectionsByUsername(username);
+        
+        if (connections.isEmpty()) {
+            return false;
+        }
+        
+        boolean atLeastOneSent = false;
+        int successCount = 0;
+        
+        // Enviar el mensaje a TODAS las sesiones activas del usuario
+        for (ClientConnection connection : connections) {
             try {
                 if (connection.getSocket() != null && !connection.getSocket().isClosed()) {
                     PrintWriter out = new PrintWriter(connection.getSocket().getOutputStream(), true);
                     out.println(message);
-
-                    if (senderInfo != null) {
-                        String messageContent = extractMessageContent(message);
-                        logger.info("Cliente [{}] envió \"{}\" a cliente [{}]",
-                                senderInfo, messageContent, username);
-                    } else {
-                        String messageContent = extractMessageContent(message);
-                        logger.info("Mensaje directo enviado a [{}]: {}", username, messageContent);
-                    }
-                    return true;
+                    atLeastOneSent = true;
+                    successCount++;
                 }
             } catch (IOException e) {
-                logger.warn("[{}] Error al enviar mensaje directo: {}", username, e.getMessage());
+                logger.warn("[{}] Error al enviar mensaje a sesión [{}]: {}", 
+                        username, connection.getId(), e.getMessage());
             }
         }
-        return false;
+        
+        // Log del resultado
+        if (atLeastOneSent) {
+            String messageContent = extractMessageContent(message);
+            if (senderInfo != null) {
+                logger.info("Cliente [{}] envió \"{}\" a [{}] ({}/{} sesiones alcanzadas)",
+                        senderInfo, messageContent, username, successCount, connections.size());
+            } else {
+                logger.info("Mensaje directo enviado a [{}] ({}/{} sesiones alcanzadas): {}", 
+                        username, successCount, connections.size(), messageContent);
+            }
+        }
+        
+        return atLeastOneSent;
+    }
+    
+    // Nuevo método: enviar a todas las sesiones del usuario EXCEPTO una sesión específica
+    public boolean sendMessageToUserExceptSession(String username, String message, String excludeConnectionId, String senderInfo) {
+        List<ClientConnection> connections = connectionPool.findAllConnectionsByUsername(username);
+        
+        if (connections.isEmpty()) {
+            return false;
+        }
+        
+        boolean atLeastOneSent = false;
+        int successCount = 0;
+        
+        // Enviar solo a las sesiones que NO sean la excluida
+        for (ClientConnection connection : connections) {
+            if (!connection.getId().equals(excludeConnectionId)) {
+                try {
+                    if (connection.getSocket() != null && !connection.getSocket().isClosed()) {
+                        PrintWriter out = new PrintWriter(connection.getSocket().getOutputStream(), true);
+                        out.println(message);
+                        atLeastOneSent = true;
+                        successCount++;
+                    }
+                } catch (IOException e) {
+                    logger.warn("[{}] Error al enviar mensaje a sesión [{}]: {}", 
+                            username, connection.getId(), e.getMessage());
+                }
+            }
+        }
+        
+        if (atLeastOneSent) {
+            String messageContent = extractMessageContent(message);
+            logger.info("Sincronizando mensaje a otras sesiones de [{}] ({}/{} sesiones)", 
+                    username, successCount, connections.size() - 1);
+        }
+        
+        return atLeastOneSent;
     }
 
     public void broadcastMessage(String message, String excludeUsername) {

@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 public class ChannelInviteDTO implements Serializable {
-    private final Integer inviteId; // null if not persisted
+    private final Integer inviteId;
     private final Integer channelId;
     private final String inviterUserId;
     private final String inviterUsername;

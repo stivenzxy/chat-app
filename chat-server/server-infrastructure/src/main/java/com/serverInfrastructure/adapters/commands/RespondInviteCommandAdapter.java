@@ -31,15 +31,23 @@ public class RespondInviteCommandAdapter implements ProtocolCommandAdapter {
         Integer inviteId = Integer.valueOf(parts.get(1));
         ChannelInvite.Status status = ChannelInvite.Status.valueOf(parts.get(2));
         Integer channelId = Integer.valueOf(parts.get(3));
-        String userId = connectionContext.getId();
+        
+        String userId = ActiveUserManager.getInstance().getUserIdFromConnection(connectionContext.getId());
+        if (userId == null) {
+            return parser.encode("ERROR", "Usuario no autenticado");
+        }
 
 
         inviteRepository.updateStatus(inviteId, status);
         if (status == ChannelInvite.Status.ACCEPTED) {
             channelRepository.addMember(channelId, userId);
 
-            String newMemberUsername = ActiveUserManager.getInstance().getActiveUsers().entrySet().stream()
-                    .filter(entry -> entry.getValue().getId().equals(userId))
+            String newMemberUsername = ActiveUserManager.getInstance().getAllUserSessions().entrySet().stream()
+                    .filter(entry -> entry.getValue().stream()
+                        .anyMatch(u -> {
+                            String realUserId = ActiveUserManager.getInstance().getUserIdFromConnection(u.getId());
+                            return realUserId != null && realUserId.equals(userId);
+                        }))
                     .map(java.util.Map.Entry::getKey)
                     .findFirst()
                     .orElse(null);
