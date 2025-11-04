@@ -9,6 +9,7 @@ import com.clientPresentation.views.components.BaseChatPanel;
 import com.clientPresentation.views.components.atoms.ChatMessagePanel;
 
 import javax.swing.*;
+import java.awt.Component;
 import java.util.List;
 
 public class PrivateChatPanel extends BaseChatPanel {
@@ -75,10 +76,15 @@ public class PrivateChatPanel extends BaseChatPanel {
     }
 
     @Override
-    protected void onTranscribeAudio(byte[] audioData) {
+    protected void onTranscribeAudioAt(ChatMessagePanel sourcePanel, byte[] audioData) {
+        if (hasTranscriptionAfterPanel(sourcePanel)) {
+            return;
+        }
+        
         MessageDTO transcribingMessage = new MessageDTO("Sistema", "", "⏳ Transcribiendo audio...");
         ChatMessagePanel tempPanel = new ChatMessagePanel(transcribingMessage, audioService);
-        chatHistoryArea.add(tempPanel);
+        int insertIndex = Math.min(chatHistoryArea.getComponentZOrder(sourcePanel) + 1, chatHistoryArea.getComponentCount());
+        chatHistoryArea.add(tempPanel, insertIndex);
         chatHistoryArea.revalidate();
         chatHistoryArea.repaint();
         
@@ -97,11 +103,14 @@ public class PrivateChatPanel extends BaseChatPanel {
                 try {
                     String transcribedText = get();
                     if (transcribedText != null && !transcribedText.trim().isEmpty()) {
-                        appendMessage("[TRANSCRIPCIÓN]", transcribedText, null);
-                        
-                        MessageDTO transcriptionMessage = new MessageDTO(selfUsername, otherUsername, "[TRANSCRIPCIÓN] " + transcribedText);
-                        messageDAO.saveMessage(transcriptionMessage);
-                        sendMessageCommand.execute(transcriptionMessage);
+                        if (!hasTranscriptionAfterPanel(sourcePanel)) {
+                            MessageDTO transcriptionMessage = new MessageDTO("[TRANSCRIPCIÓN]", otherUsername, transcribedText);
+                            ChatMessagePanel transcriptionPanel = new ChatMessagePanel(transcriptionMessage, audioService);
+                            int idx = Math.min(chatHistoryArea.getComponentZOrder(sourcePanel) + 1, chatHistoryArea.getComponentCount());
+                            chatHistoryArea.add(transcriptionPanel, idx);
+                            chatHistoryArea.revalidate();
+                            chatHistoryArea.repaint();
+                        }
                     } else {
                         JOptionPane.showMessageDialog(PrivateChatPanel.this,
                             "No se pudo transcribir el audio. Verifique que el servidor Vosk esté ejecutándose.",
@@ -116,6 +125,26 @@ public class PrivateChatPanel extends BaseChatPanel {
                 }
             }
         }.execute();
+    }
+    
+    private boolean hasTranscriptionAfterPanel(ChatMessagePanel audioPanel) {
+        int audioPanelIndex = chatHistoryArea.getComponentZOrder(audioPanel);
+        if (audioPanelIndex < 0) {
+            return false;
+        }
+        
+        int maxSearch = Math.min(audioPanelIndex + 3, chatHistoryArea.getComponentCount());
+        for (int i = audioPanelIndex + 1; i < maxSearch; i++) {
+            Component comp = chatHistoryArea.getComponent(i);
+            if (comp instanceof ChatMessagePanel) {
+                ChatMessagePanel panel = (ChatMessagePanel) comp;
+                if (panel.isTranscription()) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
 
 

@@ -6,15 +6,11 @@ import com.serverInfrastructure.adapters.ProtocolCommandAdapter;
 import com.serverInfrastructure.network.ClientConnection;
 import com.serverInfrastructure.network.TcpServer;
 import com.serverInfrastructure.services.AudioTranscriptionService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Base64;
 import java.util.List;
 
 public class TranscribeAudioCommandAdapter implements ProtocolCommandAdapter {
-    private static final Logger logger = LoggerFactory.getLogger(TranscribeAudioCommandAdapter.class);
-
     private final TcpServer server;
     private final AudioTranscriptionService audioTranscriptionService;
     private final MessageDAO messageDAO = new MessageDAO();
@@ -51,17 +47,28 @@ public class TranscribeAudioCommandAdapter implements ProtocolCommandAdapter {
 
         try {
             byte[] audioData = Base64.getDecoder().decode(audioBase64);
+            
+            int messageId = messageDAO.findAudioMessageByContent(senderUserId, audioData);
+            
+            if (messageId > 0) {
+                String existingTranscription = messageDAO.getTranscription(messageId);
+                if (existingTranscription != null && !existingTranscription.trim().isEmpty()) {
+                    return parser.encode("TRANSCRIPTION_RESULT", existingTranscription);
+                }
+            }
+            
             String transcribedText = audioTranscriptionService.transcribeAudio(audioData);
 
             if (transcribedText != null && !transcribedText.trim().isEmpty()) {
-                messageDAO.savePrivateTextMessage("System-Transcription", senderUserId, transcribedText);
+                if (messageId > 0) {
+                    messageDAO.saveTranscription(messageId, "WAV", transcribedText);
+                }
 
                 return parser.encode("TRANSCRIPTION_RESULT", transcribedText);
             } else {
                 return parser.encode("ERROR", "No se pudo transcribir...");
             }
         } catch (Exception e) {
-            logger.error("Error transcribiendo audio", e);
             return parser.encode("ERROR", "Error interno durante la transcripción");
         }
     }

@@ -9,15 +9,16 @@ import javax.swing.*;
 import javax.swing.text.*;
 import javax.swing.text.html.*;
 import java.awt.*;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 public class ChatMessagePanel extends JPanel {
+    private final MessageDTO message;
 
     public ChatMessagePanel(MessageDTO message, AudioService audioService) {
         this(message, audioService, null);
     }
 
-    public ChatMessagePanel(MessageDTO message, AudioService audioService, Consumer<byte[]> onTranscribeRequest) {
+    public ChatMessagePanel(MessageDTO message, AudioService audioService, BiConsumer<ChatMessagePanel, byte[]> onTranscribeRequest) {
         super(new BorderLayout());
         setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -27,6 +28,8 @@ public class ChatMessagePanel extends JPanel {
                 BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(220, 220, 220)),
                 BorderFactory.createEmptyBorder(5, 10, 5, 10)
         ));
+
+        this.message = message;
 
         final String userColor = message.getSenderId().equals("Yo") ? "#007BFF" : "#28A745";
 
@@ -65,7 +68,7 @@ public class ChatMessagePanel extends JPanel {
         }
     }
 
-    private JPanel createAudioMessagePanel(String sender, String userColor, byte[] audioData, AudioService audioService, Consumer<byte[]> onTranscribeRequest) {
+    private JPanel createAudioMessagePanel(String sender, String userColor, byte[] audioData, AudioService audioService, BiConsumer<ChatMessagePanel, byte[]> onTranscribeRequest) {
         JPanel audioPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         audioPanel.setOpaque(false);
         String htmlContent = String.format(
@@ -131,7 +134,7 @@ public class ChatMessagePanel extends JPanel {
                 new SwingWorker<Void, Void>() {
                     @Override
                     protected Void doInBackground() throws Exception {
-                        onTranscribeRequest.accept(audioData);
+                        onTranscribeRequest.accept(ChatMessagePanel.this, audioData);
                         return null;
                     }
 
@@ -227,5 +230,16 @@ public class ChatMessagePanel extends JPanel {
                   .replace(">", "&gt;")
                   .replace("\"", "&quot;")
                   .replace("'", "&#39;");
+    }
+    
+    public MessageDTO getMessage() {
+        return message;
+    }
+    
+    public boolean isTranscription() {
+        return message != null && 
+               message.getMessageType() == MessageType.TEXT &&
+               message.getSenderId() != null && 
+               message.getSenderId().equals("[TRANSCRIPCIÓN]");
     }
 }

@@ -4,12 +4,21 @@ import com.chatCommon.protocol.ProtocolParser;
 import com.serverInfrastructure.adapters.ProtocolCommandAdapter;
 import com.serverInfrastructure.network.ClientConnection;
 import com.serverInfrastructure.network.TcpServer;
+import com.serverInfrastructure.persistence.dao.MessageDAO;
+import com.serverInfrastructure.observers.ActiveUserManager;
+import com.serverInfrastructure.services.AudioTranscriptionService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.Base64;
 import java.util.List;
 
 public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
+    private static final Logger logger = LoggerFactory.getLogger(SendPrivateAudioCommandAdapter.class);
 
     private final TcpServer server;
+    private final MessageDAO messageDAO = new MessageDAO();
+    private final AudioTranscriptionService audioTranscriptionService = new AudioTranscriptionService();
 
     public SendPrivateAudioCommandAdapter(TcpServer server) {
         this.server = server;
@@ -30,7 +39,7 @@ public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
         String senderUserId = connectionContext.getId();
         
         // Obtener username del usuario que envía el audio
-        com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
+        ActiveUserManager aum = ActiveUserManager.getInstance();
         String senderUsername = aum.getActiveUsers().entrySet().stream()
             .filter(entry -> entry.getValue().getId().equals(senderUserId))
             .map(entry -> entry.getKey())
@@ -43,6 +52,40 @@ public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
         
         String recipientUsername = parts.get(1);
         String audioBase64 = parts.get(2);
+        
+        String recipientUserId = aum.getActiveUsers().entrySet().stream()
+            .filter(entry -> entry.getKey().equals(recipientUsername))
+            .map(entry -> entry.getValue().getId())
+            .findFirst()
+            .orElse(null);
+        
+        if (recipientUserId == null) {
+            return parser.encode("ERROR", "El usuario no está conectado o no existe.");
+        }
+
+        int messageId = -1;
+        byte[] audioData = null;
+        try {
+            audioData = Base64.getDecoder().decode(audioBase64);
+            messageId = messageDAO.savePrivateAudioMessage(senderUserId, recipientUserId, audioData);
+            
+            final int finalMessageId = messageId;
+            final byte[] finalAudioData = audioData;
+            if (finalMessageId > 0 && finalAudioData != null) {
+                new Thread(() -> {
+                    try {
+                        String transcribedText = audioTranscriptionService.transcribeAudio(finalAudioData);
+                        
+                        if (transcribedText != null && !transcribedText.trim().isEmpty()) {
+                            messageDAO.saveTranscription(finalMessageId, "WAV", transcribedText);
+                        }
+                    } catch (Exception e) {
+                    }
+                }).start();
+            }
+        } catch (Exception e) {
+            logger.error("Error al guardar mensaje de audio: {}", e.getMessage());
+        }
 
         String forwardMessage = parser.encode("RECEIVE_PRIVATE_AUDIO", senderUsername, audioBase64);
 

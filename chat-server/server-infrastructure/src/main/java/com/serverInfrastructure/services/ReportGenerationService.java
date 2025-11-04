@@ -126,16 +126,28 @@ public class ReportGenerationService {
 
             addTitle(document, "Informe de Transcripciones de Audio");
 
-            Table table = new Table(UnitValue.createPercentArray(new float[]{1, 3}));
+            Table table = new Table(UnitValue.createPercentArray(new float[]{1.5f, 1.5f, 3}));
             table.setWidth(UnitValue.createPercentValue(100));
             table.addHeaderCell("Autor y Fecha");
+            table.addHeaderCell("Origen de Comunicación");
             table.addHeaderCell("Texto Transcrito");
 
             if (transcriptions.isEmpty()) {
                 document.add(new Paragraph("No hay transcripciones guardadas en la base de datos."));
             } else {
                 transcriptions.forEach((key, value) -> {
-                    table.addCell(key); // "Usuario - Fecha"
+                    String comunicacion = "";
+                    String autorYFecha = key;
+                    
+                    int comunicacionStart = key.lastIndexOf("[");
+                    int comunicacionEnd = key.lastIndexOf("]");
+                    if (comunicacionStart != -1 && comunicacionEnd != -1 && comunicacionEnd > comunicacionStart) {
+                        comunicacion = key.substring(comunicacionStart + 1, comunicacionEnd);
+                        autorYFecha = key.substring(0, comunicacionStart).trim();
+                    }
+                    
+                    table.addCell(autorYFecha);
+                    table.addCell(comunicacion);
                     table.addCell(value);
                 });
                 document.add(table);
