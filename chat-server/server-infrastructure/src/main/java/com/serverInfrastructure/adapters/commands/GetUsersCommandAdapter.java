@@ -2,17 +2,23 @@ package com.serverInfrastructure.adapters.commands;
 
 import com.chatCommon.protocol.ProtocolParser;
 import com.serverInfrastructure.adapters.ProtocolCommandAdapter;
+import com.serverInfrastructure.adapters.ServerNetworkAdapter;
 import com.serverInfrastructure.network.ClientConnection;
 import com.serverInfrastructure.observers.ActiveUserManager;
-import java.util.Base64; // <<< AÑADIR IMPORT
+import java.util.Base64;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class GetUsersCommandAdapter implements ProtocolCommandAdapter {
 
     private final ActiveUserManager activeUserManager = ActiveUserManager.getInstance();
+    private final ServerNetworkAdapter serverNetworkAdapter;
 
-    public GetUsersCommandAdapter() {}
+    public GetUsersCommandAdapter(ServerNetworkAdapter serverNetworkAdapter) {
+        this.serverNetworkAdapter = serverNetworkAdapter;
+    }
 
     @Override
     public String getCommandName() {
@@ -30,20 +36,50 @@ public class GetUsersCommandAdapter implements ProtocolCommandAdapter {
                     .findFirst()
                     .orElse(null);
 
-            // --- INICIO DE LA MODIFICACIÓN ---
-            // Ahora el payload será: id,username,photo_base64
-            String usersPayload = activeUserManager.getActiveUsers().values().stream()
+            // Recolectar usuarios locales
+            List<String> allUsersEntries = new ArrayList<>();
+            
+            // Obtener lista de usernames locales para filtrado posterior
+            java.util.Set<String> localUsernames = activeUserManager.getActiveUsers().values().stream()
+                    .map(u -> u.getUsername().value())
+                    .collect(java.util.stream.Collectors.toSet());
+            
+            // 1. Usuarios locales (con datos completos)
+            activeUserManager.getActiveUsers().values().stream()
                     .filter(user -> requesterUsername == null || !user.getUsername().value().equals(requesterUsername))
-                    .map(u -> {
+                    .forEach(u -> {
                         String photoBase64 = "";
                         if (u.getPhotoData() != null && u.getPhotoData().length > 0) {
                             photoBase64 = Base64.getEncoder().encodeToString(u.getPhotoData());
                         }
-                        // Unimos las 3 partes
-                        return u.getId() + "," + u.getUsername().value() + "," + photoBase64;
-                    })
-                    .collect(Collectors.joining(";"));
-            // --- FIN DE LA MODIFICACIÓN ---
+                        // Formato: id,username,photo_base64
+                        allUsersEntries.add(u.getId() + "," + u.getUsername().value() + "," + photoBase64);
+                    });
+            
+            // 2. Usuarios remotos de servidores P2P conectados (con prefijo del servidor)
+            // SOLO si NO están conectados localmente
+            if (serverNetworkAdapter != null) {
+                Map<String, List<String>> remoteUsers = serverNetworkAdapter.getAllUsersAcrossPeers();
+                for (Map.Entry<String, List<String>> entry : remoteUsers.entrySet()) {
+                    String serverId = entry.getKey();
+                    List<String> usernames = entry.getValue();
+                    
+                    // Crear prefijo legible para el servidor (solo IP sin puerto)
+                    String serverPrefix = "Servidor " + serverId.split(":")[0] + " - ";
+                    
+                    for (String username : usernames) {
+                        // FILTRAR: Solo agregar si NO está conectado localmente
+                        if (!localUsernames.contains(username)) {
+                            // Formato: serverId-username,Servidor IP - username,""
+                            String uniqueId = serverId + "-" + username;
+                            String displayName = serverPrefix + username;
+                            allUsersEntries.add(uniqueId + "," + displayName + ",");
+                        }
+                    }
+                }
+            }
+            
+            String usersPayload = String.join(";", allUsersEntries);
 
             return parser.encode("OK", "Usuarios obtenidos", usersPayload);
         } catch (Exception e) {

@@ -22,7 +22,7 @@ public class TcpServer {
     private static final Logger logger = LoggerFactory.getLogger(TcpServer.class);
     private static final AtomicInteger connectionCounter = new AtomicInteger(0);
 
-    private final int port;
+    private final int serverPort;
     private final CommandHandler commandHandler;
     private final ProtocolParser protocolParser;
     private volatile ServerSocket serverSocket;
@@ -34,14 +34,14 @@ public class TcpServer {
 
     private final List<ConnectionListener> listeners = new CopyOnWriteArrayList<>();
 
-    public TcpServer(int port, CommandHandler commandHandler) {
-        this.port = port;
+    public TcpServer(CommandHandler commandHandler) {
         this.commandHandler = commandHandler;
         this.commandHandler.setServer(this);
         this.protocolParser = new ProtocolParser('|', '\\');
 
         AppProperties props = new AppProperties("server-configuration");
         int maxConnections = props.getInt("MAX_CONNECTIONS");
+        this.serverPort = props.getInt("SERVER_PORT");
         this.connectionPool = new ConnectionPool(maxConnections);
 
         this.messageBroadcaster = new MessageBroadcaster(connectionPool, protocolParser);
@@ -53,8 +53,8 @@ public class TcpServer {
 
     public void start() {
         try {
-            this.serverSocket = new ServerSocket(port);
-            logger.info("Servidor TCP iniciado y escuchando en el puerto {}", port);
+            this.serverSocket = new ServerSocket(serverPort);
+            logger.info("Servidor TCP iniciado y escuchando en el puerto {}", serverPort);
 
             while (!serverSocket.isClosed()) {
                 acceptNewConnection();
@@ -67,24 +67,29 @@ public class TcpServer {
         }
     }
 
-    private void acceptNewConnection() throws IOException {
-        Socket socket = serverSocket.accept();
-        ClientConnection connection;
-
+    private void acceptNewConnection() {
         try {
-            connection = connectionPool.acquireConnection(socket);
-            connection.setId("cliente-" + connectionCounter.incrementAndGet());
+            Socket socket = serverSocket.accept();
+            ClientConnection connection;
 
-            fireClientConnected(connection);
+            try {
+                connection = connectionPool.acquireConnection(socket);
+                connection.setId("cliente-" + connectionCounter.incrementAndGet());
 
-            ClientHandler clientHandler = new ClientHandler(
-                connection, commandHandler, protocolParser, connectionPool, listeners);
-            Thread clientThread = new Thread(clientHandler);
-            clientThread.setName(connection.getId());
-            clientThread.start();
+                fireClientConnected(connection);
 
-        } catch (RuntimeException exception) {
-            handleMaxConnectionsReached(socket);
+                ClientHandler clientHandler = new ClientHandler(
+                        connection, commandHandler, protocolParser, connectionPool, listeners);
+                Thread clientThread = new Thread(clientHandler);
+                clientThread.setName(connection.getId());
+                clientThread.start();
+
+            } catch (RuntimeException exception) {
+                handleMaxConnectionsReached(socket);
+            }
+
+        } catch (IOException e) {
+            logger.error("Error al iniciar el servidor: {}", e.getMessage());
         }
     }
 
@@ -94,11 +99,13 @@ public class TcpServer {
         try (PrintWriter tempOut = new PrintWriter(socket.getOutputStream(), true)) {
             String rejectMessage = protocolParser.encode("DISCONNECT", "Servidor a máxima capacidad. Intente más tarde.");
             tempOut.println(rejectMessage);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         try {
             socket.close();
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     private void handleSocketException(SocketException exception) {
@@ -126,6 +133,8 @@ public class TcpServer {
         return connectionPool != null ? connectionPool.getInUseCount() : 0;
     }
 
+    public int getServerPortNumber() {return this.serverPort; }
+
     public void disconnectClient(String clientId) {
         if (connectionPool != null) {
             messageBroadcaster.notifyClientDisconnection(clientId);
@@ -135,9 +144,9 @@ public class TcpServer {
     public boolean sendMessageToUser(String username, String message, String senderInfo) {
         return messageBroadcaster.sendMessageToUser(username, message, senderInfo);
     }
-    
-    public boolean sendMessageToUserExceptSession(String username, String message, String excludeConnectionId, String senderInfo) {
-        return messageBroadcaster.sendMessageToUserExceptSession(username, message, excludeConnectionId, senderInfo);
+
+    public void sendMessageToUserExceptSession(String username, String message, String excludeConnectionId, String senderInfo) {
+        messageBroadcaster.sendMessageToUserExceptSession(username, message, excludeConnectionId, senderInfo);
     }
 
     public void sendBroadcastMessage(String message) {
@@ -149,7 +158,6 @@ public class TcpServer {
     public void fireClientIdentityUpdatedPublic(ClientConnection connection) {
         fireClientIdentityUpdated(connection);
     }
-
 
     private void fireClientConnected(ClientConnection connection) {
         for (ConnectionListener listener : listeners) {

@@ -43,7 +43,7 @@ public class ConnectionPanel extends JPanel {
 
         ipField = new JTextField("localhost", 15);
         UiBuilder.styleField(ipField, roundedBorder);
-        portField = new JTextField("12345", 15);
+        portField = new JTextField("9090", 15);
         UiBuilder.styleField(portField, roundedBorder);
         connectButton = new JButton("Conectar");
         UiBuilder.styleButton(connectButton, new Color(220, 38, 38));

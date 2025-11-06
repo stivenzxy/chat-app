@@ -4,6 +4,7 @@ import com.chatCommon.viewResources.UiBuilder;
 import com.serverApplication.dto.ConnectedClientInfo;
 import com.serverApplication.ports.ServerControl;
 import com.serverApplication.ports.ClientConnectionObserver;
+import com.serverPresentation.factories.PresentationFactory;
 import com.serverPresentation.views.models.ConnectionTableModel;
 import com.serverInfrastructure.observers.ActiveUserManager;
 import com.serverInfrastructure.observers.ActiveUserObserver;
@@ -17,10 +18,10 @@ import java.net.UnknownHostException;
 import java.util.List;
 
 public class ConnectionPanel extends JPanel implements ClientConnectionObserver, ActiveUserObserver {
-    private JTextField portField;
     private JButton toggleServerButton;
     private JLabel statusLabel;
     private JLabel ipLabel;
+    private JLabel portLabel;
     private JLabel connectionPoolLabel;
     private JTable connectionsTable;
     private ConnectionTableModel tableModel;
@@ -28,15 +29,18 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver,
     private ServerNetworkPanel serverNetworkPanel;
 
     private final ServerControl serverControl;
+    private final PresentationFactory factory;
 
-    public ConnectionPanel(ServerControl serverControl) {
+    public ConnectionPanel(ServerControl serverControl, PresentationFactory factory) {
         this.serverControl = serverControl;
+        this.factory = factory;
         this.serverControl.addConnectionObserver(this);
         
         ActiveUserManager.getInstance().addObserver(this);
         
         initComponents();
         loadServerIp();
+        loadServerPort();
     }
 
     private void initComponents() {
@@ -51,20 +55,17 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver,
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 5));
         panel.setBorder(BorderFactory.createTitledBorder("Control del Servidor"));
 
-        Border roundedBorder = UiBuilder.createRoundedBorder();
-
         ipLabel = new JLabel("IP del Servidor: Cargando...");
         ipLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
         panel.add(ipLabel);
 
+        portLabel = new JLabel("Puerto del Servidor: Cargando...");
+        portLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
+        panel.add(portLabel);
+
         JSeparator separator = new JSeparator(SwingConstants.VERTICAL);
         separator.setPreferredSize(new Dimension(2, 20));
         panel.add(separator);
-
-        panel.add(new JLabel("Puerto:"));
-        portField = new JTextField("12345", 8);
-        UiBuilder.styleField(portField, roundedBorder);
-        panel.add(portField);
 
         toggleServerButton = new JButton("Iniciar Servidor");
         UiBuilder.styleButton(toggleServerButton, new Color(46, 153, 85));
@@ -87,7 +88,7 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver,
         broadcastPanel = new BroadcastPanel(serverControl);
         tabbedPane.addTab("Broadcast", broadcastPanel);
         
-        serverNetworkPanel = new ServerNetworkPanel();
+        serverNetworkPanel = factory.createServerNetworkPanel();
         tabbedPane.addTab("Red de Servidores", serverNetworkPanel);
         
         return tabbedPane;
@@ -140,10 +141,13 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver,
 
         if (!isServerRunning) {
             try {
-                int port = Integer.parseInt(portField.getText().trim());
-                serverControl.startServer(port);
-
+                serverControl.startServer();
+                int port = serverControl.getServerPortNumber();
                 updateUI(true, port);
+
+                if (serverNetworkPanel != null) {
+                    serverNetworkPanel.updatePeerServerStatus(true);
+                }
             } catch (NumberFormatException ex) {
                 showError("El puerto debe ser un número válido.");
             } catch (Exception ex) {
@@ -152,6 +156,10 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver,
         } else {
             serverControl.stopServer();
             updateUI(false, 0);
+
+            if (serverNetworkPanel != null) {
+                serverNetworkPanel.updatePeerServerStatus(false);
+            }
         }
     }
 
@@ -217,14 +225,12 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver,
             statusLabel.setForeground(new Color(46, 153, 85));
             toggleServerButton.setText("Detener Servidor");
             UiBuilder.styleButton(toggleServerButton, new Color(220, 38, 38));
-            portField.setEnabled(false);
             updateConnectionPoolLabel();
         } else {
             statusLabel.setText("Estado: Detenido");
             statusLabel.setForeground(Color.RED);
             toggleServerButton.setText("Iniciar Servidor");
             UiBuilder.styleButton(toggleServerButton, new Color(46, 153, 85));
-            portField.setEnabled(true);
             connectionPoolLabel.setText("Pool de conexiones: Servidor detenido");
         }
 
@@ -238,6 +244,19 @@ public class ConnectionPanel extends JPanel implements ClientConnectionObserver,
             ipLabel.setText("IP del Servidor: " + InetAddress.getLocalHost().getHostAddress());
         } catch (UnknownHostException e) {
             ipLabel.setText("IP del Servidor: No se pudo determinar.");
+        }
+    }
+
+    private void loadServerPort() {
+        try {
+            int port = serverControl.getServerPortNumber();
+            if (port > 0) {
+                portLabel.setText("Puerto del Servidor: " + port);
+            } else {
+                portLabel.setText("Puerto del Servidor: No configurado");
+            }
+        } catch (Exception e) {
+            portLabel.setText("Puerto del Servidor: Error al cargar" + e.getMessage());
         }
     }
 

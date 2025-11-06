@@ -1,15 +1,22 @@
 package com.serverPresentation.views.components;
 
 import com.chatCommon.viewResources.UiBuilder;
+import com.serverApplication.dto.ConnectedPeerInfo;
+import com.serverApplication.ports.PeerConnectionObserver;
+import com.serverApplication.ports.peer.PeerNetworkControl;
 import com.serverPresentation.views.models.ServerNetworkTableModel;
 import com.serverPresentation.views.models.ServerNetworkTableModel.ConnectedServerInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
-public class ServerNetworkPanel extends JPanel {
+public class ServerNetworkPanel extends JPanel implements PeerConnectionObserver {
+    private static final Logger logger = LoggerFactory.getLogger(ServerNetworkPanel.class);
     
     private JTextField ipField;
     private JTextField portField;
@@ -19,59 +26,85 @@ public class ServerNetworkPanel extends JPanel {
     private ServerNetworkTableModel tableModel;
     private JLabel statusLabel;
     private JLabel connectedServersLabel;
+    private JLabel peerServerStatusLabel;
+    private JLabel peerPortLabel;
     
-    public ServerNetworkPanel() {
+    private final PeerNetworkControl serverNetworkControl;
+    
+    public ServerNetworkPanel(PeerNetworkControl serverNetworkControl) {
+        this.serverNetworkControl = serverNetworkControl;
+        this.serverNetworkControl.addPeerConnectionObserver(this);
         initComponents();
     }
     
+    private JPanel createPeerServerControlPanel() {
+        JPanel panel = new JPanel(new BorderLayout(5, 5));
+        panel.setBorder(BorderFactory.createTitledBorder("Servidor P2P"));
+        
+        JPanel mainPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        
+        // Puerto P2P (solo lectura desde configuración)
+        peerPortLabel = new JLabel("Puerto P2P: " + serverNetworkControl.getPeerServerPort());
+        peerPortLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
+        mainPanel.add(peerPortLabel);
+        
+        mainPanel.add(Box.createHorizontalStrut(10));
+        
+        // Estado P2P
+        peerServerStatusLabel = new JLabel("Estado P2P: Esperando servidor principal");
+        peerServerStatusLabel.setFont(new Font("SansSerif", Font.BOLD, 11));
+        peerServerStatusLabel.setForeground(new Color(107, 114, 128));
+        mainPanel.add(peerServerStatusLabel);
+        
+        panel.add(mainPanel, BorderLayout.CENTER);
+        
+        return panel;
+    }
+    
     private void initComponents() {
-        setLayout(new BorderLayout(10, 10));
+        setLayout(new BorderLayout(5, 5));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
-        add(createConnectionFormPanel(), BorderLayout.NORTH);
+        // Panel superior: Control P2P y Conexión en la misma fila
+        JPanel topPanel = new JPanel(new BorderLayout(10, 5));
+        topPanel.add(createPeerServerControlPanel(), BorderLayout.NORTH);
+        topPanel.add(createConnectionFormPanel(), BorderLayout.CENTER);
+        
+        add(topPanel, BorderLayout.NORTH);
         add(createServersTablePanel(), BorderLayout.CENTER);
     }
     
     private JPanel createConnectionFormPanel() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        JPanel panel = new JPanel(new BorderLayout(5, 5));
         panel.setBorder(BorderFactory.createTitledBorder("Conectar a Otro Servidor"));
         
-        // Panel de descripción
-        JPanel descriptionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JLabel descLabel = new JLabel("<html><i>Conecta este servidor a otros servidores en la red P2P para compartir usuarios y canales</i></html>");
-        descLabel.setFont(new Font("SansSerif", Font.PLAIN, 11));
-        descLabel.setForeground(new Color(75, 85, 99));
-        descriptionPanel.add(descLabel);
-        panel.add(descriptionPanel, BorderLayout.NORTH);
-        
-        // Panel de campos de entrada
-        JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        // Panel principal más compacto
+        JPanel mainPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
         Border roundedBorder = UiBuilder.createRoundedBorder();
         
-        inputPanel.add(new JLabel("IP del Servidor:"));
-        ipField = new JTextField("127.0.0.1", 15);
+        mainPanel.add(new JLabel("IP:"));
+        ipField = new JTextField("127.0.0.1", 12);
         UiBuilder.styleField(ipField, roundedBorder);
-        inputPanel.add(ipField);
+        mainPanel.add(ipField);
         
-        inputPanel.add(new JLabel("Puerto:"));
-        portField = new JTextField("12346", 8);
+        mainPanel.add(new JLabel("Puerto:"));
+        portField = new JTextField("12346", 6);
         UiBuilder.styleField(portField, roundedBorder);
-        inputPanel.add(portField);
+        mainPanel.add(portField);
         
         connectButton = new JButton("Conectar");
         UiBuilder.styleButton(connectButton, new Color(59, 130, 246));
-        connectButton.setPreferredSize(new Dimension(120, 35));
+        connectButton.setPreferredSize(new Dimension(100, 30));
         connectButton.addActionListener(e -> onConnectToServer());
-        inputPanel.add(connectButton);
+        mainPanel.add(connectButton);
         
-        panel.add(inputPanel, BorderLayout.CENTER);
-        
-        // Panel de estado
-        JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // Panel de estado más pequeño
         statusLabel = new JLabel("Estado: Listo para conectar");
-        statusLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
-        statusPanel.add(statusLabel);
-        panel.add(statusPanel, BorderLayout.SOUTH);
+        statusLabel.setFont(new Font("SansSerif", Font.BOLD, 11));
+        mainPanel.add(Box.createHorizontalStrut(10)); // Espaciador
+        mainPanel.add(statusLabel);
+        
+        panel.add(mainPanel, BorderLayout.CENTER);
         
         return panel;
     }
@@ -94,7 +127,7 @@ public class ServerNetworkPanel extends JPanel {
         serversTable.getColumnModel().getColumn(0).setMaxWidth(100);
         
         JScrollPane scrollPane = new JScrollPane(serversTable);
-        scrollPane.setPreferredSize(new Dimension(0, 250));
+        scrollPane.setPreferredSize(new Dimension(0, 180));
         panel.add(scrollPane, BorderLayout.CENTER);
         
         // Panel de botones
@@ -154,35 +187,37 @@ public class ServerNetworkPanel extends JPanel {
             }
             
             // Validar que no esté ya conectado
-            if (isServerAlreadyConnected(ip, port)) {
+            String peerId = ip + ":" + port;
+            if (serverNetworkControl.isConnectedToPeer(peerId)) {
                 showWarning("Ya existe una conexión con este servidor.");
                 return;
             }
             
-            // TODO: Aquí irá la lógica real de conexión P2P
-            // Por ahora solo agregamos a la tabla como simulación
-            ConnectedServerInfo serverInfo = new ConnectedServerInfo(
-                ip, 
-                port, 
-                "Conectado", 
-                LocalDateTime.now()
-            );
+            // Conectar usando el backend real
+            statusLabel.setText("Estado: Conectando a " + peerId + "...");
+            statusLabel.setForeground(new Color(251, 191, 36));
             
-            tableModel.addServer(serverInfo);
-            updateConnectedServersLabel();
+            boolean success = serverNetworkControl.connectToPeer(ip, port);
             
-            statusLabel.setText("Estado: Conectado a " + ip + ":" + port);
-            statusLabel.setForeground(new Color(16, 185, 129));
-            
-            showInfo("Conexión establecida exitosamente con " + ip + ":" + port);
-            
-            ipField.setText("");
-            portField.setText("");
+            if (success) {
+                // NO mostrar alert aquí - esperar confirmación del callback onPeerConnected
+                // El callback se encargará de notificar el éxito real
+                
+                // Limpiar campos
+                ipField.setText("");
+                portField.setText("");
+                
+            } else {
+                statusLabel.setText("Estado: Error conectando a " + peerId);
+                statusLabel.setForeground(new Color(220, 38, 38));
+                showError("No se pudo establecer conexión con " + peerId);
+            }
             
         } catch (NumberFormatException e) {
             showError("El puerto debe ser un número válido.");
         }
     }
+
     
     private void onDisconnectSelected() {
         var selectedServers = tableModel.getSelectedServers();
@@ -201,14 +236,63 @@ public class ServerNetworkPanel extends JPanel {
         );
         
         if (confirmed == JOptionPane.YES_OPTION) {
-            for (ConnectedServerInfo server : selectedServers) {
-                tableModel.removeServer(server.getIpAddress(), server.getPort());
-            }
+            // Convertir a peerIds para el backend
+            List<String> peerIds = selectedServers.stream()
+                .map(server -> server.getIpAddress() + ":" + server.getPort())
+                .toList();
             
-            updateConnectedServersLabel();
-            statusLabel.setText("Estado: Servidores desconectados");
-            statusLabel.setForeground(new Color(220, 38, 38));
-            tableModel.clearSelections();
+            // Deshabilitar botón para evitar múltiples clics
+            disconnectSelectedButton.setEnabled(false);
+            statusLabel.setText("Estado: Desconectando servidores...");
+            statusLabel.setForeground(new Color(251, 191, 36));
+            
+            // Ejecutar desconexión en hilo separado para no bloquear UI
+            Thread disconnectThread = new Thread(() -> {
+                try {
+                    logger.info("Iniciando desconexión de {} servidores", peerIds.size());
+                    
+                    // Desconectar usando backend real
+                    int disconnected = serverNetworkControl.disconnectFromPeers(peerIds);
+                    
+                    logger.info("Desconexión completada: {} de {} servidores", disconnected, peerIds.size());
+                    
+                    // Actualizar UI en el Event Dispatch Thread
+                    SwingUtilities.invokeLater(() -> {
+                        try {
+                            disconnectSelectedButton.setEnabled(true);
+                            
+                            if (disconnected > 0) {
+                                statusLabel.setText("Estado: " + disconnected + " servidor(es) desconectado(s)");
+                                statusLabel.setForeground(new Color(220, 38, 38));
+                                showInfo("Se desconectaron " + disconnected + " servidor(es) exitosamente.");
+                            } else {
+                                statusLabel.setText("Estado: Error desconectando servidores");
+                                statusLabel.setForeground(new Color(220, 38, 38));
+                                showError("No se pudo desconectar ningún servidor.");
+                            }
+                            
+                            tableModel.clearSelections();
+                        } catch (Exception uiEx) {
+                            logger.error("Error actualizando UI tras desconexión", uiEx);
+                            disconnectSelectedButton.setEnabled(true);
+                        }
+                    });
+                    
+                } catch (Exception e) {
+                    logger.error("Error durante proceso de desconexión", e);
+                    
+                    // Manejar errores en UI thread - SIEMPRE re-habilitar botón
+                    SwingUtilities.invokeLater(() -> {
+                        disconnectSelectedButton.setEnabled(true);
+                        statusLabel.setText("Estado: Error inesperado desconectando");
+                        statusLabel.setForeground(new Color(220, 38, 38));
+                        showError("Error inesperado: " + e.getMessage());
+                    });
+                }
+            }, "DisconnectPeersThread");
+            
+            disconnectThread.setDaemon(true); // No bloquear cierre de aplicación
+            disconnectThread.start();
         }
     }
     
@@ -256,5 +340,99 @@ public class ServerNetworkPanel extends JPanel {
     
     private void showInfo(String message) {
         JOptionPane.showMessageDialog(this, message, "Información", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    // Método público para actualizar UI cuando P2P se inicia automáticamente
+    public void updatePeerServerStatus(boolean isRunning) {
+        SwingUtilities.invokeLater(() -> {
+            if (isRunning) {
+                int port = serverNetworkControl.getPeerServerPort();
+                peerServerStatusLabel.setText("Estado P2P: Servidor activo en puerto " + port);
+                peerServerStatusLabel.setForeground(new Color(16, 185, 129));
+            } else {
+                peerServerStatusLabel.setText("Estado P2P: Servidor detenido");
+                peerServerStatusLabel.setForeground(new Color(220, 38, 38));
+            }
+        });
+    }
+    
+    // PeerConnectionObserver implementation
+    @Override
+    public void onPeerConnected(ConnectedPeerInfo peer) {
+        SwingUtilities.invokeLater(() -> {
+            // Actualizar estado del servidor P2P si es la primera conexión
+            if (tableModel.getRowCount() == 0 && serverNetworkControl.isPeerServerRunning()) {
+                updatePeerServerStatus(true);
+            }
+            
+            // Convertir de ConnectedPeerInfo a ConnectedServerInfo para la tabla
+            ConnectedServerInfo serverInfo = new ConnectedServerInfo(
+                peer.peerId(),
+                peer.ipAddress(),
+                peer.port(),
+                peer.connectionTime(),
+                true // isActive
+            );
+            
+            tableModel.addServer(serverInfo);
+            updateConnectedServersLabel();
+            statusLabel.setText("Estado: Nuevo servidor conectado - " + peer.peerId());
+            statusLabel.setForeground(new Color(34, 197, 94));
+            
+            // Mostrar mensaje de éxito solo cuando la conexión sea confirmada
+            showInfo("Conexión establecida exitosamente con " + peer.peerId());
+        });
+    }
+
+    @Override
+    public void onPeerDisconnected(ConnectedPeerInfo peer) {
+        SwingUtilities.invokeLater(() -> {
+            // Buscar y remover el servidor por peerId
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                ConnectedServerInfo server = tableModel.getServerAt(i);
+                String serverPeerId = server.getIpAddress() + ":" + server.getPort();
+                
+                if (serverPeerId.equals(peer.peerId())) {
+                    tableModel.removeServerAt(i);
+                    updateConnectedServersLabel();
+                    statusLabel.setText("Estado: Servidor desconectado - " + peer.peerId());
+                    statusLabel.setForeground(new Color(220, 38, 38));
+                    break;
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onPeerStatusChanged(ConnectedPeerInfo peer) {
+        SwingUtilities.invokeLater(() -> {
+            // Actualizar estado del servidor en la tabla
+            tableModel.updateServerStatus(peer.ipAddress(), peer.port(), peer.status());
+            
+            // Actualizar latencia si está disponible
+            if (peer.latency() > 0) {
+                tableModel.updateServerLatency(peer.ipAddress(), peer.port(), peer.latency());
+            }
+            
+            statusLabel.setText("Estado: Cambio de estado - " + peer.peerId() + " : " + peer.status());
+            statusLabel.setForeground(new Color(59, 130, 246));
+        });
+    }
+    
+    @Override
+    public void onPeerConnectionError(String peerId, String errorMessage) {
+        SwingUtilities.invokeLater(() -> {
+            // Mostrar alert de error
+            JOptionPane.showMessageDialog(
+                this,
+                "Error al conectar con el servidor P2P:\n" + peerId + "\n\n" + errorMessage,
+                "Error de Conexión P2P",
+                JOptionPane.ERROR_MESSAGE
+            );
+            
+            // Actualizar status label
+            statusLabel.setText("Estado: Error - " + errorMessage);
+            statusLabel.setForeground(new Color(220, 38, 38));
+        });
     }
 }

@@ -51,6 +51,14 @@ public class ClientHandler implements Runnable {
             String request;
 
             while ((request = in.readLine()) != null) {
+                if (request.startsWith("P2P_SERVER_HANDSHAKE|")) {
+                    logger.warn("[{}] Rechazando conexión P2P en puerto de clientes desde {}",
+                        connectionId, socket.getInetAddress().getHostAddress());
+                    
+                    out.println("P2P_CONNECTION_REJECTED|reason=WRONG_PORT|message=Este puerto es para clientes. Use el puerto P2P del servidor");
+                    break;
+                }
+                
                 List<String> parts = protocolParser.decode(request);
                 String response = commandHandler.process(parts, connection);
 
@@ -73,7 +81,6 @@ public class ClientHandler implements Runnable {
         try {
             connection.getSocket().close();
 
-            // Buscar el username correspondiente a este connectionId
             String usernameToLogOut = ActiveUserManager.getInstance().getAllUserSessions().entrySet().stream()
                     .filter(entry -> entry.getValue().stream()
                             .anyMatch(user -> user.getId().equals(connectionId)))
@@ -82,7 +89,6 @@ public class ClientHandler implements Runnable {
                     .orElse(null);
 
             if (usernameToLogOut != null) {
-                // Usar el nuevo método que recibe connectionId para desconectar solo esta sesión
                 ActiveUserManager.getInstance().userLoggedOut(usernameToLogOut, connectionId);
             } else {
                 logger.info("[{}] desconectado antes de completar login. No se notifica.", connectionId);
