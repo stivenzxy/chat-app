@@ -468,3 +468,20 @@
 2025-11-06 13:37:41.297 [IncomingPeerHandler-127.0.0.1] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa recibida de 127.0.0.1:12346: 0 usuario(s)
 2025-11-06 13:37:41.297 [IncomingPeerHandler-127.0.0.1] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa: 0 usuarios remotos de Servidor 127.0.0.1 - 
 2025-11-06 13:37:41.299 [IncomingPeerHandler-127.0.0.1] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 127.0.0.1:12346=0
+2025-11-06 14:26:37.672 [main] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-06 14:26:38.779 [main] INFO  c.s.p.config.ConnectionManager - Base de datos inicializada correctamente
+2025-11-06 14:26:38.808 [main] INFO  c.s.adapters.TcpServerAdapter - TcpServerAdapter inicializado para gestión de clientes
+2025-11-06 14:26:38.833 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - RemoteUsersProvider configurado en PeerMessageRoutingManager
+2025-11-06 14:26:38.836 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - PeerMessageSender configurado en PeerMessageRoutingManager
+2025-11-06 14:26:38.836 [main] INFO  c.s.a.peer.PeerTcpServerAdapter - PeerTcpServerAdapter inicializado con managers inyectados
+2025-11-06 14:26:38.840 [main] INFO  c.s.adapters.ServerNetworkAdapter - ServerNetworkAdapter inicializado - Gestión P2P exclusiva con sincronización automática de usuarios
+2025-11-06 14:26:38.840 [main] INFO  c.s.adapters.TcpServerAdapter - PeerNetworkControl configurado para inicio automático
+2025-11-06 14:26:38.842 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - RemoteUsersProvider configurado en PeerMessageRoutingManager
+2025-11-06 14:26:38.842 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - PeerMessageSender configurado en PeerMessageRoutingManager
+2025-11-06 14:26:38.842 [main] INFO  c.s.a.peer.PeerTcpServerAdapter - PeerTcpServerAdapter inicializado con managers inyectados
+2025-11-06 14:26:38.842 [main] INFO  c.s.adapters.ServerNetworkAdapter - ServerNetworkAdapter inicializado - Gestión P2P exclusiva con sincronización automática de usuarios
+2025-11-06 14:26:39.798 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-06 14:26:39.799 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - PeerTcpServer inicializado - Puerto P2P configurado: 9095
+2025-11-06 14:26:39.827 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-06 14:26:40.303 [AWT-EventQueue-0] INFO  c.s.views.components.UserListPanel - Usuarios cargados exitosamente: 3 usuarios
+2025-11-06 14:26:49.808 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Servidor de clientes detenido.
