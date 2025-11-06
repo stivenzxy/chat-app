@@ -6,6 +6,7 @@ import com.serverApplication.ports.peer.*;
 import com.serverInfrastructure.adapters.peer.managers.*;
 import com.serverInfrastructure.network.peerTcp.PeerTcpServer;
 import com.serverInfrastructure.factories.PeerManagerFactory;
+import com.serverInfrastructure.persistence.PeerPersistenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class PeerTcpServerAdapter implements PeerNetworkControl {
     
@@ -25,6 +28,7 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
     private final PeerUserSyncManager userSyncManager;
     private final PeerMessageRoutingManager messageRoutingManager;
     private final PeerObserverNotifier observerNotifier;
+    private final PeerPersistenceService peerPersistenceService;
 
     public PeerTcpServerAdapter(
             PeerConnectionManager connectionManager,
@@ -36,6 +40,7 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
         this.userSyncManager = userSyncManager;
         this.messageRoutingManager = messageRoutingManager;
         this.observerNotifier = observerNotifier;
+        this.peerPersistenceService = new PeerPersistenceService();
 
         configureManagerDependencies();
         
@@ -100,7 +105,8 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
             userSyncManager.setLocalServerId(localServerId);
 
             connectionManager.setPeerServer(peerServer);
-            
+            reconnectToKnownPeers();
+
             logger.info("Servidor P2P iniciado exitosamente en puerto {}", peerPort);
             return true;
             
@@ -109,6 +115,36 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
             peerServer = null;
             return false;
         }
+    }
+
+    private void reconnectToKnownPeers() {
+        Set<String> knownPeers = peerPersistenceService.loadPeers();
+        if (knownPeers.isEmpty()) {
+            return;
+        }
+
+        logger.info("Intentando reconectar a {} peers conocidos...", knownPeers.size());
+        new Thread(() -> {
+            for (String peerAddress : knownPeers) {
+                try {
+                    String[] parts = peerAddress.split(":");
+                    if (parts.length == 2) {
+                        String ip = parts[0];
+                        int port = Integer.parseInt(parts[1]);
+
+                        // Evitar conectarse a uno mismo
+                        String myId = userSyncManager.getLocalServerId();
+                        if (peerAddress.equals(myId)) continue;
+
+                        logger.info("Reconexión automática a {}", peerAddress);
+                        connectToPeer(ip, port);
+                        Thread.sleep(1000); // Pequeña pausa entre conexiones
+                    }
+                } catch (Exception e) {
+                    logger.error("Error en la reconexión automática a {}: {}", peerAddress, e.getMessage());
+                }
+            }
+        }, "AutoReconnectThread").start();
     }
     
     @Override
@@ -165,7 +201,9 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
 
 
             (sourcePeerId, message) -> {
-                if (message.startsWith("P2P_ROUTE_PRIVATE_AUDIO")) {
+                if (message.startsWith("P2P_SHARE_PEERS|")) {
+                    handleSharedPeers(message);
+                } else if (message.startsWith("P2P_ROUTE_PRIVATE_AUDIO")) {
                     logger.info("Recibiendo audio privado enrutado mediante peer {}", sourcePeerId);
                     messageRoutingManager.handlePrivateAudioRouted(sourcePeerId, message);
                 } else {
@@ -174,18 +212,75 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
                 }
             },
 
-            confirmedPeerId -> {
-                ConnectedPeerInfo peerInfo = connectionManager.getPeerInfo(confirmedPeerId);
-                if (peerInfo != null) {
-                    observerNotifier.notifyPeerConnected(peerInfo);
-                }
+                confirmedPeerId -> {
+                    ConnectedPeerInfo peerInfo = connectionManager.getPeerInfo(confirmedPeerId);
+                    if (peerInfo != null) {
+                        observerNotifier.notifyPeerConnected(peerInfo);
+                    }
 
-                userSyncManager.sendFullUserSyncToPeer(confirmedPeerId, 
-                    message -> connectionManager.sendMessageToPeer(confirmedPeerId, message));
-            }
+                    saveNewPeer(confirmedPeerId);
+
+                    shareKnownPeers(confirmedPeerId);
+
+                    userSyncManager.sendFullUserSyncToPeer(confirmedPeerId,
+                            message -> connectionManager.sendMessageToPeer(confirmedPeerId, message));
+                }
         );
     }
-    
+
+    private void saveNewPeer(String newPeerId) {
+        Set<String> knownPeers = peerPersistenceService.loadPeers();
+        if (knownPeers.add(newPeerId)) { // add retorna true si el elemento no existía
+            peerPersistenceService.savePeers(knownPeers);
+            logger.info("Nuevo peer {} añadido a la lista de peers conocidos.", newPeerId);
+        }
+    }
+
+    private void shareKnownPeers(String targetPeerId) {
+        // Obtenemos todos los peers conocidos, EXCLUYENDO al que le vamos a enviar la lista
+        Set<String> peersToShare = getConnectedPeers().stream()
+                .map(ConnectedPeerInfo::peerId)
+                .filter(id -> !id.equals(targetPeerId))
+                .collect(Collectors.toSet());
+
+        if (peersToShare.isEmpty()) {
+            return; // No hay otros peers que compartir
+        }
+
+        String payload = String.join(";", peersToShare);
+        String message = "P2P_SHARE_PEERS|" + payload;
+
+        logger.info("Compartiendo {} peers con {}: {}", peersToShare.size(), targetPeerId, payload);
+        sendMessageToPeer(targetPeerId, message);
+    }
+
+    private void handleSharedPeers(String message) {
+        try {
+            String[] parts = message.split("\\|", 2);
+            if (parts.length < 2 || parts[1].isEmpty()) {
+                return;
+            }
+
+            String[] sharedPeerAddresses = parts[1].split(";");
+            String myId = userSyncManager.getLocalServerId();
+
+            for (String peerAddress : sharedPeerAddresses) {
+                // Evitar conectarse a uno mismo o a un peer ya conectado
+                if (peerAddress.equals(myId) || isConnectedToPeer(peerAddress)) {
+                    continue;
+                }
+
+                logger.info("Descubierto nuevo peer a través de la red: {}. Intentando conectar...", peerAddress);
+                String[] addrParts = peerAddress.split(":");
+                if (addrParts.length == 2) {
+                    connectToPeer(addrParts[0], Integer.parseInt(addrParts[1]));
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error al procesar la lista de peers compartidos: {}", e.getMessage());
+        }
+    }
+
     @Override
     public boolean disconnectFromPeer(String peerId) {
         boolean success = connectionManager.disconnectFromPeer(peerId);

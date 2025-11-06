@@ -138,7 +138,12 @@ public class PeerTcpClient {
             if (onUserSyncReceived != null) {
                 onUserSyncReceived.accept(message);
             }
-            
+
+        } else if (message.startsWith("P2P_SHARE_PEERS")) {
+            logger.info("(CLIENT) Recibida lista de peers compartidos desde {}: {}", peerId, message);
+            if (onPrivateMessageReceived != null) {
+                onPrivateMessageReceived.accept(peerId, message);
+            }
         } else if (message.startsWith("P2P_ROUTE_PRIVATE_AUDIO")) {
             logger.info("(CLIENT) Audio privado enrutado recibido desde {}: {}", peerId, message);
             // Notificar via callback para que el adapter lo entregue al cliente local

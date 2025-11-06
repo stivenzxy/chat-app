@@ -1,3 +1,4 @@
+// Ubicación: chat-server/server-infrastructure/src/main/java/com/serverInfrastructure/adapters/peer/managers/PeerUserSyncManager.java
 package com.serverInfrastructure.adapters.peer.managers;
 
 import com.chatCommon.protocol.ProtocolParser;
@@ -15,7 +16,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class PeerUserSyncManager {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(PeerUserSyncManager.class);
     private final ProtocolParser protocolParser;
     private final Map<String, List<String>> remoteServerUsers = new ConcurrentHashMap<>();
@@ -35,6 +36,12 @@ public class PeerUserSyncManager {
         logger.info("ID del servidor local establecido: {}", serverId);
     }
 
+    // <-- MÉTODO AÑADIDO PARA SOLUCIONAR EL ERROR -->
+    public String getLocalServerId() {
+        return this.localServerId;
+    }
+    // <-- FIN DEL MÉTODO AÑADIDO -->
+
     public void setPeerBroadcastCallback(Consumer<String> callback) {
         this.peerBroadcastCallback = callback;
     }
@@ -50,11 +57,11 @@ public class PeerUserSyncManager {
     public void handleUserSyncMessage(String peerId, String message) {
         try {
             UserSyncInfo syncInfo = UserSyncInfo.fromProtocol(message);
-            
+
             String action = syncInfo.action();
             List<String> users = syncInfo.connectedUsers();
             String serverPrefix = "Servidor " + peerId.split(":")[0] + " - ";
-            
+
             if ("SYNC_ALL".equals(action)) {
                 handleFullSync(peerId, users, serverPrefix);
             } else if ("USER_JOINED".equals(action)) {
@@ -62,9 +69,9 @@ public class PeerUserSyncManager {
             } else if ("USER_LEFT".equals(action)) {
                 handleUserLeft(peerId, users, serverPrefix);
             }
-            
+
             logRemoteUsersState();
-            
+
         } catch (Exception e) {
             logger.error("Error procesando mensaje de sincronización de usuarios: {}", e.getMessage());
         }
@@ -73,14 +80,14 @@ public class PeerUserSyncManager {
     private void handleFullSync(String peerId, List<String> users, String serverPrefix) {
         List<String> previousUsers = remoteServerUsers.put(peerId, new ArrayList<>(users));
         logger.info("Sincronización completa recibida de {}: {} usuario(s)", peerId, users.size());
-        
+
         notifyClientsAboutRemoteUsers(peerId, users, serverPrefix, "SYNC_ALL", previousUsers);
     }
 
     private void handleUserJoined(String peerId, List<String> users, String serverPrefix) {
         remoteServerUsers.computeIfAbsent(peerId, k -> new ArrayList<>()).addAll(users);
         logger.info("Usuario(s) {} se unió a peer {}", users, peerId);
-        
+
         notifyClientsAboutRemoteUsers(peerId, users, serverPrefix, "USER_JOINED", null);
     }
 
@@ -89,7 +96,7 @@ public class PeerUserSyncManager {
         if (peerUsers != null) {
             peerUsers.removeAll(users);
             logger.info("Usuario(s) {} salió de peer {}", users, peerId);
-            
+
             notifyClientsAboutRemoteUsers(peerId, users, serverPrefix, "USER_LEFT", null);
         }
     }
@@ -103,7 +110,7 @@ public class PeerUserSyncManager {
             } else if ("USER_LEFT".equals(action)) {
                 logger.info("Usuario remoto desconectado: {} {}", serverPrefix, String.join(", ", users));
             }
-            
+
             if (clientBroadcastCallback != null) {
                 for (String username : users) {
                     String uniqueId = peerId + "-" + username;
@@ -128,9 +135,9 @@ public class PeerUserSyncManager {
             logger.debug("No hay peers conectados - no se requiere notificación");
             return;
         }
-        
+
         String serverId = getServerIdOrDefault();
-        
+
         UserSyncInfo syncInfo;
         if ("USER_JOINED".equals(action)) {
             syncInfo = UserSyncInfo.createUserJoined(serverId, username);
@@ -140,9 +147,9 @@ public class PeerUserSyncManager {
             logger.warn("Acción desconocida para sincronización de usuarios: {}", action);
             return;
         }
-        
+
         String message = syncInfo.toProtocol();
-        
+
         if (peerBroadcastCallback != null) {
             peerBroadcastCallback.accept(message);
             logger.info("Notificación de {} {} enviada a peers", action, username);
@@ -152,10 +159,10 @@ public class PeerUserSyncManager {
     public void sendFullUserSyncToPeer(String peerId, Consumer<String> sendCallback) {
         List<String> localUsers = getLocalUsers();
         String serverId = getServerIdOrDefault();
-        
+
         UserSyncInfo syncInfo = UserSyncInfo.createFullSync(serverId, localUsers);
         String message = syncInfo.toProtocol();
-        
+
         sendCallback.accept(message);
         logger.info("Sincronización completa de {} usuario(s) enviada a peer {}", localUsers.size(), peerId);
     }
@@ -167,7 +174,7 @@ public class PeerUserSyncManager {
 
         try {
             ActiveUserManager userManager =
-                ActiveUserManager.getInstance();
+                    ActiveUserManager.getInstance();
             return new ArrayList<>(userManager.getAllUserSessions().keySet());
         } catch (Exception e) {
             logger.error("Error obteniendo usuarios locales: {}", e.getMessage());
@@ -177,7 +184,7 @@ public class PeerUserSyncManager {
 
     public String generateInitialSyncMessage(int peerPort) {
         List<String> localUsers = getLocalUsers();
-        
+
         String serverId = localServerId;
         if (serverId == null) {
             try {
@@ -186,7 +193,7 @@ public class PeerUserSyncManager {
                 serverId = "localhost:" + peerPort;
             }
         }
-        
+
         UserSyncInfo syncInfo = UserSyncInfo.createFullSync(serverId, localUsers);
         logger.debug("Preparando sincronización inicial: {} usuarios de {}", localUsers.size(), serverId);
         return syncInfo.toProtocol();
@@ -205,7 +212,7 @@ public class PeerUserSyncManager {
         if (localServerId != null) {
             return localServerId;
         }
-        
+
         try {
             return java.net.InetAddress.getLocalHost().getHostAddress() + ":0";
         } catch (Exception e) {
