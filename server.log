@@ -391,3 +391,80 @@
 2025-11-06 09:21:36.414 [AWT-EventQueue-0] INFO  c.s.n.l.ServerShutdownManager - Servidor cerrado correctamente
 2025-11-06 09:21:36.415 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Servidor de clientes detenido.
 2025-11-06 09:21:38.032 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Servidor de clientes detenido.
+2025-11-06 13:37:14.290 [main] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-06 13:37:14.783 [main] INFO  c.s.p.config.ConnectionManager - Base de datos inicializada correctamente
+2025-11-06 13:37:14.804 [main] INFO  c.s.adapters.TcpServerAdapter - TcpServerAdapter inicializado para gestión de clientes
+2025-11-06 13:37:14.819 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - RemoteUsersProvider configurado en PeerMessageRoutingManager
+2025-11-06 13:37:14.820 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - PeerMessageSender configurado en PeerMessageRoutingManager
+2025-11-06 13:37:14.820 [main] INFO  c.s.a.peer.PeerTcpServerAdapter - PeerTcpServerAdapter inicializado con managers inyectados
+2025-11-06 13:37:14.824 [main] INFO  c.s.adapters.ServerNetworkAdapter - ServerNetworkAdapter inicializado - Gestión P2P exclusiva con sincronización automática de usuarios
+2025-11-06 13:37:14.824 [main] INFO  c.s.adapters.TcpServerAdapter - PeerNetworkControl configurado para inicio automático
+2025-11-06 13:37:14.825 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - RemoteUsersProvider configurado en PeerMessageRoutingManager
+2025-11-06 13:37:14.826 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - PeerMessageSender configurado en PeerMessageRoutingManager
+2025-11-06 13:37:14.826 [main] INFO  c.s.a.peer.PeerTcpServerAdapter - PeerTcpServerAdapter inicializado con managers inyectados
+2025-11-06 13:37:14.826 [main] INFO  c.s.adapters.ServerNetworkAdapter - ServerNetworkAdapter inicializado - Gestión P2P exclusiva con sincronización automática de usuarios
+2025-11-06 13:37:16.507 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-06 13:37:16.507 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - PeerTcpServer inicializado - Puerto P2P configurado: 9095
+2025-11-06 13:37:16.528 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-06 13:37:16.825 [AWT-EventQueue-0] INFO  c.s.views.components.UserListPanel - Usuarios cargados exitosamente: 10 usuarios
+2025-11-06 13:37:24.469 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-06 13:37:24.479 [AWT-EventQueue-0] INFO  c.s.a.p.m.PeerMessageRoutingManager - ClientMessageBroadcaster configurado en PeerMessageRoutingManager
+2025-11-06 13:37:24.480 [AWT-EventQueue-0] INFO  c.s.a.peer.PeerTcpServerAdapter - ClientMessageBroadcaster configurado en managers
+2025-11-06 13:37:24.480 [AWT-EventQueue-0] INFO  c.s.adapters.ServerNetworkAdapter - Callback de broadcast registrado en ServerNetworkAdapter
+2025-11-06 13:37:24.483 [AWT-EventQueue-0] INFO  c.s.a.c.SendPrivateMessageCommandAdapter - Callback de enrutamiento P2P configurado en SendPrivateMessageCommandAdapter
+2025-11-06 13:37:24.484 [AWT-EventQueue-0] INFO  c.s.factories.InfrastructureFactory - Callback de enrutamiento P2P configurado en SendPrivateMessageCommandAdapter
+2025-11-06 13:37:24.487 [AWT-EventQueue-0] INFO  c.s.a.c.SendPrivateAudioCommandAdapter - PeerMessageRouter configurado en SendPrivateAudioCommandAdapter
+2025-11-06 13:37:24.489 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Servidor de clientes iniciado en puerto 9090
+2025-11-06 13:37:24.490 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Iniciando servidor P2P automáticamente...
+2025-11-06 13:37:24.490 [AWT-EventQueue-0] INFO  c.s.adapters.ServerNetworkAdapter - Iniciando servidor P2P (puerto desde configuración)
+2025-11-06 13:37:24.490 [TcpServerThread] INFO  c.s.network.TcpServer - Servidor TCP iniciado y escuchando en el puerto 9090
+2025-11-06 13:37:24.490 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-06 13:37:24.490 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - PeerTcpServer inicializado - Puerto P2P configurado: 9095
+2025-11-06 13:37:24.494 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - PeerTcpServer iniciado en puerto 9095 - Esperando conexiones de otros servidores
+2025-11-06 13:37:24.496 [PeerServer-Acceptor] INFO  c.s.network.peerTcp.PeerTcpServer - PeerTcpServer comenzó a escuchar conexiones entrantes
+2025-11-06 13:37:24.498 [AWT-EventQueue-0] INFO  c.s.a.peer.PeerTcpServerAdapter - ID del servidor local: 192.168.10.225:9095
+2025-11-06 13:37:24.498 [AWT-EventQueue-0] INFO  c.s.a.p.managers.PeerUserSyncManager - ID del servidor local establecido: 192.168.10.225:9095
+2025-11-06 13:37:24.498 [AWT-EventQueue-0] INFO  c.s.a.peer.PeerTcpServerAdapter - Servidor P2P iniciado exitosamente en puerto 9095
+2025-11-06 13:37:24.498 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Servidor P2P iniciado automáticamente en puerto 9095
+2025-11-06 13:37:24.548 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-06 13:37:24.549 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - PeerTcpServer inicializado - Puerto P2P configurado: 9095
+2025-11-06 13:37:30.110 [main] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-06 13:37:30.533 [main] INFO  c.s.p.config.ConnectionManager - Base de datos inicializada correctamente
+2025-11-06 13:37:30.552 [main] INFO  c.s.adapters.TcpServerAdapter - TcpServerAdapter inicializado para gestión de clientes
+2025-11-06 13:37:30.564 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - RemoteUsersProvider configurado en PeerMessageRoutingManager
+2025-11-06 13:37:30.566 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - PeerMessageSender configurado en PeerMessageRoutingManager
+2025-11-06 13:37:30.567 [main] INFO  c.s.a.peer.PeerTcpServerAdapter - PeerTcpServerAdapter inicializado con managers inyectados
+2025-11-06 13:37:30.570 [main] INFO  c.s.adapters.ServerNetworkAdapter - ServerNetworkAdapter inicializado - Gestión P2P exclusiva con sincronización automática de usuarios
+2025-11-06 13:37:30.571 [main] INFO  c.s.adapters.TcpServerAdapter - PeerNetworkControl configurado para inicio automático
+2025-11-06 13:37:30.571 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - RemoteUsersProvider configurado en PeerMessageRoutingManager
+2025-11-06 13:37:30.571 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - PeerMessageSender configurado en PeerMessageRoutingManager
+2025-11-06 13:37:30.573 [main] INFO  c.s.a.peer.PeerTcpServerAdapter - PeerTcpServerAdapter inicializado con managers inyectados
+2025-11-06 13:37:30.573 [main] INFO  c.s.adapters.ServerNetworkAdapter - ServerNetworkAdapter inicializado - Gestión P2P exclusiva con sincronización automática de usuarios
+2025-11-06 13:37:31.765 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-06 13:37:31.766 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - PeerTcpServer inicializado - Puerto P2P configurado: 9095
+2025-11-06 13:37:31.789 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-06 13:37:32.072 [AWT-EventQueue-0] INFO  c.s.views.components.UserListPanel - Usuarios cargados exitosamente: 10 usuarios
+2025-11-06 13:37:41.069 [AWT-EventQueue-0] INFO  c.s.adapters.ServerNetworkAdapter - Conectando a peer 127.0.0.1:9095
+2025-11-06 13:37:41.069 [AWT-EventQueue-0] INFO  c.s.a.p.m.PeerConnectionManager - Conectando a peer 127.0.0.1:9095...
+2025-11-06 13:37:41.074 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpClient - Iniciando conexión a peer 127.0.0.1:9095
+2025-11-06 13:37:41.076 [PeerServer-Acceptor] INFO  c.s.network.peerTcp.PeerTcpServer - Nueva conexión P2P entrante desde 127.0.0.1:14375
+2025-11-06 13:37:41.076 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpClient - Conectado exitosamente a peer 127.0.0.1:9095
+2025-11-06 13:37:41.079 [PeerListener-127.0.0.1:9095] INFO  c.s.network.peerTcp.PeerTcpClient - Iniciando escucha de mensajes desde peer 127.0.0.1:9095
+2025-11-06 13:37:41.079 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpClient - Enviando handshake P2P a peer 127.0.0.1:9095
+2025-11-06 13:37:41.079 [IncomingPeerHandler-127.0.0.1] INFO  c.s.network.peerTcp.PeerTcpServer - Evaluando conexión entrante: 127.0.0.1:14375
+2025-11-06 13:37:41.079 [AWT-EventQueue-0] INFO  c.s.a.p.m.PeerConnectionManager - Conexión inicial establecida con peer 127.0.0.1:9095, validando...
+2025-11-06 13:37:41.081 [IncomingPeerHandler-127.0.0.1] INFO  c.s.network.peerTcp.PeerTcpServer - Handshake P2P válido recibido de 127.0.0.1:12346
+2025-11-06 13:37:41.081 [IncomingPeerHandler-127.0.0.1] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante almacenada: 127.0.0.1:12346
+2025-11-06 13:37:41.083 [PeerListener-127.0.0.1:9095] INFO  c.s.network.peerTcp.PeerTcpClient - Procesando mensaje de 127.0.0.1:9095: P2P_SERVER_HANDSHAKE_ACK|myId=192.168.10.225:9095|status=ACCEPTED
+2025-11-06 13:37:41.083 [PeerListener-127.0.0.1:9095] INFO  c.s.network.peerTcp.PeerTcpClient - Recibido P2P_SERVER_HANDSHAKE_ACK de 127.0.0.1:9095
+2025-11-06 13:37:41.083 [PeerListener-127.0.0.1:9095] INFO  c.s.network.peerTcp.PeerTcpClient - Procesando mensaje de 127.0.0.1:9095: P2P_USER_SYNC|serverId=192.168.10.225:9095|action=SYNC_ALL|users=
+2025-11-06 13:37:41.083 [PeerListener-127.0.0.1:9095] INFO  c.s.network.peerTcp.PeerTcpClient - (CLIENT) Recibida sincronización de usuarios desde 127.0.0.1:9095: P2P_USER_SYNC|serverId=192.168.10.225:9095|action=SYNC_ALL|users=
+2025-11-06 13:37:41.083 [IncomingPeerHandler-127.0.0.1] INFO  c.s.network.peerTcp.PeerTcpServer - Sincronización inicial enviada a peer conectado 127.0.0.1:12346
+2025-11-06 13:37:41.085 [PeerListener-127.0.0.1:9095] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa recibida de 127.0.0.1:9095: 0 usuario(s)
+2025-11-06 13:37:41.085 [PeerListener-127.0.0.1:9095] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa: 0 usuarios remotos de Servidor 127.0.0.1 - 
+2025-11-06 13:37:41.085 [PeerListener-127.0.0.1:9095] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 127.0.0.1:9095=0
+2025-11-06 13:37:41.297 [ConnectionValidation-127.0.0.1:9095] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa de 0 usuario(s) enviada a peer 127.0.0.1:9095
+2025-11-06 13:37:41.297 [ConnectionValidation-127.0.0.1:9095] INFO  c.s.a.p.m.PeerConnectionManager - Conectado exitosamente a peer 127.0.0.1:9095
+2025-11-06 13:37:41.297 [IncomingPeerHandler-127.0.0.1] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa recibida de 127.0.0.1:12346: 0 usuario(s)
+2025-11-06 13:37:41.297 [IncomingPeerHandler-127.0.0.1] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa: 0 usuarios remotos de Servidor 127.0.0.1 - 
+2025-11-06 13:37:41.299 [IncomingPeerHandler-127.0.0.1] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 127.0.0.1:12346=0
