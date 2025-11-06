@@ -2,9 +2,6 @@ package com.serverApplication.dto;
 
 import java.time.LocalDateTime;
 
-/**
- * DTO para representar un usuario en las capas superiores (presentación)
- */
 public class UserPresentationDTO {
     
     private final String id;
