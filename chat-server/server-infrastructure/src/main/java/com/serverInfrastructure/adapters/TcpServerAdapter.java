@@ -99,8 +99,7 @@ public class TcpServerAdapter implements ServerControl, ConnectionListener {
         if (server != null) {
             return server.getServerPortNumber();
         }
-        
-        // Si el servidor aún no está iniciado, leer del archivo de configuración
+
         try {
             com.chatCommon.utils.AppProperties props = new com.chatCommon.utils.AppProperties("server-configuration");
             return props.getInt("SERVER_PORT");

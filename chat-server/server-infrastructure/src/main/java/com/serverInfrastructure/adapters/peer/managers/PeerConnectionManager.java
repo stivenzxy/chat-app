@@ -57,8 +57,6 @@ public class PeerConnectionManager {
             
             PeerTcpClient client = new PeerTcpClient();
 
-            // ======== NUEVA LÍNEA AÑADIDA ========
-            // ¡Conectar el callback de desconexión del cliente!
             client.setOnDisconnected(() -> handleDisconnection(peerId));
             
             client.setOnConnectionRejected(() -> {
@@ -79,8 +77,7 @@ public class PeerConnectionManager {
 
                 ConnectedPeerInfo peerInfo = ConnectedPeerInfo.create(ip, port, "Conectado");
                 connectedPeers.put(peerId, peerInfo);
-                
-                // Registrar peer conocido en el registro persistente
+
                 try {
                     logger.debug("Intentando registrar peer conocido en PeerRegistry: {}", peerId);
                     com.serverInfrastructure.adapters.peer.managers.PeerRegistry.getInstance().addKnownPeer(peerInfo);
@@ -119,19 +116,16 @@ public class PeerConnectionManager {
 
     public boolean disconnectFromPeer(String peerId) {
         logger.info("Iniciando desconexión activa del peer {}", peerId);
-        
-        // Desconectar cliente saliente si existe
+
         PeerTcpClient client = peerClients.get(peerId);
         if (client != null) {
-            client.disconnect(); // Esto activará el callback onDisconnected
+            client.disconnect();
         }
 
-        // Desconectar conexión entrante si existe
         if (peerServer != null && peerServer.isRunning()) {
             peerServer.disconnectIncomingPeer(peerId);
         }
-        
-        // Forzar limpieza si aún no se ha realizado por los callbacks
+
         if (connectedPeers.containsKey(peerId)) {
             handleDisconnection(peerId);
         }
@@ -157,11 +151,6 @@ public class PeerConnectionManager {
         }
     }
 
-    /**
-     * Centraliza la lógica de limpieza y notificación para cualquier tipo de desconexión (activa o pasiva).
-     * Este método es seguro para ser llamado múltiples veces para el mismo peerId.
-     * @param peerId El ID del peer que se ha desconectado.
-     */
     private synchronized void handleDisconnection(String peerId) {
         peerClients.remove(peerId);
 
@@ -252,10 +241,6 @@ public class PeerConnectionManager {
         return connectedPeers.get(peerId);
     }
 
-    /**
-     * Registrar una conexión entrante (aceptada por el servidor local).
-     * Permite que las conexiones entrantes aparezcan en el listado general de peers.
-     */
     public void registerIncomingPeer(ConnectedPeerInfo info) {
         if (info == null) return;
         connectedPeers.put(info.peerId(), info);

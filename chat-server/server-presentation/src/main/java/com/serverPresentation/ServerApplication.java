@@ -16,26 +16,17 @@ public class ServerApplication {
         ServiceFactory serviceFactory = new DefaultServiceFactory();
         InfrastructureFactory infraFactory = new InfrastructureFactory(serviceFactory);
         TcpServerAdapter serverControl = new TcpServerAdapter(infraFactory);
-        
-        // ======================= INICIO DE LA CORRECCIÓN =======================
 
-        // 1. Crea UNA SOLA instancia del adaptador de red P2P.
         ServerNetworkAdapter singlePeerNetworkControl = infraFactory.createServerNetworkAdapter();
 
-        // 2. Pasa esta ÚNICA instancia tanto al control del servidor principal...
         serverControl.setPeerNetworkControl(singlePeerNetworkControl);
 
-        // 3. ...como a la factoría de presentación. La factoría ya no creará una nueva.
-        //    (Necesitarás un pequeño ajuste en PresentationFactory para aceptar esto).
         PresentationFactory presentationFactory = new PresentationFactory(
             serviceFactory, 
             infraFactory, 
             serverControl,
-            singlePeerNetworkControl // <-- Pasa la instancia única aquí
+            singlePeerNetworkControl
         );
-
-        // ======================== FIN DE LA CORRECCIÓN ========================
-
 
         SwingUtilities.invokeLater(() -> {
             MainServerView view = presentationFactory.createMainServerView();

@@ -2,13 +2,11 @@ package com.serverInfrastructure.adapters.peer.managers;
 
 import com.chatCommon.protocol.ProtocolParser;
 import com.serverDomain.entities.User;
-import com.serverDomain.entities.ChannelInvite;
 import com.serverDomain.repositories.ChannelInviteRepository;
 import com.serverApplication.ports.peer.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -166,10 +164,6 @@ public class PeerMessageRoutingManager {
         }
     }
 
-    /**
-     * Enruta una invitación de canal a un usuario remoto.
-     * Formato: P2P_CHANNEL_INVITE|inviteId|channelId|channelName|visibility|inviterUsername|invitedUsername
-     */
     public boolean routeChannelInviteToPeer(String recipientUsername, String routeMessage) {
         if (remoteUsersProvider == null || peerMessageSender == null) {
             logger.error("Router no configurado correctamente (faltan dependencias)");
@@ -196,11 +190,6 @@ public class PeerMessageRoutingManager {
         return false;
     }
 
-    /**
-     * Maneja una invitación de canal recibida desde un peer remoto.
-     * El servidor destino debe crear la invitación en su propia BD.
-     * Formato: P2P_CHANNEL_INVITE|channelId|channelName|visibility|inviterUsername|inviterServerId|invitedUsername
-     */
     public void handleChannelInviteRouted(String sourcePeerId, String message) {
         try {
             List<String> parts = protocolParser.decode(message);
@@ -219,8 +208,7 @@ public class PeerMessageRoutingManager {
             
             logger.info("Procesando invitación de canal {} de {} a usuario local {}", 
                        channelName, inviterUsername, invitedUsername);
-            
-            // Obtener el userId local del usuario invitado
+
             var aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
             var invitedUserSessions = aum.getUserSessions(invitedUsername);
             
@@ -234,23 +222,15 @@ public class PeerMessageRoutingManager {
                 logger.error("No se pudo obtener userId para {}", invitedUsername);
                 return;
             }
-            
-            // Para canales remotos, NO guardamos en BD local porque:
-            // 1. El canal no existe en nuestra BD (FK falla)
-            // 2. El servidor origen maneja la invitación
-            // Solo enviamos la notificación al cliente
-            
+
             logger.info("Invitación de canal remoto - NO se guarda en BD local, solo notificación al cliente");
             
             if (clientBroadcaster != null) {
                 String serverPrefix = "Servidor " + sourcePeerId.split(":")[0] + " - ";
                 String inviterWithPrefix = serverPrefix + inviterUsername;
-                
-                // Enviar notificación con ID negativo para indicar que es remoto
-                // El cliente puede distinguir: ID positivo = local, ID negativo = remoto
-                // Usamos -channelId para que sea único
+
                 String deliverMessage = protocolParser.encode("INVITE_RECEIVED", 
-                        String.valueOf(-Integer.parseInt(channelIdStr)), // ID negativo para remoto
+                        String.valueOf(-Integer.parseInt(channelIdStr)),
                         channelIdStr, 
                         channelName, 
                         visibility, 
@@ -267,10 +247,6 @@ public class PeerMessageRoutingManager {
         }
     }
 
-    /**
-     * Enruta un mensaje de canal a un usuario remoto.
-     * Formato: P2P_CHANNEL_MESSAGE|channelId|senderUsername|content|recipientUsername
-     */
     public boolean routeChannelMessageToPeer(String recipientUsername, String routeMessage) {
         if (remoteUsersProvider == null || peerMessageSender == null) {
             logger.error("Router no configurado correctamente (faltan dependencias)");
@@ -293,10 +269,6 @@ public class PeerMessageRoutingManager {
         return false;
     }
 
-    /**
-     * Maneja un mensaje de canal recibido desde un peer remoto.
-     * Formato: P2P_CHANNEL_MESSAGE|channelId|senderUsername|content|recipientUsername
-     */
     public void handleChannelMessageRouted(String sourcePeerId, String message) {
         try {
             List<String> parts = protocolParser.decode(message);
@@ -318,20 +290,15 @@ public class PeerMessageRoutingManager {
                 return;
             }
 
-            // Verificar si es una notificación especial del sistema
             if ("SYSTEM".equals(senderUsername) && content.startsWith("MEMBER_JOINED:")) {
-                // Extraer el nombre del nuevo miembro
                 String newMemberUsername = content.substring("MEMBER_JOINED:".length());
-                // Formato: CHANNEL_MEMBERS_UPDATED|channelId|newMemberUsername
                 String deliverMessage = protocolParser.encode("CHANNEL_MEMBERS_UPDATED", 
                         channelId, newMemberUsername);
                 deliverLocalMessage(recipientUsername, deliverMessage);
             } else {
-                // Mensaje normal de canal
                 String serverPrefix = "Servidor " + sourcePeerId.split(":")[0] + " - ";
                 String senderWithPrefix = serverPrefix + senderUsername;
-                
-                // Formato: RECEIVE_CHANNEL_MESSAGE|channelId|senderUsername|content
+
                 String deliverMessage = protocolParser.encode("RECEIVE_CHANNEL_MESSAGE", 
                         channelId, senderWithPrefix, content);
 

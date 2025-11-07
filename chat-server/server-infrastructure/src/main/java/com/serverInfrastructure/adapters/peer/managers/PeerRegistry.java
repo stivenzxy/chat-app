@@ -71,13 +71,12 @@ public class PeerRegistry {
             String[] parts = peerId.split(":");
             if (parts.length < 2) return false;
             int port = Integer.parseInt(parts[1]);
-            // Reject typical ephemeral ports (49152-65535) which are assigned by OS for client sockets
+
             int EPHEMERAL_LOWER = 49152;
             int EPHEMERAL_UPPER = 65535;
             if (port >= EPHEMERAL_LOWER && port <= EPHEMERAL_UPPER) {
                 return false;
             }
-            // Accept any non-ephemeral port as valid peer P2P port. This allows peers to use different configured ports (e.g., 9095, 9096)
             return true;
         } catch (Exception e) {
             logger.debug("Error validando puerto de peer {}: {}", peerId, e.getMessage());
@@ -99,7 +98,6 @@ public class PeerRegistry {
         if (peerInfo == null) return;
         String id = peerInfo.peerId();
         logger.debug("PeerRegistry.addKnownPeer called with ConnectedPeerInfo={}", id);
-        // Only persist peers that match configured PEER_SERVER_PORT (avoid ephemeral client ports)
         if (!knownPeers.contains(id) && isPeerPortValid(id)) {
             knownPeers.add(id);
             logger.info("Nuevo peer conocido agregado: {}", id);
@@ -125,9 +123,6 @@ public class PeerRegistry {
         return new HashSet<>(knownPeers);
     }
 
-    /**
-     * Returns only peers that are valid (match configured PEER_SERVER_PORT) or are already in registry.
-     */
     public synchronized Set<String> getValidPeers() {
         return knownPeers.stream().filter(this::isPeerPortValid).collect(Collectors.toSet());
     }
