@@ -2,6 +2,7 @@ package com.serverInfrastructure.adapters;
 
 import com.serverApplication.dto.ConnectedPeerInfo;
 import com.serverApplication.ports.PeerConnectionObserver;
+import com.serverApplication.ports.peer.ClientMessageBroadcaster;
 import com.serverApplication.ports.peer.PeerNetworkControl;
 import com.serverInfrastructure.adapters.peer.PeerTcpServerAdapter;
 import com.serverInfrastructure.observers.ActiveUserManager;
@@ -118,6 +119,11 @@ public class ServerNetworkAdapter implements PeerNetworkControl {
     public void registerClientBroadcast(Consumer<String> broadcastCallback) {
         peerAdapter.setClientBroadcastCallback(broadcastCallback);
         logger.info("Callback de broadcast registrado en ServerNetworkAdapter");
+    }
+
+    public void registerClientMessageBroadcaster(ClientMessageBroadcaster broadcaster) {
+        peerAdapter.setClientMessageBroadcaster(broadcaster);
+        logger.info("ClientMessageBroadcaster registrado en ServerNetworkAdapter");
     }
 
     public boolean routePrivateMessageToPeer(String recipientUsername, String routeMessage) {

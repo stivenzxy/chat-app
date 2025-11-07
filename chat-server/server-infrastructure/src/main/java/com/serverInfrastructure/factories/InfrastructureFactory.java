@@ -2,6 +2,7 @@ package com.serverInfrastructure.factories;
 
 import com.chatCommon.protocol.ProtocolParser;
 import com.serverApplication.factories.ServiceFactory;
+import com.serverApplication.ports.peer.ClientMessageBroadcaster;
 import com.serverApplication.ports.peer.PeerMessageRouter;
 import com.serverInfrastructure.network.TcpServer;
 import com.serverInfrastructure.adapters.commands.LoginCommandAdapter;
@@ -79,10 +80,26 @@ public class InfrastructureFactory {
         TcpServer server = new TcpServer(handler);
 
         try {
-            // Usar sendDirectBroadcast para usuarios remotos P2P (sin prefijo SERVER_BROADCAST)
-            getOrCreateServerNetworkAdapter().registerClientBroadcast(server::sendDirectBroadcast);
+            ServerNetworkAdapter networkAdapter = getOrCreateServerNetworkAdapter();
+
+            networkAdapter.registerClientBroadcast(server::sendDirectBroadcast);
+
+            ClientMessageBroadcaster targetedBroadcaster = (targetUsername, message, excludeConnectionId) -> {
+                if (targetUsername == null || targetUsername.isBlank()) {
+                    server.sendDirectBroadcast(message);
+                    return;
+                }
+
+                if (excludeConnectionId != null && !excludeConnectionId.isBlank()) {
+                    server.sendMessageToUserExceptSession(targetUsername, message, excludeConnectionId, null);
+                } else {
+                    server.sendMessageToUser(targetUsername, message, null);
+                }
+            };
+
+            networkAdapter.registerClientMessageBroadcaster(targetedBroadcaster);
         } catch (Exception e) {
-            logger.info("No se pudo registrar callback broadcast P2P (No se cargarán mensajes entre Peers): {}", e.getMessage());
+            logger.info("No se pudo registrar callbacks de broadcast P2P: {}", e.getMessage());
         }
 
         SendPrivateMessageCommandAdapter sendMessageAdapter = new SendPrivateMessageCommandAdapter(server);

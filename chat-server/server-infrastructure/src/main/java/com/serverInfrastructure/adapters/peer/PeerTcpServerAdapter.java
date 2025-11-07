@@ -414,12 +414,12 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
     }
 
     public void setClientBroadcastCallback(Consumer<String> callback) {
-        ClientMessageBroadcaster broadcaster =
-            (targetUsername, message, excludeConnectionId) -> callback.accept(message);
-        
         userSyncManager.setClientBroadcastCallback(callback);
+    }
+
+    public void setClientMessageBroadcaster(ClientMessageBroadcaster broadcaster) {
         messageRoutingManager.setClientBroadcaster(broadcaster);
-        logger.info("ClientMessageBroadcaster configurado en managers");
+        logger.info("ClientMessageBroadcaster configurado en PeerMessageRoutingManager");
     }
 
     
