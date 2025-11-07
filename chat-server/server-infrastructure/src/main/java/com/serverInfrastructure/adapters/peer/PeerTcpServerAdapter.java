@@ -143,6 +143,7 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
                     logger.info("Procesando mensaje de canal enrutado de peer {}", peerId);
                     messageRoutingManager.handleChannelMessageRouted(peerId, message);
                 }
+                // Nota: P2P_USER_SYNC se maneja en setOnUserSyncReceived
             });
             
             peerServer.startPeerServer();
@@ -230,7 +231,11 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
             return false;
         }
         
-        return connectionManager.connectToPeer(ip, port, () -> {
+        return connectionManager.connectToPeer(
+            ip, 
+            port, 
+            // 1. onConnectionRejected
+            () -> {
                 ConnectedPeerInfo peerInfo = connectionManager.getPeerInfo(peerId);
                 if (peerInfo != null) {
                     observerNotifier.notifyPeerDisconnected(peerInfo.withStatus("Conexión Rechazada"));
@@ -238,12 +243,13 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
                 observerNotifier.notifyPeerConnectionError(peerId, "Conexión rechazada - intento de conectar P2P al puerto de clientes");
             },
 
+            // 2. onUserSyncReceived
             message -> {
                 logger.debug("Listado de usuarios actualizado por peer {}", peerId);
                 userSyncManager.handleUserSyncMessage(peerId, message);
             },
 
-            // Manejar lista de peers recibida desde un peer
+            // 3. onPeerListReceived - Manejar lista de peers recibida desde un peer
             peerListMessage -> {
                 try {
                     if (peerListMessage == null || !peerListMessage.contains("peers=")) return;
@@ -287,7 +293,7 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
                 }
             },
 
-
+            // 4. onPrivateMessageReceived
             (sourcePeerId, message) -> {
                 if (message.startsWith("P2P_ROUTE_PRIVATE_AUDIO")) {
                     logger.info("Recibiendo audio privado enrutado mediante peer {}", sourcePeerId);
@@ -304,6 +310,7 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
                 }
             },
 
+            // 5. onConnectionSuccess
             confirmedPeerId -> {
                 ConnectedPeerInfo peerInfo = connectionManager.getPeerInfo(confirmedPeerId);
                 if (peerInfo != null) {
