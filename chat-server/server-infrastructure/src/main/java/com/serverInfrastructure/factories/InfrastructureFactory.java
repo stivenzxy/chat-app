@@ -61,7 +61,10 @@ public class InfrastructureFactory {
         inviteAdapter.setNetworkAdapter(getOrCreateServerNetworkAdapter());
         handler.registerCommand(inviteAdapter);
         
-        handler.registerCommand(new RespondInviteCommandAdapter(channelRepository, inviteRepository, handler));
+        RespondInviteCommandAdapter respondInviteAdapter = new RespondInviteCommandAdapter(channelRepository, inviteRepository, handler);
+        respondInviteAdapter.setNetworkAdapter(getOrCreateServerNetworkAdapter());
+        handler.registerCommand(respondInviteAdapter);
+        
         handler.registerCommand(new ListPendingInvitesCommandAdapter(inviteRepository));
         handler.registerCommand(new GetChannelMembersCommandAdapter(channelRepository));
 

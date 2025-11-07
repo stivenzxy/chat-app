@@ -9,7 +9,6 @@ import com.serverInfrastructure.network.ClientConnection;
 import com.serverInfrastructure.observers.ActiveUserManager;
 import com.serverInfrastructure.services.CommandHandler;
 import com.serverInfrastructure.adapters.ServerNetworkAdapter;
-import com.serverInfrastructure.factories.InfrastructureFactory;
 
 import java.util.List;
 
@@ -17,11 +16,16 @@ public class RespondInviteCommandAdapter implements ProtocolCommandAdapter {
     private final ChannelRepository channelRepository;
     private final ChannelInviteRepository inviteRepository;
     private final CommandHandler handler;
+    private ServerNetworkAdapter networkAdapter;
 
     public RespondInviteCommandAdapter(ChannelRepository channelRepository, ChannelInviteRepository inviteRepository, CommandHandler handler) {
         this.channelRepository = channelRepository;
         this.inviteRepository = inviteRepository;
         this.handler = handler;
+    }
+
+    public void setNetworkAdapter(ServerNetworkAdapter networkAdapter) {
+        this.networkAdapter = networkAdapter;
     }
 
     @Override
@@ -59,7 +63,6 @@ public class RespondInviteCommandAdapter implements ProtocolCommandAdapter {
                 String notification = parser.encode("CHANNEL_MEMBERS_UPDATED", String.valueOf(channelId), newMemberUsername);
 
                 ActiveUserManager aum = ActiveUserManager.getInstance();
-                ServerNetworkAdapter networkAdapter = InfrastructureFactory.getInstance().createServerNetworkAdapter();
 
                 for (String memberUsername : memberUsernames) {
                     // Verificar si el usuario es local o remoto
@@ -69,7 +72,7 @@ public class RespondInviteCommandAdapter implements ProtocolCommandAdapter {
                     if (isLocalUser) {
                         // Usuario local: enviar directamente
                         handler.getServer().sendMessageToUser(memberUsername, notification, "SERVER_NOTIFICATION");
-                    } else {
+                    } else if (networkAdapter != null && networkAdapter.isUserConnected(memberUsername)) {
                         // Usuario remoto: enrutar a través de P2P
                         // Formato: P2P_CHANNEL_MESSAGE|channelId|senderUsername|content|recipientUsername
                         // Usamos el mismo formato pero con un contenido especial para notificaciones
