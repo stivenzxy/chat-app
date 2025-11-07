@@ -20,5 +20,7 @@ Thumbs.db
 *.trace.db
 models/
 
+*.log
+*.txt
 
 
