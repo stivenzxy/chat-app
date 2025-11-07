@@ -71,13 +71,10 @@ public class PeerTcpServer {
         return new ArrayList<>(incomingPeerWriters.keySet());
     }
 
-    /**
-     * Inicia el servidor P2P en el puerto configurado (PEER_SERVER_PORT).
-     * Se llama automáticamente cuando inicia el servidor principal de clientes.
-     */
+
     public void startPeerServer() {
         if (isRunning.get()) {
-            logger.warn("PeerTcpServer ya está ejecutándose en puerto {}", this.peerPort);
+            logger.warn("El Servidor P2P ya se encuentra en ejecución en el puerto: {}", this.peerPort);
             return;
         }
         
@@ -96,16 +93,12 @@ public class PeerTcpServer {
         }
     }
     
-    /**
-     * Obtiene el puerto P2P configurado.
-     */
     public int getPeerServerPort() {
         return peerPort;
     }
     
-
     private void acceptPeerConnections() {
-        logger.info("PeerTcpServer comenzó a escuchar conexiones entrantes");
+        logger.info("Esperando conexiones entrantes...");
         
         while (isRunning.get()) {
             try {
@@ -116,9 +109,7 @@ public class PeerTcpServer {
                 
                 logger.info("Nueva conexión P2P entrante desde {}:{}", peerIp, peerPort);
                 
-                // Manejar conexión entrante (validación handshake, almacenamiento, comunicación)
                 handleIncomingPeer(incomingPeerSocket);
-                
             } catch (SocketException e) {
                 if (isRunning.get()) {
                     logger.error("SocketException en PeerTcpServer: {}", e.getMessage());
@@ -211,7 +202,6 @@ public class PeerTcpServer {
                             onUserSyncReceived.accept(peerId, message);
                         }
                         
-                        // Si es una sincronización completa y no hemos respondido aún, responder con nuestros usuarios
                         if (!hasRespondedToSync && message.contains("action=SYNC_ALL")) {
                             hasRespondedToSync = true;
                             if (onGetLocalUserSync != null) {
