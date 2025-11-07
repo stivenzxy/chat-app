@@ -13,26 +13,36 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-
 public class PeerConnectionManager {
     private static final Logger logger = LoggerFactory.getLogger(PeerConnectionManager.class);
 
     private final Map<String, PeerTcpClient> peerClients = new ConcurrentHashMap<>();
     private final Map<String, ConnectedPeerInfo> connectedPeers = new ConcurrentHashMap<>();
     private PeerTcpServer peerServer;
+    
+    // ======== NUEVO CAMPO AÑADIDO ========
+    private PeerObserverNotifier observerNotifier;
 
     public void setPeerServer(PeerTcpServer peerServer) {
         this.peerServer = peerServer;
+        // ======== NUEVA LÍNEA AÑADIDA ========
+        // Configurar el callback para cuando un peer entrante se desconecta.
+        this.peerServer.setOnIncomingPeerDisconnected(this::handleDisconnection);
     }
     
+    // ======== NUEVO MÉTODO AÑADIDO ========
+    public void setObserverNotifier(PeerObserverNotifier notifier) {
+        this.observerNotifier = notifier;
+    }
 
     public boolean connectToPeer(
-            String ip, 
-            int port,
-            Runnable onConnectionRejected,
-            Consumer<String> onUserSyncReceived,
-            BiConsumer<String, String> onPrivateMessageReceived,
-            Consumer<String> onConnectionSuccess
+        String ip,
+        int port,
+        Runnable onConnectionRejected,
+        Consumer<String> onUserSyncReceived,
+        java.util.function.Consumer<String> onPeerListReceived,
+        BiConsumer<String, String> onPrivateMessageReceived,
+        Consumer<String> onConnectionSuccess
     ) {
         String peerId = ip + ":" + port;
         
@@ -46,6 +56,10 @@ public class PeerConnectionManager {
             
             PeerTcpClient client = new PeerTcpClient();
 
+            // ======== NUEVA LÍNEA AÑADIDA ========
+            // ¡Conectar el callback de desconexión del cliente!
+            client.setOnDisconnected(() -> handleDisconnection(peerId));
+            
             client.setOnConnectionRejected(() -> {
                 logger.error("Conexión rechazada por peer {} - limpiando registros", peerId);
                 peerClients.remove(peerId);
@@ -54,6 +68,7 @@ public class PeerConnectionManager {
             });
             
             client.setOnUserSyncReceived(onUserSyncReceived);
+            client.setOnPeerListReceived(onPeerListReceived);
             client.setOnPrivateMessageReceived(onPrivateMessageReceived);
             
             boolean connected = client.connectToPeer(ip, port);
@@ -63,6 +78,15 @@ public class PeerConnectionManager {
 
                 ConnectedPeerInfo peerInfo = ConnectedPeerInfo.create(ip, port, "Conectado");
                 connectedPeers.put(peerId, peerInfo);
+                
+                // Registrar peer conocido en el registro persistente
+                try {
+                    logger.debug("Intentando registrar peer conocido en PeerRegistry: {}", peerId);
+                    com.serverInfrastructure.adapters.peer.managers.PeerRegistry.getInstance().addKnownPeer(peerInfo);
+                    logger.debug("Registro solicitado para peer {}", peerId);
+                } catch (Exception e) {
+                    logger.warn("No se pudo persistir peer conocido {}: {}", peerId, e.getMessage());
+                }
 
                 client.sendHandshake();
 
@@ -93,34 +117,25 @@ public class PeerConnectionManager {
     }
 
     public boolean disconnectFromPeer(String peerId) {
+        logger.info("Iniciando desconexión activa del peer {}", peerId);
+        
+        // Desconectar cliente saliente si existe
         PeerTcpClient client = peerClients.get(peerId);
         if (client != null) {
-            try {
-                client.disconnect();
-                peerClients.remove(peerId);
-                logger.info("Conexión como cliente a {} cerrada", peerId);
-            } catch (Exception e) {
-                logger.error("Error cerrando conexión de cliente P2P a {}: {}", peerId, e.getMessage());
-            }
+            client.disconnect(); // Esto activará el callback onDisconnected
         }
 
+        // Desconectar conexión entrante si existe
         if (peerServer != null && peerServer.isRunning()) {
-            if (peerServer.disconnectIncomingPeer(peerId)) {
-                logger.info("Conexión como servidor a {} cerrada", peerId);
-            }
-        }
-
-        ConnectedPeerInfo peerInfo = connectedPeers.remove(peerId);
-        
-        if (peerInfo != null) {
-            logger.info("Limpiando registro de peer {}", peerId);
+            peerServer.disconnectIncomingPeer(peerId);
         }
         
-        boolean success = true;
-
-        logger.info("Desconexión completa de peer {}", peerId);
-
-        return success;
+        // Forzar limpieza si aún no se ha realizado por los callbacks
+        if (connectedPeers.containsKey(peerId)) {
+            handleDisconnection(peerId);
+        }
+        
+        return true;
     }
 
     public int disconnectFromPeers(List<String> peerIds) {
@@ -138,6 +153,31 @@ public class PeerConnectionManager {
         List<String> peerIds = new ArrayList<>(peerClients.keySet());
         for (String peerId : peerIds) {
             disconnectFromPeer(peerId);
+        }
+    }
+
+    // ======== NUEVO MÉTODO AÑADIDO ========
+    /**
+     * Centraliza la lógica de limpieza y notificación para cualquier tipo de desconexión (activa o pasiva).
+     * Este método es seguro para ser llamado múltiples veces para el mismo peerId.
+     * @param peerId El ID del peer que se ha desconectado.
+     */
+    private synchronized void handleDisconnection(String peerId) {
+        // Remover de las conexiones salientes activas
+        peerClients.remove(peerId);
+
+        // Remover de la lista general de peers conectados (la que usa la UI)
+        ConnectedPeerInfo removedPeerInfo = connectedPeers.remove(peerId);
+
+        // Si el peer realmente estaba en nuestra lista, notificar a los observadores.
+        if (removedPeerInfo != null) {
+            logger.info("Peer {} desconectado. Notificando a los observadores.", peerId);
+            if (observerNotifier != null) {
+                // Notificar con un estado claro de "Desconectado".
+                observerNotifier.notifyPeerDisconnected(removedPeerInfo.withStatus("Desconectado"));
+            }
+        } else {
+            logger.debug("handleDisconnection llamado para {}, pero ya no estaba en la lista de conectados.", peerId);
         }
     }
 
@@ -209,6 +249,21 @@ public class PeerConnectionManager {
 
     public ConnectedPeerInfo getPeerInfo(String peerId) {
         return connectedPeers.get(peerId);
+    }
+
+    /**
+     * Registrar una conexión entrante (aceptada por el servidor local).
+     * Permite que las conexiones entrantes aparezcan en el listado general de peers.
+     */
+    public void registerIncomingPeer(ConnectedPeerInfo info) {
+        if (info == null) return;
+        connectedPeers.put(info.peerId(), info);
+        try {
+            com.serverInfrastructure.adapters.peer.managers.PeerRegistry.getInstance().addKnownPeer(info);
+        } catch (Exception e) {
+            logger.warn("No se pudo persistir peer entrante {}: {}", info.peerId(), e.getMessage());
+        }
+        logger.info("Peer entrante registrado: {}", info.peerId());
     }
 
     public void handleIncomingPeer(java.net.Socket incomingSocket) {

@@ -10,21 +10,28 @@ import com.serverPresentation.views.components.ConnectionPanel;
 import com.serverPresentation.views.components.ServerNetworkPanel;
 import com.serverPresentation.views.components.UserListPanel;
 
+
 public class PresentationFactory {
     private final ServiceFactory serviceFactory;
     private final InfrastructureFactory infrastructureFactory;
     private final ServerControl serverControl;
-    private final PeerNetworkControl serverNetworkControl;
+    private final PeerNetworkControl serverNetworkControl; // <-- Ya tienes el campo, solo cambiaremos cómo se inicializa
 
     private UserController userController;
 
-    public PresentationFactory(ServiceFactory serviceFactory, InfrastructureFactory infrastructureFactory, ServerControl serverControl) {
+    // ============== CONSTRUCTOR MODIFICADO ==============
+    public PresentationFactory(
+            ServiceFactory serviceFactory, 
+            InfrastructureFactory infrastructureFactory, 
+            ServerControl serverControl,
+            PeerNetworkControl serverNetworkControl // <-- AÑADIR este parámetro
+    ) {
         this.serviceFactory = serviceFactory;
         this.infrastructureFactory = infrastructureFactory;
         this.serverControl = serverControl;
         
-        // Crear adaptador P2P separado
-        this.serverNetworkControl = infrastructureFactory.createServerNetworkAdapter();
+        // Asigna la instancia única que recibes, en lugar de crear una nueva.
+        this.serverNetworkControl = serverNetworkControl; 
     }
 
     public UserController createUserController() {

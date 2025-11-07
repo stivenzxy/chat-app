@@ -1,5 +1,6 @@
 package com.serverInfrastructure.network.peerTcp;
 
+import com.chatCommon.utils.AppProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +28,10 @@ public class PeerTcpClient {
     private Runnable onConnectionRejected;
     private java.util.function.Consumer<String> onUserSyncReceived;
     private java.util.function.BiConsumer<String, String> onPrivateMessageReceived;
+    private java.util.function.Consumer<String> onPeerListReceived;
     
+    private Runnable onDisconnected;
+
     public PeerTcpClient() {
         logger.debug("PeerTcpClient creado - Listo para conectar");
     }
@@ -37,6 +41,10 @@ public class PeerTcpClient {
     }
     public void setOnUserSyncReceived(Consumer<String> callback) {
         this.onUserSyncReceived = callback;
+    }
+
+    public void setOnPeerListReceived(Consumer<String> callback) {
+        this.onPeerListReceived = callback;
     }
 
     public void setOnPrivateMessageReceived(BiConsumer<String, String> callback) {
@@ -83,37 +91,39 @@ public class PeerTcpClient {
         }
     }
 
+     public void setOnDisconnected(Runnable onDisconnected) {
+        this.onDisconnected = onDisconnected;
+    }
+
     private void startListening() {
         listenerThread = new Thread(() -> {
             logger.info("Iniciando escucha de mensajes desde peer {}", peerId);
             
-            while (isConnected.get() && !Thread.currentThread().isInterrupted()) {
-                try {
+            try {
+                while (isConnected.get() && !Thread.currentThread().isInterrupted()) {
                     String message = input.readLine();
-                    
                     if (message == null) {
-                        logger.info("Peer {} cerró la conexión", peerId);
-                        break;
+                        logger.info("Peer {} cerró la conexión (end of stream)", peerId);
+                        break; // Salir del bucle si se cierra la conexión
                     }
-
-                    logger.debug("Mensaje recibido de {}: {}", peerId, message);
                     handleIncomingMessage(message);
-                    
-                } catch (SocketException e) {
-                    if (isConnected.get() && !Thread.currentThread().isInterrupted()) {
-                        logger.warn("Conexión con peer {} perdida: {}", peerId, e.getMessage());
-                    }
-                    break;
-                } catch (IOException e) {
-                    if (isConnected.get() && !Thread.currentThread().isInterrupted()) {
-                        logger.error("Error leyendo mensaje de peer {}: {}", peerId, e.getMessage());
-                    }
-                    break;
-                } catch (Exception e) {
-                    logger.error("Error crítico procesando mensaje de peer {}: {}", peerId, e.getMessage(), e);
                 }
+            } catch (IOException e) {
+                if (isConnected.get()) { // Evitar logs de error si nos desconectamos a propósito
+                    logger.warn("Conexión con peer {} perdida: {}", peerId, e.getMessage());
+                }
+            } finally {
+                // ======== MODIFICACIÓN CLAVE DENTRO DE finally ========
+                // Asegurarse de que la desconexión se maneje y notifique solo una vez.
+                if (isConnected.getAndSet(false)) { // Atomically set to false
+                    logger.info("El hilo de escucha para {} ha terminado. Notificando desconexión.", peerId);
+                    if (onDisconnected != null) {
+                        onDisconnected.run();
+                    }
+                }
+                // Limpieza final de recursos
+                cleanupResources();
             }
-            
         }, "PeerListener-" + peerId);
         
         listenerThread.start();
@@ -138,7 +148,12 @@ public class PeerTcpClient {
             if (onUserSyncReceived != null) {
                 onUserSyncReceived.accept(message);
             }
-            
+        } else if (message.startsWith("P2P_PEER_LIST")) {
+            logger.info("(CLIENT) Lista de peers recibida desde {}: {}", peerId, message);
+            if (onPeerListReceived != null) {
+                onPeerListReceived.accept(message);
+            }
+
         } else if (message.startsWith("P2P_ROUTE_PRIVATE_AUDIO")) {
             logger.info("(CLIENT) Audio privado enrutado recibido desde {}: {}", peerId, message);
             // Notificar via callback para que el adapter lo entregue al cliente local
@@ -192,46 +207,69 @@ public class PeerTcpClient {
             logger.error("No se puede enviar evento de conexión inicial - no hay conexión");
             return;
         }
+        // Announce configured PEER_SERVER_PORT (the server's listening P2P port) instead of the ephemeral TCP local port
+        String handshakeMessage = String.format("P2P_SERVER_HANDSHAKE|version=1.0|type=PEER_SERVER|myId=%s:%d|protocol=CHAT_P2P|users=[]|channels=[]",
+            getLocalIp(), getConfiguredPeerServerPort());
 
-        String handshakeMessage = String.format("P2P_SERVER_HANDSHAKE|version=1.0|type=PEER_SERVER|myId=%s:%d|protocol=CHAT_P2P|users=[]|channels=[]", 
-            getLocalIp(), getLocalPort());
-        
-        logger.info("Enviando handshake P2P a peer {}", peerId);
+        logger.info("Enviando handshake P2P a peer {} (advertised myId={}:{})", peerId, getLocalIp(), getConfiguredPeerServerPort());
         sendMessage(handshakeMessage);
+        // También enviar lista local de peers conocida
+        try {
+            sendPeerList();
+        } catch (Exception e) {
+            logger.debug("No se pudo enviar peer list tras handshake: {}", e.getMessage());
+        }
+    }
+
+    public void sendPeerList() {
+        // Construir mensaje con peers conocidos (si existe registry)
+        try {
+            com.serverInfrastructure.adapters.peer.managers.PeerRegistry registry = com.serverInfrastructure.adapters.peer.managers.PeerRegistry.getInstance();
+            java.util.Set<String> peers = registry.getValidPeers();
+            if (peers.isEmpty()) return;
+            String payload = String.join(",", peers);
+            String message = "P2P_PEER_LIST|peers=" + payload;
+            sendMessage(message);
+            logger.debug("Enviado P2P_PEER_LIST a {}: {} peers sent", peerId, peers.size());
+        } catch (Exception e) {
+            logger.debug("Error construyendo/enviando peer list: {}", e.getMessage());
+        }
     }
 
     public void disconnect() {
-        if (!isConnected.get()) {
-            logger.debug("PeerTcpClient ya estaba desconectado");
+        // ======== MODIFICACIÓN EN disconnect() ========
+        // Usa getAndSet para asegurar que el bloque se ejecute solo una vez.
+        if (!isConnected.getAndSet(false)) {
+            logger.debug("PeerTcpClient a {} ya estaba desconectado.", peerId);
             return;
         }
         
-        logger.info("Desconectando de peer {}", peerId);
-        isConnected.set(false);
+        logger.info("Iniciando desconexión de peer {}", peerId);
 
-        // Enviar mensaje de desconexión si es posible
-        try {
-            if (output != null) {
-                output.println("DISCONNECT");
-            }
-        } catch (Exception e) {
-            logger.debug("No se pudo enviar mensaje de desconexión: {}", e.getMessage());
+        // Notificar inmediatamente para una respuesta de UI más rápida
+        if (onDisconnected != null) {
+            onDisconnected.run();
         }
         
-        // Cerrar todos los recursos
+        cleanupResources();
+        logger.info("Desconectado de peer {}", peerId);
+    }
+    
+    // ======== AÑADIR ESTE NUEVO MÉTODO PRIVADO ========
+    private void cleanupResources() {
         try {
-            if (input != null) input.close();
-            if (output != null) output.close();
-            if (socket != null && !socket.isClosed()) socket.close();
-            
-            // Interrumpir hilo listener
             if (listenerThread != null && listenerThread.isAlive()) {
                 listenerThread.interrupt();
             }
-            
-            logger.info("Desconectado de peer {}", peerId);
-        } catch (Exception e) {
-            logger.error("Error limpiando recursos al desconectar: {}", e.getMessage());
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+            }
+        } catch (IOException e) {
+            logger.error("Error limpiando recursos para peer {}: {}", peerId, e.getMessage());
+        } finally {
+            input = null;
+            output = null;
+            socket = null;
         }
     }
     
@@ -240,10 +278,33 @@ public class PeerTcpClient {
     }
 
     private String getLocalIp() {
-        return "127.0.0.1"; 
+        try {
+            if (socket != null && socket.getLocalAddress() != null) {
+                return socket.getLocalAddress().getHostAddress();
+            }
+        } catch (Exception ignored) {
+        }
+        return "127.0.0.1";
     }
 
     private int getLocalPort() {
-        return 12346; 
+        try {
+            if (socket != null) {
+                return socket.getLocalPort();
+            }
+        } catch (Exception ignored) {
+        }
+        return 0;
+    }
+
+    private int getConfiguredPeerServerPort() {
+        try {
+            AppProperties props = new AppProperties("server-configuration");
+            int p = props.getInt("PEER_SERVER_PORT");
+            if (p > 0) return p;
+        } catch (Exception e) {
+            logger.debug("No se pudo leer PEER_SERVER_PORT desde configuración: {}", e.getMessage());
+        }
+        return getLocalPort();
     }
 }

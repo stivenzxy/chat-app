@@ -1,5 +1,5 @@
 package com.serverInfrastructure.adapters.peer;
-
+import com.serverInfrastructure.utils.NetworkUtils;
 import com.serverApplication.dto.ConnectedPeerInfo;
 import com.serverApplication.ports.PeerConnectionObserver;
 import com.serverApplication.ports.peer.*;
@@ -21,6 +21,8 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
 
     private PeerTcpServer peerServer;
 
+    private String localServerId;
+
     private final PeerConnectionManager connectionManager;
     private final PeerUserSyncManager userSyncManager;
     private final PeerMessageRoutingManager messageRoutingManager;
@@ -37,6 +39,10 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
         this.messageRoutingManager = messageRoutingManager;
         this.observerNotifier = observerNotifier;
 
+        // ======== AÑADIR ESTA LÍNEA ========
+        // Inyectar el notificador en el gestor de conexiones.
+        this.connectionManager.setObserverNotifier(observerNotifier);
+        
         configureManagerDependencies();
         
         logger.info("PeerTcpServerAdapter inicializado con managers inyectados");
@@ -81,6 +87,45 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
                 logger.debug("Procesando sincronización de usuarios de peer entrante {}", peerId);
                 userSyncManager.handleUserSyncMessage(peerId, message);
             });
+
+            // Notificar y registrar peers entrantes en los managers cuando se acepta la conexión
+            peerServer.setOnPeerConnected(info -> {
+                try {
+                    // Only accept/register incoming peers that advertise a non-ephemeral port
+                    if (info == null) {
+                        logger.debug("OnPeerConnected received null info, ignoring");
+                        return;
+                    }
+                    // parse the peer port from info
+                    String pid = info.peerId();
+                    int remotePort = -1;
+                    try {
+                        String[] parts = pid.split(":");
+                        if (parts.length > 1) remotePort = Integer.parseInt(parts[1]);
+                    } catch (Exception ex) {
+                        logger.debug("No se pudo parsear puerto de peerId {}: {}", pid, ex.getMessage());
+                    }
+
+                    // Allow incoming peers if they advertise a non-ephemeral port.
+                    // Previously we required exact port equality which prevented registering valid peers
+                    // that run their P2P server on a different port. Only reject typical ephemeral ports.
+                    int EPHEMERAL_LOWER = 49152;
+                    int EPHEMERAL_UPPER = 65535;
+                    if (remotePort >= EPHEMERAL_LOWER && remotePort <= EPHEMERAL_UPPER) {
+                        logger.debug("Ignorando conexión entrante desde puerto efímero {} (esperado no-efímero)", remotePort);
+                        return;
+                    }
+
+                    connectionManager.registerIncomingPeer(info);
+                } catch (Exception e) {
+                    logger.warn("No se pudo registrar peer entrante en connectionManager: {}", e.getMessage());
+                }
+                try {
+                    observerNotifier.notifyPeerConnected(info);
+                } catch (Exception e) {
+                    logger.warn("No se pudo notificar observadores de peer conectado: {}", e.getMessage());
+                }
+            });
             
             peerServer.setOnGetLocalUserSync(() -> userSyncManager.generateInitialSyncMessage(peerPort));
             
@@ -96,12 +141,36 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
             
             peerServer.startPeerServer();
 
-            String localServerId = establishLocalServerId(peerPort);
-            userSyncManager.setLocalServerId(localServerId);
+            this.localServerId = establishLocalServerId(peerPort);
+            userSyncManager.setLocalServerId(this.localServerId);
 
             connectionManager.setPeerServer(peerServer);
             
             logger.info("Servidor P2P iniciado exitosamente en puerto {}", peerPort);
+            // Intentar reconectar a peers persistidos al iniciar
+            try {
+                com.serverInfrastructure.adapters.peer.managers.PeerRegistry registry =
+                        com.serverInfrastructure.adapters.peer.managers.PeerRegistry.getInstance();
+                for (String known : registry.getKnownPeers()) {
+                    try {
+                        if (known == null || known.isBlank()) continue;
+                        if (known.equals(this.localServerId)) continue;
+                        String[] parts = known.split(":");
+                        if (parts.length != 2) continue;
+                        String kip = parts[0];
+                        int kport = Integer.parseInt(parts[1]);
+                        if (!connectionManager.isConnectedToPeer(known)) {
+                            logger.info("Reconectando a peer persistido {}", known);
+                            // use adapter-level connect to reuse callbacks
+                            connectToPeer(kip, kport);
+                        }
+                    } catch (Exception ex) {
+                        logger.warn("No se pudo reconectar peer persistido {}: {}", known, ex.getMessage());
+                    }
+                }
+            } catch (Exception e) {
+                logger.debug("No se pudo iniciar reconexión a peers conocidos: {}", e.getMessage());
+            }
             return true;
             
         } catch (Exception e) {
@@ -149,6 +218,11 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
     @Override
     public boolean connectToPeer(String ip, int port) {
         String peerId = ip + ":" + port;
+
+        if (peerServer != null && NetworkUtils.isLocalAddress(ip, port, peerServer.getPeerPort())) {
+            logger.info("Auto-conexión detectada y prevenida para {}:{}", ip, port);
+            return false;
+        }
         
         return connectionManager.connectToPeer(ip, port, () -> {
                 ConnectedPeerInfo peerInfo = connectionManager.getPeerInfo(peerId);
@@ -161,6 +235,50 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
             message -> {
                 logger.debug("Listado de usuarios actualizado por peer {}", peerId);
                 userSyncManager.handleUserSyncMessage(peerId, message);
+            },
+
+            // Manejar lista de peers recibida desde un peer
+            peerListMessage -> {
+                try {
+                    if (peerListMessage == null || !peerListMessage.contains("peers=")) return;
+                    String after = peerListMessage.substring(peerListMessage.indexOf("peers=") + 6);
+                    String[] items = after.split(",");
+                    for (String item : items) {
+                        String p = item.trim();
+                        if (p.isEmpty()) continue;
+
+                        // Lógica simplificada y robusta
+                        try {
+                            String[] parts = p.split(":");
+                            if (parts.length != 2) continue;
+                            String discoveredIp = parts[0];
+                            int discoveredPort = Integer.parseInt(parts[1]);
+
+                            // ¡Usa nuestra nueva utilidad para la comprobación!
+                            if (peerServer != null && NetworkUtils.isLocalAddress(discoveredIp, discoveredPort, peerServer.getPeerPort())) {
+                                logger.debug("Omitiendo peer descubierto que corresponde al servidor local: {}", p);
+                                continue;
+                            }
+                            
+                            // Evitar conectar al peer que nos envió la lista (sigue siendo útil)
+                            if (p.equals(peerId)) continue;
+
+                            // Intentar conectar (en background para no bloquear)
+                            new Thread(() -> {
+                                try {
+                                    logger.info("Descubierto peer {} desde {}, intentando conectar...", p, peerId);
+                                    connectToPeer(discoveredIp, discoveredPort);
+                                } catch (Exception ex) {
+                                    logger.warn("Error intentando conectar peer descubierto {}: {}", p, ex.getMessage());
+                                }
+                            }, "PeerAutoConnect-" + p).start();
+                        } catch (Exception ex) {
+                            logger.warn("Error procesando peer descubierto '{}': {}", p, ex.getMessage());
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.warn("Error procesando peerList de {}: {}", peerId, e.getMessage());
+                }
             },
 
 
@@ -274,6 +392,8 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
         messageRoutingManager.setClientBroadcaster(broadcaster);
         logger.info("ClientMessageBroadcaster configurado en managers");
     }
+
+    
 
     private List<String> getLocalConnectedUsers() {
         try {
