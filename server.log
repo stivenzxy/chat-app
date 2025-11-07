@@ -3368,3 +3368,16 @@ java.net.BindException: Address already in use: bind
 2025-11-07 01:50:48.302 [cliente-2] INFO  c.s.network.handlers.ClientHandler - [cliente-2] Enviando respuesta: OK|Login exitoso|8c46e37a-bda7-4625-b711-f0aa96dfc0fd|stivenzxy|[foto de perfil]
 2025-11-07 01:50:49.227 [cliente-2] INFO  c.s.network.handlers.ClientHandler - [cliente-2] Enviando respuesta: OK|4,Unillanos,PRIVATE
 2025-11-07 01:50:49.228 [cliente-2] INFO  c.s.network.handlers.ClientHandler - [cliente-2] Enviando respuesta: OK|Usuarios obtenidos|
+2025-11-07 01:55:46.020 [main] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:55:46.697 [main] INFO  c.s.p.config.ConnectionManager - Base de datos inicializada correctamente
+2025-11-07 01:55:46.715 [main] INFO  c.s.adapters.TcpServerAdapter - TcpServerAdapter inicializado para gestión de clientes
+2025-11-07 01:55:46.730 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - RemoteUsersProvider configurado en PeerMessageRoutingManager
+2025-11-07 01:55:46.732 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - PeerMessageSender configurado en PeerMessageRoutingManager
+2025-11-07 01:55:46.732 [main] INFO  c.s.a.peer.PeerTcpServerAdapter - PeerTcpServerAdapter inicializado con managers inyectados
+2025-11-07 01:55:46.735 [main] INFO  c.s.adapters.ServerNetworkAdapter - ServerNetworkAdapter inicializado - Gestión P2P exclusiva con sincronización automática de usuarios
+2025-11-07 01:55:46.736 [main] INFO  c.s.adapters.TcpServerAdapter - PeerNetworkControl configurado para inicio automático
+2025-11-07 01:55:47.920 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:55:47.920 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - PeerTcpServer inicializado - Puerto P2P configurado: 6060
+2025-11-07 01:55:47.945 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:55:48.215 [AWT-EventQueue-0] INFO  c.s.views.components.UserListPanel - Usuarios cargados exitosamente: 10 usuarios
+2025-11-07 01:55:50.652 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Servidor de clientes detenido.
