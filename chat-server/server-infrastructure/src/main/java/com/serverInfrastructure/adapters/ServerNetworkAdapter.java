@@ -125,4 +125,18 @@ public class ServerNetworkAdapter implements PeerNetworkControl {
         logger.info("Enrutando audio para {} utilizando PeerAdapter", recipientUsername);
         return peerAdapter.routePrivateAudioToPeer(recipientUsername, routeMessage);
     }
+
+    public boolean routeChannelInviteToPeer(String recipientUsername, String routeMessage) {
+        logger.info("Enrutando invitación de canal para {} utilizando PeerAdapter", recipientUsername);
+        return peerAdapter.routeChannelInviteToPeer(recipientUsername, routeMessage);
+    }
+
+    public boolean routeChannelMessageToPeer(String recipientUsername, String routeMessage) {
+        logger.info("Enrutando mensaje de canal para {} utilizando PeerAdapter", recipientUsername);
+        return peerAdapter.routeChannelMessageToPeer(recipientUsername, routeMessage);
+    }
+
+    public boolean isUserConnected(String username) {
+        return peerAdapter.isUserConnected(username);
+    }
 }

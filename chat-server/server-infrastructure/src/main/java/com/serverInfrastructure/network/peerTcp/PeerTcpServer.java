@@ -278,6 +278,16 @@ public class PeerTcpServer {
                         if (onPrivateMessageReceived != null) {
                             onPrivateMessageReceived.accept(peerId, message);
                         }
+                    } else if (message.startsWith("P2P_CHANNEL_INVITE")) {
+                        logger.info("(SERVER) Invitación de canal enrutada recibida de peer {}", peerId);
+                        if (onPrivateMessageReceived != null) {
+                            onPrivateMessageReceived.accept(peerId, message);
+                        }
+                    } else if (message.startsWith("P2P_CHANNEL_MESSAGE")) {
+                        logger.info("(SERVER) Mensaje de canal enrutado recibido de peer {}", peerId);
+                        if (onPrivateMessageReceived != null) {
+                            onPrivateMessageReceived.accept(peerId, message);
+                        }
                     }
                     
                     logger.debug("Mensaje de peer {}: {}", peerId, message);

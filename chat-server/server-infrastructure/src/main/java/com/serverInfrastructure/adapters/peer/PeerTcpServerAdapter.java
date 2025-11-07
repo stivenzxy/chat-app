@@ -133,9 +133,15 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
                 if (message.startsWith("P2P_ROUTE_PRIVATE_AUDIO")) {
                     logger.info("Procesando audio privado enrutado de peer {}", peerId);
                     messageRoutingManager.handlePrivateAudioRouted(peerId, message);
-                } else {
+                } else if (message.startsWith("P2P_ROUTE_PRIVATE")) {
                     logger.info("Procesando mensaje privado enrutado de peer {}", peerId);
                     messageRoutingManager.handlePrivateMessageRouted(peerId, message);
+                } else if (message.startsWith("P2P_CHANNEL_INVITE")) {
+                    logger.info("Procesando invitación de canal enrutada de peer {}", peerId);
+                    messageRoutingManager.handleChannelInviteRouted(peerId, message);
+                } else if (message.startsWith("P2P_CHANNEL_MESSAGE")) {
+                    logger.info("Procesando mensaje de canal enrutado de peer {}", peerId);
+                    messageRoutingManager.handleChannelMessageRouted(peerId, message);
                 }
             });
             
@@ -286,9 +292,15 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
                 if (message.startsWith("P2P_ROUTE_PRIVATE_AUDIO")) {
                     logger.info("Recibiendo audio privado enrutado mediante peer {}", sourcePeerId);
                     messageRoutingManager.handlePrivateAudioRouted(sourcePeerId, message);
-                } else {
+                } else if (message.startsWith("P2P_ROUTE_PRIVATE")) {
                     logger.info("Recibiendo mensaje privado enrutado mediante peer {}", sourcePeerId);
                     messageRoutingManager.handlePrivateMessageRouted(sourcePeerId, message);
+                } else if (message.startsWith("P2P_CHANNEL_INVITE")) {
+                    logger.info("Recibiendo invitación de canal enrutada mediante peer {}", sourcePeerId);
+                    messageRoutingManager.handleChannelInviteRouted(sourcePeerId, message);
+                } else if (message.startsWith("P2P_CHANNEL_MESSAGE")) {
+                    logger.info("Recibiendo mensaje de canal enrutado mediante peer {}", sourcePeerId);
+                    messageRoutingManager.handleChannelMessageRouted(sourcePeerId, message);
                 }
             },
 
@@ -413,5 +425,46 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
 
     public boolean routePrivateAudioToPeer(String recipientUsername, String routeMessage) {
         return messageRoutingManager.routePrivateAudioToPeer(recipientUsername, routeMessage);
+    }
+
+    /**
+     * Enruta una invitación de canal a un usuario remoto.
+     */
+    public boolean routeChannelInviteToPeer(String recipientUsername, String routeMessage) {
+        return messageRoutingManager.routeChannelInviteToPeer(recipientUsername, routeMessage);
+    }
+
+    /**
+     * Enruta un mensaje de canal a un usuario remoto.
+     */
+    public boolean routeChannelMessageToPeer(String recipientUsername, String routeMessage) {
+        return messageRoutingManager.routeChannelMessageToPeer(recipientUsername, routeMessage);
+    }
+
+    /**
+     * Verifica si un usuario está conectado localmente o en un peer remoto.
+     */
+    public boolean isUserConnected(String username) {
+        // Verificar usuarios locales
+        try {
+            com.serverInfrastructure.observers.ActiveUserManager aum = 
+                com.serverInfrastructure.observers.ActiveUserManager.getInstance();
+            List<com.serverDomain.entities.User> localSessions = aum.getUserSessions(username);
+            if (localSessions != null && !localSessions.isEmpty()) {
+                return true;
+            }
+        } catch (Exception e) {
+            logger.debug("Error verificando usuario local: {}", e.getMessage());
+        }
+
+        // Verificar usuarios remotos
+        Map<String, List<String>> remoteUsers = userSyncManager.getAllUsersAcrossPeers();
+        for (List<String> users : remoteUsers.values()) {
+            if (users.contains(username)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
