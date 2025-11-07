@@ -107,7 +107,7 @@ public class ServerNetworkAdapter implements PeerNetworkControl {
     }
     
     @Override
-    public Map<String, java.util.List<String>> getAllUsersAcrossPeers() {
+    public Map<String, List<String>> getAllUsersAcrossPeers() {
         return peerAdapter.getAllUsersAcrossPeers();
     }
 

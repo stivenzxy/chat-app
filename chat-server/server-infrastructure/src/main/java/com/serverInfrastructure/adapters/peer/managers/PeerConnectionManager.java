@@ -276,7 +276,6 @@ public class PeerConnectionManager {
             }
             return;
         }
-
         peerServer.handleIncomingPeer(incomingSocket);
     }
 }

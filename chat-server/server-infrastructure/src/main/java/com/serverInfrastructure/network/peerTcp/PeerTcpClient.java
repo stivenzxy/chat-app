@@ -129,6 +129,8 @@ public class PeerTcpClient {
         listenerThread.start();
     }
 
+    private boolean hasReceivedInitialSync = false;
+
     private void handleIncomingMessage(String message) {
         logger.info("Procesando mensaje de {}: {}", peerId, message);
         
@@ -148,12 +150,18 @@ public class PeerTcpClient {
             if (onUserSyncReceived != null) {
                 onUserSyncReceived.accept(message);
             }
+            // Si es la primera sincronización completa recibida, responder con nuestros usuarios
+            if (!hasReceivedInitialSync && message.contains("action=SYNC_ALL")) {
+                hasReceivedInitialSync = true;
+                // La respuesta se envía automáticamente en el callback onConnectionSuccess del PeerConnectionManager
+                logger.info("Primera sincronización completa recibida desde {}, se enviará respuesta", peerId);
+            }
+
         } else if (message.startsWith("P2P_PEER_LIST")) {
             logger.info("(CLIENT) Lista de peers recibida desde {}: {}", peerId, message);
             if (onPeerListReceived != null) {
                 onPeerListReceived.accept(message);
             }
-
         } else if (message.startsWith("P2P_ROUTE_PRIVATE_AUDIO")) {
             logger.info("(CLIENT) Audio privado enrutado recibido desde {}: {}", peerId, message);
             // Notificar via callback para que el adapter lo entregue al cliente local

@@ -155,6 +155,16 @@ public class TcpServer {
         }
     }
 
+    /**
+     * Envía un mensaje broadcast directo a todos los clientes sin agregar prefijos.
+     * Se usa para notificaciones P2P de usuarios remotos.
+     */
+    public void sendDirectBroadcast(String message) {
+        if (messageBroadcaster != null) {
+            messageBroadcaster.broadcastMessage(message, null);
+        }
+    }
+
     public void fireClientIdentityUpdatedPublic(ClientConnection connection) {
         fireClientIdentityUpdated(connection);
     }
