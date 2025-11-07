@@ -156,7 +156,7 @@ public class PeerMessageRoutingManager {
                 logger.info("Mensaje/audio enrutado para sesión {} de {}", connectionId, recipientUsername);
             }
 
-            clientBroadcaster.broadcast(null, deliverMessage, null);
+            clientBroadcaster.broadcast(recipientUsername, deliverMessage, null);
             logger.info("Mensaje/audio enrutado transmitido para entrega local a {}", recipientUsername);
             
         } catch (Exception e) {
