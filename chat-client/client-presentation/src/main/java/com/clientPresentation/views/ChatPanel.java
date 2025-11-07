@@ -103,7 +103,7 @@ public class ChatPanel extends JPanel {
         JPanel leftPanel = new JPanel(new BorderLayout(5, 5));
         leftPanel.add(profilePanel, BorderLayout.NORTH);
         leftPanel.add(leftTabs, BorderLayout.CENTER);
-        leftPanel.setPreferredSize(new Dimension(240, 0));
+        leftPanel.setPreferredSize(new Dimension(320, 0));
 
         add(leftPanel, BorderLayout.WEST);
         invitesBtn = new JButton("Invitaciones");
