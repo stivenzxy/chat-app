@@ -6,6 +6,7 @@ import com.serverApplication.ports.peer.*;
 import com.serverInfrastructure.adapters.peer.managers.*;
 import com.serverInfrastructure.network.peerTcp.PeerTcpServer;
 import com.serverInfrastructure.factories.PeerManagerFactory;
+import com.serverDomain.repositories.ChannelInviteRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,16 +57,33 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
             PeerManagerFactory.createObserverNotifier()
         );
     }
+    
+    public void setInviteRepository(ChannelInviteRepository repository) {
+        messageRoutingManager.setInviteRepository(repository);
+        logger.info("ChannelInviteRepository inyectado en PeerTcpServerAdapter");
+    }
 
     private void configureManagerDependencies() {
         userSyncManager.setPeerBroadcastCallback(connectionManager::broadcastToPeers);
         messageRoutingManager.setRemoteUsersProvider(userSyncManager::getAllUsersAcrossPeers);
 
         messageRoutingManager.setPeerMessageSender((peerId, message) -> {
-            if (!connectionManager.sendMessageToPeer(peerId, message)) {
+            logger.debug("Intentando enviar mensaje P2P a {}: {}", peerId, message.substring(0, Math.min(50, message.length())));
+            boolean sentViaOutgoing = connectionManager.sendMessageToPeer(peerId, message);
+            if (!sentViaOutgoing) {
+                logger.debug("No se pudo enviar via conexión saliente, intentando via conexión entrante");
                 if (peerServer != null && peerServer.isRunning()) {
-                    peerServer.sendMessageToIncomingPeer(peerId, message);
+                    boolean sentViaIncoming = peerServer.sendMessageToIncomingPeer(peerId, message);
+                    if (sentViaIncoming) {
+                        logger.debug("Mensaje enviado exitosamente via conexión entrante a {}", peerId);
+                    } else {
+                        logger.warn("No se pudo enviar mensaje P2P a {} (ni saliente ni entrante)", peerId);
+                    }
+                } else {
+                    logger.warn("PeerServer no está corriendo, no se puede enviar via conexión entrante");
                 }
+            } else {
+                logger.debug("Mensaje enviado exitosamente via conexión saliente a {}", peerId);
             }
         });
 
@@ -456,26 +474,44 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
      * Verifica si un usuario está conectado localmente o en un peer remoto.
      */
     public boolean isUserConnected(String username) {
+        logger.debug("Buscando usuario: '{}'", username);
+        
+        // Extraer el nombre real si tiene el prefijo "Servidor X.X.X.X - "
+        String actualUsername = username;
+        if (username.contains(" - ")) {
+            String[] parts = username.split(" - ", 2);
+            if (parts[0].startsWith("Servidor ")) {
+                actualUsername = parts[1];
+                logger.debug("Prefijo remoto detectado. Username original: '{}', username real: '{}'", 
+                           username, actualUsername);
+            }
+        }
+        
         // Verificar usuarios locales
         try {
             com.serverInfrastructure.observers.ActiveUserManager aum = 
                 com.serverInfrastructure.observers.ActiveUserManager.getInstance();
-            List<com.serverDomain.entities.User> localSessions = aum.getUserSessions(username);
+            List<com.serverDomain.entities.User> localSessions = aum.getUserSessions(actualUsername);
             if (localSessions != null && !localSessions.isEmpty()) {
+                logger.info("Usuario '{}' encontrado localmente", actualUsername);
                 return true;
             }
         } catch (Exception e) {
             logger.debug("Error verificando usuario local: {}", e.getMessage());
         }
 
-        // Verificar usuarios remotos
+        // Verificar usuarios remotos (almacenados sin prefijo)
         Map<String, List<String>> remoteUsers = userSyncManager.getAllUsersAcrossPeers();
-        for (List<String> users : remoteUsers.values()) {
-            if (users.contains(username)) {
+        logger.debug("Verificando usuario '{}' en {} peers remotos", actualUsername, remoteUsers.size());
+        for (Map.Entry<String, List<String>> entry : remoteUsers.entrySet()) {
+            logger.debug("Peer {}: {} usuarios -> {}", entry.getKey(), entry.getValue().size(), entry.getValue());
+            if (entry.getValue().contains(actualUsername)) {
+                logger.info("Usuario '{}' encontrado en peer remoto {}", actualUsername, entry.getKey());
                 return true;
             }
         }
 
+        logger.info("Usuario '{}' no encontrado (ni local ni remoto)", actualUsername);
         return false;
     }
 }

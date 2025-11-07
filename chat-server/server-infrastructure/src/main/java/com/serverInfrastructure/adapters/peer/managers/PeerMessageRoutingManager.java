@@ -2,10 +2,13 @@ package com.serverInfrastructure.adapters.peer.managers;
 
 import com.chatCommon.protocol.ProtocolParser;
 import com.serverDomain.entities.User;
+import com.serverDomain.entities.ChannelInvite;
+import com.serverDomain.repositories.ChannelInviteRepository;
 import com.serverApplication.ports.peer.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -17,9 +20,15 @@ public class PeerMessageRoutingManager {
     private ClientMessageBroadcaster clientBroadcaster;
     private RemoteUsersProvider remoteUsersProvider;
     private PeerMessageSender peerMessageSender;
+    private ChannelInviteRepository inviteRepository;
     
     public PeerMessageRoutingManager() {
         this.protocolParser = new ProtocolParser('|', '\\');
+    }
+    
+    public void setInviteRepository(ChannelInviteRepository repository) {
+        this.inviteRepository = repository;
+        logger.info("ChannelInviteRepository configurado en PeerMessageRoutingManager");
     }
 
     public void setClientBroadcaster(ClientMessageBroadcaster broadcaster) {
@@ -167,6 +176,8 @@ public class PeerMessageRoutingManager {
             return false;
         }
 
+        logger.debug("Mensaje P2P a enviar: {}", routeMessage);
+        
         Map<String, List<String>> remoteServerUsers = remoteUsersProvider.getRemoteUsers();
         for (Map.Entry<String, List<String>> entry : remoteServerUsers.entrySet()) {
             String peerId = entry.getKey();
@@ -174,6 +185,7 @@ public class PeerMessageRoutingManager {
             
             if (users.contains(recipientUsername)) {
                 logger.info("Enrutando invitación de canal a usuario {} en peer {}", recipientUsername, peerId);
+                logger.info("ENVIANDO P2P -> peerId: {}, mensaje: {}", peerId, routeMessage);
                 peerMessageSender.sendToPeer(peerId, routeMessage);
                 logger.info("Invitación de canal enrutada exitosamente a peer {}", peerId);
                 return true;
@@ -186,7 +198,8 @@ public class PeerMessageRoutingManager {
 
     /**
      * Maneja una invitación de canal recibida desde un peer remoto.
-     * Formato: P2P_CHANNEL_INVITE|inviteId|channelId|channelName|visibility|inviterUsername|invitedUsername
+     * El servidor destino debe crear la invitación en su propia BD.
+     * Formato: P2P_CHANNEL_INVITE|channelId|channelName|visibility|inviterUsername|inviterServerId|invitedUsername
      */
     public void handleChannelInviteRouted(String sourcePeerId, String message) {
         try {
@@ -197,31 +210,60 @@ public class PeerMessageRoutingManager {
                 return;
             }
             
-            String inviteId = parts.get(1);
-            String channelId = parts.get(2);
-            String channelName = parts.get(3);
-            String visibility = parts.get(4);
-            String inviterUsername = parts.get(5);
+            String channelIdStr = parts.get(1);
+            String channelName = parts.get(2);
+            String visibility = parts.get(3);
+            String inviterUsername = parts.get(4);
+            String inviterServerId = parts.get(5);  // ID remoto del invitador
             String invitedUsername = parts.get(6);
             
-            logger.info("Entregando invitación de canal {} de {} a usuario local {}", channelName, inviterUsername, invitedUsername);
+            logger.info("Procesando invitación de canal {} de {} a usuario local {}", 
+                       channelName, inviterUsername, invitedUsername);
             
-            if (clientBroadcaster == null) {
-                logger.warn("No hay broadcaster configurado para entregar invitación");
+            // Obtener el userId local del usuario invitado
+            var aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
+            var invitedUserSessions = aum.getUserSessions(invitedUsername);
+            
+            if (invitedUserSessions == null || invitedUserSessions.isEmpty()) {
+                logger.warn("Usuario invitado {} no encontrado localmente", invitedUsername);
                 return;
             }
-
-            String serverPrefix = "Servidor " + sourcePeerId.split(":")[0] + " - ";
-            String inviterWithPrefix = serverPrefix + inviterUsername;
             
-            // Formato: INVITE_RECEIVED|inviteId|channelId|channelName|visibility|inviterUsername
-            String deliverMessage = protocolParser.encode("INVITE_RECEIVED", 
-                    inviteId, channelId, channelName, visibility, inviterWithPrefix);
-
-            deliverLocalMessage(invitedUsername, deliverMessage);
+            String invitedUserId = aum.getUserIdFromConnection(invitedUserSessions.get(0).getId());
+            if (invitedUserId == null) {
+                logger.error("No se pudo obtener userId para {}", invitedUsername);
+                return;
+            }
+            
+            // Para canales remotos, NO guardamos en BD local porque:
+            // 1. El canal no existe en nuestra BD (FK falla)
+            // 2. El servidor origen maneja la invitación
+            // Solo enviamos la notificación al cliente
+            
+            logger.info("Invitación de canal remoto - NO se guarda en BD local, solo notificación al cliente");
+            
+            if (clientBroadcaster != null) {
+                String serverPrefix = "Servidor " + sourcePeerId.split(":")[0] + " - ";
+                String inviterWithPrefix = serverPrefix + inviterUsername;
+                
+                // Enviar notificación con ID negativo para indicar que es remoto
+                // El cliente puede distinguir: ID positivo = local, ID negativo = remoto
+                // Usamos -channelId para que sea único
+                String deliverMessage = protocolParser.encode("INVITE_RECEIVED", 
+                        String.valueOf(-Integer.parseInt(channelIdStr)), // ID negativo para remoto
+                        channelIdStr, 
+                        channelName, 
+                        visibility, 
+                        inviterWithPrefix);
+                
+                deliverLocalMessage(invitedUsername, deliverMessage);
+                logger.info("Notificación de invitación de canal remoto enviada a {}", invitedUsername);
+            } else {
+                logger.warn("No hay broadcaster configurado para entregar invitación");
+            }
             
         } catch (Exception e) {
-            logger.error("Error procesando invitación de canal enrutada: {}", e.getMessage());
+            logger.error("Error procesando invitación de canal enrutada: {}", e.getMessage(), e);
         }
     }
 
