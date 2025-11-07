@@ -50,9 +50,17 @@ public class InfrastructureFactory {
         ChannelInviteRepository inviteRepository = new ChannelInviteRepositoryImpl();
         handler.registerCommand(new CreateChannelCommandAdapter(channelRepository));
         handler.registerCommand(new ListChannelsCommandAdapter(channelRepository));
-        handler.registerCommand(new SendChannelMessageCommandAdapter(channelRepository, handler));
+        
+        SendChannelMessageCommandAdapter sendChannelMsgAdapter = new SendChannelMessageCommandAdapter(channelRepository, handler);
+        sendChannelMsgAdapter.setNetworkAdapter(getOrCreateServerNetworkAdapter());
+        handler.registerCommand(sendChannelMsgAdapter);
+        
         handler.registerCommand(new SendChannelAudioCommandAdapter(channelRepository, handler));
-        handler.registerCommand(new InviteToChannelCommandAdapter(channelRepository, inviteRepository, handler));
+        
+        InviteToChannelCommandAdapter inviteAdapter = new InviteToChannelCommandAdapter(channelRepository, inviteRepository, handler);
+        inviteAdapter.setNetworkAdapter(getOrCreateServerNetworkAdapter());
+        handler.registerCommand(inviteAdapter);
+        
         handler.registerCommand(new RespondInviteCommandAdapter(channelRepository, inviteRepository, handler));
         handler.registerCommand(new ListPendingInvitesCommandAdapter(inviteRepository));
         handler.registerCommand(new GetChannelMembersCommandAdapter(channelRepository));

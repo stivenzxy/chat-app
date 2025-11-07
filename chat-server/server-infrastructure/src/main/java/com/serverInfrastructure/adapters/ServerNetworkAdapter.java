@@ -131,9 +131,9 @@ public class ServerNetworkAdapter implements PeerNetworkControl {
         return peerAdapter.routeChannelInviteToPeer(recipientUsername, routeMessage);
     }
 
-    public boolean routeChannelMessageToPeer(String recipientUsername, String routeMessage) {
+    public void routeChannelMessageToPeer(String recipientUsername, String routeMessage) {
         logger.info("Enrutando mensaje de canal para {} utilizando PeerAdapter", recipientUsername);
-        return peerAdapter.routeChannelMessageToPeer(recipientUsername, routeMessage);
+        peerAdapter.routeChannelMessageToPeer(recipientUsername, routeMessage);
     }
 
     public boolean isUserConnected(String username) {

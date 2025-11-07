@@ -8,7 +8,6 @@ import com.serverInfrastructure.adapters.ProtocolCommandAdapter;
 import com.serverInfrastructure.network.ClientConnection;
 import com.serverInfrastructure.services.CommandHandler;
 import com.serverInfrastructure.adapters.ServerNetworkAdapter;
-import com.serverInfrastructure.factories.InfrastructureFactory;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,11 +16,16 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
     private final ChannelRepository channelRepository;
     private final ChannelInviteRepository inviteRepository;
     private final CommandHandler handler;
+    private ServerNetworkAdapter networkAdapter;
 
     public InviteToChannelCommandAdapter(ChannelRepository channelRepository, ChannelInviteRepository inviteRepository, CommandHandler handler) {
         this.channelRepository = channelRepository;
         this.inviteRepository = inviteRepository;
         this.handler = handler;
+    }
+
+    public void setNetworkAdapter(ServerNetworkAdapter networkAdapter) {
+        this.networkAdapter = networkAdapter;
     }
 
     @Override
@@ -54,8 +58,14 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
         }
 
         // Verificar si el usuario invitado está conectado (local o remoto)
-        ServerNetworkAdapter networkAdapter = InfrastructureFactory.getInstance().createServerNetworkAdapter();
-        boolean isUserConnected = networkAdapter.isUserConnected(invitedUsername);
+        boolean isUserConnected = false;
+        if (networkAdapter != null) {
+            isUserConnected = networkAdapter.isUserConnected(invitedUsername);
+        } else {
+            // Fallback: solo verificar usuarios locales
+            var invitedUserSessions = aum.getUserSessions(invitedUsername);
+            isUserConnected = invitedUserSessions != null && !invitedUserSessions.isEmpty();
+        }
         
         if (!isUserConnected) {
             return parser.encode("ERROR", "Usuario invitado no está en línea");
@@ -104,7 +114,7 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
         if (isLocalUser) {
             // Usuario local: enviar directamente
             handler.getServer().sendMessageToUser(invitedUsername, forward, inviterUsername);
-        } else {
+        } else if (networkAdapter != null) {
             // Usuario remoto: enrutar a través de P2P
             // Formato: P2P_CHANNEL_INVITE|inviteId|channelId|channelName|visibility|inviterUsername|invitedUsername
             String routeMessage = parser.encode("P2P_CHANNEL_INVITE",
