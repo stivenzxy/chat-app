@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -172,6 +171,18 @@ public class PeerTcpClient {
         } else if (message.startsWith("P2P_ROUTE_PRIVATE")) {
             logger.info("(CLIENT) Mensaje privado enrutado recibido desde {}: {}", peerId, message);
             // Notificar via callback para que el adapter lo entregue al cliente local
+            if (onPrivateMessageReceived != null) {
+                onPrivateMessageReceived.accept(peerId, message);
+            }
+            
+        } else if (message.startsWith("P2P_CHANNEL_INVITE")) {
+            logger.info("(CLIENT) Invitación de canal enrutada recibida desde {}: {}", peerId, message);
+            if (onPrivateMessageReceived != null) {
+                onPrivateMessageReceived.accept(peerId, message);
+            }
+            
+        } else if (message.startsWith("P2P_CHANNEL_MESSAGE")) {
+            logger.info("(CLIENT) Mensaje de canal enrutado recibido desde {}: {}", peerId, message);
             if (onPrivateMessageReceived != null) {
                 onPrivateMessageReceived.accept(peerId, message);
             }
