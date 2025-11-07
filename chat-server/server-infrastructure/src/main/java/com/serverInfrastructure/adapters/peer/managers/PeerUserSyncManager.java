@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.Collections;
 
 public class PeerUserSyncManager {
 
@@ -255,10 +256,53 @@ public class PeerUserSyncManager {
         return lastReceivedPhotos.getOrDefault(username, "");
     }
 
+    /**
+     * Maneja la desconexión completa de un peer.
+     * Limpia los usuarios remotos asociados y notifica a todos los clientes locales.
+     * @param peerId El ID del peer que se ha desconectado.
+     */
+    public void handlePeerDisconnection(String peerId) {
+        // 1. Obtiene la lista de usuarios que estaban en ese peer ANTES de borrarlos.
+        List<String> disconnectedUsers = remoteServerUsers.get(peerId);
+        
+        // Si no había usuarios o ya fue limpiado, no hay nada que hacer.
+        if (disconnectedUsers == null || disconnectedUsers.isEmpty()) {
+            logger.info("Peer {} se desconectó, pero no tenía usuarios remotos registrados o ya fueron limpiados.", peerId);
+            clearPeerUsers(peerId); // Asegurarse de que la entrada esté eliminada.
+            return;
+        }
+
+        // 2. Limpia la lista de usuarios de ese peer. Hacemos una copia para iterar de forma segura.
+        List<String> usersToNotify = new ArrayList<>(disconnectedUsers);
+        clearPeerUsers(peerId);
+
+        logger.info("Peer {} se desconectó. Se notificará la desconexión de {} usuario(s) remoto(s).", peerId, usersToNotify.size());
+
+        if (clientBroadcastCallback == null) {
+            logger.warn("No se puede notificar a los clientes sobre la desconexión de usuarios remotos: el callback es nulo.");
+            return;
+        }
+
+        // 3. Envía un mensaje USER_DISCONNECTED por cada usuario a los clientes locales.
+        String serverPrefix = "Servidor " + peerId.split(":")[0] + " - ";
+        for (String username : usersToNotify) {
+            String uniqueId = peerId + "-" + username;
+            String fullUsername = serverPrefix + username;
+            String message = protocolParser.encode("USER_DISCONNECTED", uniqueId, fullUsername);
+            
+            // Usamos el callback para que TcpServer envíe el broadcast a los clientes.
+            clientBroadcastCallback.accept(message);
+        }
+        
+        logger.info("Notificaciones de desconexión para los usuarios de {} enviadas a los clientes locales.", peerId);
+    }
+    
+    // El método clearPeerUsers sigue siendo útil internamente.
     public void clearPeerUsers(String peerId) {
         remoteServerUsers.remove(peerId);
-        logger.info("Usuarios de peer {} eliminados", peerId);
+        logger.info("Usuarios de peer {} eliminados del registro de sincronización.", peerId);
     }
+
 
     private String getServerIdOrDefault() {
         if (localServerId != null) {

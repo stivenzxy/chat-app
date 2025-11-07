@@ -182,10 +182,18 @@ public class PrivateChatPanel extends BaseChatPanel {
         }.execute();
     }
 
-    public void receiveMessage(MessageDTO message ) {
+    public void receiveMessage(MessageDTO message) {
         messageDAO.saveMessage(message);
 
-        String displaySender = message.getSenderId().equals(selfUsername) ? com.clientPresentation.views.constants.ChatConstants.SELF_DISPLAY_NAME : message.getSenderId();
+        if (!historyLoaded) {
+            messageQueue.add(message);
+            return; // No intentar añadirlo a la UI todavía.
+        }
+
+        String displaySender = message.getSenderId().equals(selfUsername) 
+            ? com.clientPresentation.views.constants.ChatConstants.SELF_DISPLAY_NAME 
+            : message.getSenderId();
+        
         if (message.getMessageType() == com.chatCommon.dto.MessageType.TEXT) {
             appendMessage(displaySender, message.getTextContent(), null);
         } else {
@@ -201,6 +209,11 @@ public class PrivateChatPanel extends BaseChatPanel {
             return;
         }
         
+        if (!historyLoaded) {
+            messageQueue.add(message);
+            return;
+        }
+
         String displaySender = message.getSenderId().equals(selfUsername) ? com.clientPresentation.views.constants.ChatConstants.SELF_DISPLAY_NAME : message.getSenderId();
         if (message.getMessageType() == com.chatCommon.dto.MessageType.TEXT) {
             appendMessage(displaySender, message.getTextContent(), null);

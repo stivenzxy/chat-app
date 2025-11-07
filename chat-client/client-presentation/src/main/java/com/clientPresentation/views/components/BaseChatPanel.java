@@ -4,18 +4,21 @@ import com.chatCommon.dto.MessageDTO;
 import com.clientPresentation.services.AudioService;
 import com.clientPresentation.views.components.atoms.ChatInputPanel;
 import com.clientPresentation.views.components.atoms.ChatMessagePanel;
+import com.clientPresentation.views.constants.ChatConstants;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList; 
 
 public abstract class BaseChatPanel extends JPanel {
     protected final String selfUsername;
     protected final AudioService audioService;
     protected JPanel chatHistoryArea;
     protected ChatInputPanel inputPanel;
-    protected boolean historyLoaded = false;
+    protected volatile boolean historyLoaded = false;
+    protected final List<MessageDTO> messageQueue = new CopyOnWriteArrayList<>();
 
     public BaseChatPanel(String selfUsername) {
         this.selfUsername = selfUsername;
@@ -87,11 +90,9 @@ public abstract class BaseChatPanel extends JPanel {
 
     protected void loadHistoryMessages(List<MessageDTO> messages) {
         chatHistoryArea.removeAll();
-        chatHistoryArea.revalidate();
-        chatHistoryArea.repaint();
         
         for (MessageDTO msg : messages) {
-            String displaySender = msg.getSenderId().equals(selfUsername) ? com.clientPresentation.views.constants.ChatConstants.SELF_DISPLAY_NAME : msg.getSenderId();
+            String displaySender = msg.getSenderId().equals(selfUsername) ? ChatConstants.SELF_DISPLAY_NAME : msg.getSenderId();
             MessageDTO displayMessage;
             
             if (msg.getMessageType() == com.chatCommon.dto.MessageType.TEXT) {
@@ -104,11 +105,28 @@ public abstract class BaseChatPanel extends JPanel {
             chatHistoryArea.add(messagePanel);
         }
         
+        // 3. Marcar el historial como cargado y procesar la cola.
+        historyLoaded = true;
+        
+        // Procesar cualquier mensaje que haya llegado mientras se cargaba el historial
+        for (MessageDTO queuedMessage : messageQueue) {
+            // Reutilizamos la lógica de `receiveMessage` de la subclase
+             receiveMessage(queuedMessage);
+        }
+        messageQueue.clear();
+        
         chatHistoryArea.revalidate();
         chatHistoryArea.repaint();
-        historyLoaded = true;
+        
+        // Asegurarse de hacer scroll al final después de que todo se haya renderizado
+        SwingUtilities.invokeLater(() -> {
+            JScrollPane scrollPane = (JScrollPane) chatHistoryArea.getParent().getParent();
+            scrollPane.getVerticalScrollBar().setValue(scrollPane.getVerticalScrollBar().getMaximum());
+        });
     }
 
+    public abstract void receiveMessage(MessageDTO message);
+    
     protected abstract void sendMessage();
     protected abstract void sendAudio(byte[] audioData);
     protected abstract String getRecipientId();
