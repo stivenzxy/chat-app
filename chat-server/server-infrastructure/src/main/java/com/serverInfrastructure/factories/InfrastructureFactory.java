@@ -68,7 +68,8 @@ public class InfrastructureFactory {
         TcpServer server = new TcpServer(handler);
 
         try {
-            getOrCreateServerNetworkAdapter().registerClientBroadcast(server::sendBroadcastMessage);
+            // Usar sendDirectBroadcast para usuarios remotos P2P (sin prefijo SERVER_BROADCAST)
+            getOrCreateServerNetworkAdapter().registerClientBroadcast(server::sendDirectBroadcast);
         } catch (Exception e) {
             logger.info("No se pudo registrar callback broadcast P2P (No se cargarán mensajes entre Peers): {}", e.getMessage());
         }

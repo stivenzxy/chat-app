@@ -144,6 +144,7 @@ public class PeerTcpServer {
             BufferedReader input = null;
             PrintWriter output = null;
             String peerId = null;
+            boolean hasRespondedToSync = false;
             
             try {
                 String tempId = peerSocket.getInetAddress().getHostAddress() + ":" + peerSocket.getPort();
@@ -208,6 +209,22 @@ public class PeerTcpServer {
                         logger.debug("Sincronización de usuarios de peer {}", peerId);
                         if (onUserSyncReceived != null) {
                             onUserSyncReceived.accept(peerId, message);
+                        }
+                        
+                        // Si es una sincronización completa y no hemos respondido aún, responder con nuestros usuarios
+                        if (!hasRespondedToSync && message.contains("action=SYNC_ALL")) {
+                            hasRespondedToSync = true;
+                            if (onGetLocalUserSync != null) {
+                                try {
+                                    String localUserSyncMessage = onGetLocalUserSync.get();
+                                    if (localUserSyncMessage != null && !localUserSyncMessage.trim().isEmpty()) {
+                                        output.println(localUserSyncMessage);
+                                        logger.info("Respondiendo con sincronización completa a peer {} tras recibir SYNC_ALL", peerId);
+                                    }
+                                } catch (Exception e) {
+                                    logger.error("Error enviando respuesta de sincronización a {}: {}", peerId, e.getMessage());
+                                }
+                            }
                         }
                     } else if (message.startsWith("P2P_ROUTE_PRIVATE_AUDIO")) {
                         logger.info("(SERVER) Audio privado enrutado recibido de peer {}", peerId);

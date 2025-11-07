@@ -17,7 +17,8 @@ public class ServerApplication {
         InfrastructureFactory infraFactory = new InfrastructureFactory(serviceFactory);
         TcpServerAdapter serverControl = new TcpServerAdapter(infraFactory);
         
-        ServerNetworkAdapter peerNetworkControl = new ServerNetworkAdapter();
+        // Usar la misma instancia de ServerNetworkAdapter del InfrastructureFactory
+        ServerNetworkAdapter peerNetworkControl = infraFactory.createServerNetworkAdapter();
         serverControl.setPeerNetworkControl(peerNetworkControl);
 
         PresentationFactory presentationFactory = new PresentationFactory(serviceFactory, infraFactory, serverControl);

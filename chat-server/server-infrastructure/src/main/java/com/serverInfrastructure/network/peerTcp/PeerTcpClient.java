@@ -119,6 +119,8 @@ public class PeerTcpClient {
         listenerThread.start();
     }
 
+    private boolean hasReceivedInitialSync = false;
+
     private void handleIncomingMessage(String message) {
         logger.info("Procesando mensaje de {}: {}", peerId, message);
         
@@ -137,6 +139,13 @@ public class PeerTcpClient {
             logger.info("(CLIENT) Recibida sincronización de usuarios desde {}: {}", peerId, message);
             if (onUserSyncReceived != null) {
                 onUserSyncReceived.accept(message);
+            }
+            
+            // Si es la primera sincronización completa recibida, responder con nuestros usuarios
+            if (!hasReceivedInitialSync && message.contains("action=SYNC_ALL")) {
+                hasReceivedInitialSync = true;
+                // La respuesta se envía automáticamente en el callback onConnectionSuccess del PeerConnectionManager
+                logger.info("Primera sincronización completa recibida desde {}, se enviará respuesta", peerId);
             }
             
         } else if (message.startsWith("P2P_ROUTE_PRIVATE_AUDIO")) {
