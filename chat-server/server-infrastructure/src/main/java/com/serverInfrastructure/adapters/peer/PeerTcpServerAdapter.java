@@ -39,9 +39,9 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
         this.messageRoutingManager = messageRoutingManager;
         this.observerNotifier = observerNotifier;
 
-        // ======== AÑADIR ESTA LÍNEA ========
-        // Inyectar el notificador en el gestor de conexiones.
         this.connectionManager.setObserverNotifier(observerNotifier);
+        
+        this.connectionManager.setUserSyncManager(userSyncManager);
         
         configureManagerDependencies();
         
