@@ -384,6 +384,10 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
         return userSyncManager.getAllUsersAcrossPeers();
     }
 
+    public String getRemoteUserPhoto(String username) {
+        return userSyncManager.getRemoteUserPhoto(username);
+    }
+
     public void setClientBroadcastCallback(Consumer<String> callback) {
         ClientMessageBroadcaster broadcaster =
             (targetUsername, message, excludeConnectionId) -> callback.accept(message);

@@ -25,7 +25,7 @@ public class UserDAO {
             stmt.setString(2, user.getUsername().value());
             stmt.setString(3, user.getPasswordHash());
             stmt.setString(4, user.getEmail().value());
-            stmt.setBytes(5, user.getPhotoData()); // <<< CAMBIO A setBytes
+            stmt.setBytes(5, user.getPhotoData());
             stmt.setString(6, user.getIpAddress());
             stmt.setTimestamp(7, Timestamp.valueOf(user.getCreatedAt()));
             stmt.executeUpdate();
@@ -104,7 +104,6 @@ public class UserDAO {
                     rs.getTimestamp("created_at").toLocalDateTime()
             );
         } catch (SQLException exception) {
-            // Corregido el mensaje de log para ser más genérico
             logger.error("Error al mapear ResultSet a User: {}", exception.getMessage());
             return null;
         }

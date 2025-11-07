@@ -46,6 +46,8 @@ public class ActiveUserManager {
             user.getCreatedAt()
         );
         
+        final boolean[] shouldNotify = {false};
+        
         activeUserSessions.compute(username, (key, sessions) -> {
             if (sessions == null) {
                 sessions = new CopyOnWriteArrayList<>();
@@ -55,13 +57,16 @@ public class ActiveUserManager {
                     .anyMatch(u -> u.getId().equals(connectionId));
             if (!exists) {
                 sessions.add(sessionUser);
-                // Notificar solo si es la primera sesión
                 if (sessions.size() == 1) {
-                    notifyUserLoggedIn(user);
+                    shouldNotify[0] = true;
                 }
             }
             return sessions;
         });
+        
+        if (shouldNotify[0]) {
+            notifyUserLoggedIn(user);
+        }
     }
     
     // Método antiguo para compatibilidad (asume que user.getId() es el connectionId)

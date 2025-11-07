@@ -111,6 +111,10 @@ public class ServerNetworkAdapter implements PeerNetworkControl {
         return peerAdapter.getAllUsersAcrossPeers();
     }
 
+    public String getRemoteUserPhoto(String username) {
+        return peerAdapter.getRemoteUserPhoto(username);
+    }
+
     public void registerClientBroadcast(Consumer<String> broadcastCallback) {
         peerAdapter.setClientBroadcastCallback(broadcastCallback);
         logger.info("Callback de broadcast registrado en ServerNetworkAdapter");

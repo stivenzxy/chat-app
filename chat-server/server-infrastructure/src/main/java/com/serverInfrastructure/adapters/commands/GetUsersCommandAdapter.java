@@ -70,10 +70,11 @@ public class GetUsersCommandAdapter implements ProtocolCommandAdapter {
                     for (String username : usernames) {
                         // FILTRAR: Solo agregar si NO está conectado localmente
                         if (!localUsernames.contains(username)) {
-                            // Formato: serverId-username,Servidor IP - username,""
+                            String photoBase64 = serverNetworkAdapter.getRemoteUserPhoto(username);
+                            
                             String uniqueId = serverId + "-" + username;
                             String displayName = serverPrefix + username;
-                            allUsersEntries.add(uniqueId + "," + displayName + ",");
+                            allUsersEntries.add(uniqueId + "," + displayName + "," + photoBase64);
                         }
                     }
                 }
