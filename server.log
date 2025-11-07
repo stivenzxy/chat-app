@@ -2613,3 +2613,434 @@ java.net.BindException: Address already in use: bind
 2025-11-07 01:10:46.549 [AWT-EventQueue-0] INFO  c.s.n.l.ServerShutdownManager - Servidor cerrado correctamente
 2025-11-07 01:10:46.549 [TcpServerThread] ERROR c.s.network.TcpServer - Error al iniciar el servidor: Socket closed
 2025-11-07 01:10:46.551 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Servidor de clientes detenido.
+2025-11-07 01:14:11.177 [main] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:14:11.942 [main] INFO  c.s.p.config.ConnectionManager - Base de datos inicializada correctamente
+2025-11-07 01:14:11.964 [main] INFO  c.s.adapters.TcpServerAdapter - TcpServerAdapter inicializado para gestión de clientes
+2025-11-07 01:14:11.979 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - RemoteUsersProvider configurado en PeerMessageRoutingManager
+2025-11-07 01:14:11.981 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - PeerMessageSender configurado en PeerMessageRoutingManager
+2025-11-07 01:14:11.983 [main] INFO  c.s.a.peer.PeerTcpServerAdapter - PeerTcpServerAdapter inicializado con managers inyectados
+2025-11-07 01:14:11.987 [main] INFO  c.s.adapters.ServerNetworkAdapter - ServerNetworkAdapter inicializado - Gestión P2P exclusiva con sincronización automática de usuarios
+2025-11-07 01:14:11.989 [main] INFO  c.s.adapters.TcpServerAdapter - PeerNetworkControl configurado para inicio automático
+2025-11-07 01:14:12.652 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:14:12.652 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - PeerTcpServer inicializado - Puerto P2P configurado: 6060
+2025-11-07 01:14:12.686 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:14:12.961 [AWT-EventQueue-0] INFO  c.s.views.components.UserListPanel - Usuarios cargados exitosamente: 5 usuarios
+2025-11-07 01:14:19.654 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:14:19.661 [AWT-EventQueue-0] INFO  c.s.a.p.m.PeerMessageRoutingManager - ClientMessageBroadcaster configurado en PeerMessageRoutingManager
+2025-11-07 01:14:19.662 [AWT-EventQueue-0] INFO  c.s.a.peer.PeerTcpServerAdapter - ClientMessageBroadcaster configurado en managers
+2025-11-07 01:14:19.663 [AWT-EventQueue-0] INFO  c.s.adapters.ServerNetworkAdapter - Callback de broadcast registrado en ServerNetworkAdapter
+2025-11-07 01:14:19.665 [AWT-EventQueue-0] INFO  c.s.a.c.SendPrivateMessageCommandAdapter - Callback de enrutamiento P2P configurado en SendPrivateMessageCommandAdapter
+2025-11-07 01:14:19.665 [AWT-EventQueue-0] INFO  c.s.factories.InfrastructureFactory - Callback de enrutamiento P2P configurado en SendPrivateMessageCommandAdapter
+2025-11-07 01:14:19.668 [AWT-EventQueue-0] INFO  c.s.a.c.SendPrivateAudioCommandAdapter - PeerMessageRouter configurado en SendPrivateAudioCommandAdapter
+2025-11-07 01:14:19.670 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Servidor de clientes iniciado en puerto 9090
+2025-11-07 01:14:19.671 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Iniciando servidor P2P automáticamente...
+2025-11-07 01:14:19.672 [AWT-EventQueue-0] INFO  c.s.adapters.ServerNetworkAdapter - Iniciando servidor P2P (puerto desde configuración)
+2025-11-07 01:14:19.673 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:14:19.673 [TcpServerThread] INFO  c.s.network.TcpServer - Servidor TCP iniciado y escuchando en el puerto 9090
+2025-11-07 01:14:19.673 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - PeerTcpServer inicializado - Puerto P2P configurado: 6060
+2025-11-07 01:14:19.676 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - PeerTcpServer iniciado en puerto 6060 - Esperando conexiones de otros servidores
+2025-11-07 01:14:19.678 [PeerServer-Acceptor] INFO  c.s.network.peerTcp.PeerTcpServer - Esperando conexiones entrantes...
+2025-11-07 01:14:19.679 [AWT-EventQueue-0] INFO  c.s.a.peer.PeerTcpServerAdapter - ID del servidor local: 192.168.40.91:6060
+2025-11-07 01:14:19.680 [AWT-EventQueue-0] INFO  c.s.a.p.managers.PeerUserSyncManager - ID del servidor local establecido: 192.168.40.91:6060
+2025-11-07 01:14:19.681 [AWT-EventQueue-0] INFO  c.s.a.peer.PeerTcpServerAdapter - Servidor P2P iniciado exitosamente en puerto 6060
+2025-11-07 01:14:19.686 [AWT-EventQueue-0] INFO  c.s.a.peer.managers.PeerRegistry - Cargados 4 peers conocidos desde C:\Users\duvan\OneDrive\Escritorio\SW2 - 2025-2\cliente servidor\chat-app\known_peers.txt
+2025-11-07 01:14:19.687 [AWT-EventQueue-0] INFO  c.s.a.peer.PeerTcpServerAdapter - Reconectando a peer persistido 172.30.232.6:6061
+2025-11-07 01:14:19.690 [AWT-EventQueue-0] INFO  c.s.a.p.m.PeerConnectionManager - Conectando a peer 172.30.232.6:6061...
+2025-11-07 01:14:19.694 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpClient - Iniciando conexión a peer 172.30.232.6:6061
+2025-11-07 01:14:21.733 [AWT-EventQueue-0] ERROR c.s.network.peerTcp.PeerTcpClient - Error conectando a peer 172.30.232.6:6061 - Connection refused: connect
+2025-11-07 01:14:21.735 [AWT-EventQueue-0] ERROR c.s.a.p.m.PeerConnectionManager - No se pudo conectar a peer 172.30.232.6:6061
+2025-11-07 01:14:21.735 [AWT-EventQueue-0] INFO  c.s.a.peer.PeerTcpServerAdapter - Reconectando a peer persistido 172.30.92.18:6060
+2025-11-07 01:14:21.744 [AWT-EventQueue-0] INFO  c.s.a.p.m.PeerConnectionManager - Conectando a peer 172.30.92.18:6060...
+2025-11-07 01:14:21.745 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpClient - Iniciando conexión a peer 172.30.92.18:6060
+2025-11-07 01:14:28.644 [PeerServer-Acceptor] INFO  c.s.network.peerTcp.PeerTcpServer - Nueva conexión P2P entrante desde 172.30.92.18:52301
+2025-11-07 01:14:28.648 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Evaluando conexión entrante: 172.30.92.18:52301
+2025-11-07 01:14:28.648 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Handshake P2P válido recibido de 172.30.92.18:6060
+2025-11-07 01:14:28.648 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante almacenada: 172.30.92.18:6060
+2025-11-07 01:14:28.653 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Sincronización inicial enviada a peer conectado 172.30.92.18:6060
+2025-11-07 01:14:28.656 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Enviada P2P_PEER_LIST a peer 172.30.92.18:6060: 4 peers
+2025-11-07 01:14:28.657 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.m.PeerConnectionManager - Peer entrante registrado: 172.30.92.18:6060
+2025-11-07 01:14:28.804 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpClient - Conectado exitosamente a peer 172.30.92.18:6060
+2025-11-07 01:14:28.805 [PeerListener-172.30.92.18:6060] INFO  c.s.network.peerTcp.PeerTcpClient - Iniciando escucha de mensajes desde peer 172.30.92.18:6060
+2025-11-07 01:14:28.805 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:14:28.807 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:14:28.808 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpClient - Enviando handshake P2P a peer 172.30.92.18:6060 (advertised myId=172.30.232.6:6060)
+2025-11-07 01:14:28.811 [AWT-EventQueue-0] INFO  c.s.a.p.m.PeerConnectionManager - Conexión inicial establecida con peer 172.30.92.18:6060, validando...
+2025-11-07 01:14:28.812 [AWT-EventQueue-0] INFO  c.s.a.peer.PeerTcpServerAdapter - Reconectando a peer persistido 172.30.92.18:6061
+2025-11-07 01:14:28.813 [AWT-EventQueue-0] INFO  c.s.a.p.m.PeerConnectionManager - Conectando a peer 172.30.92.18:6061...
+2025-11-07 01:14:28.814 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpClient - Iniciando conexión a peer 172.30.92.18:6061
+2025-11-07 01:14:28.838 [PeerListener-172.30.92.18:6060] INFO  c.s.network.peerTcp.PeerTcpClient - Procesando mensaje de 172.30.92.18:6060: P2P_SERVER_HANDSHAKE_ACK|myId=192.168.1.55:6060|status=ACCEPTED
+2025-11-07 01:14:28.839 [PeerListener-172.30.92.18:6060] INFO  c.s.network.peerTcp.PeerTcpClient - Recibido P2P_SERVER_HANDSHAKE_ACK de 172.30.92.18:6060
+2025-11-07 01:14:28.857 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa recibida de 172.30.92.18:6060: 0 usuario(s)
+2025-11-07 01:14:28.858 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa: 0 usuarios remotos de Servidor 172.30.92.18 - 
+2025-11-07 01:14:28.859 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.92.18:6060=0
+2025-11-07 01:14:28.860 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Respondiendo con sincronización completa a peer 172.30.92.18:6060 tras recibir SYNC_ALL
+2025-11-07 01:14:28.866 [PeerListener-172.30.92.18:6060] INFO  c.s.network.peerTcp.PeerTcpClient - Procesando mensaje de 172.30.92.18:6060: P2P_USER_SYNC|serverId=192.168.1.55:6060|action=SYNC_ALL|users=|photos=
+2025-11-07 01:14:28.866 [PeerListener-172.30.92.18:6060] INFO  c.s.network.peerTcp.PeerTcpClient - (CLIENT) Recibida sincronización de usuarios desde 172.30.92.18:6060: P2P_USER_SYNC|serverId=192.168.1.55:6060|action=SYNC_ALL|users=|photos=
+2025-11-07 01:14:28.867 [PeerListener-172.30.92.18:6060] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa recibida de 172.30.92.18:6060: 0 usuario(s)
+2025-11-07 01:14:28.868 [PeerListener-172.30.92.18:6060] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa: 0 usuarios remotos de Servidor 172.30.92.18 - 
+2025-11-07 01:14:28.869 [PeerListener-172.30.92.18:6060] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.92.18:6060=0
+2025-11-07 01:14:28.869 [PeerListener-172.30.92.18:6060] INFO  c.s.network.peerTcp.PeerTcpClient - Primera sincronización completa recibida desde 172.30.92.18:6060, se enviará respuesta
+2025-11-07 01:14:28.869 [PeerListener-172.30.92.18:6060] INFO  c.s.network.peerTcp.PeerTcpClient - Procesando mensaje de 172.30.92.18:6060: P2P_PEER_LIST|peers=172.30.232.6:6060,172.30.232.6:6061,172.30.143.177:6060,192.168.1.55:6061
+2025-11-07 01:14:28.870 [PeerListener-172.30.92.18:6060] INFO  c.s.network.peerTcp.PeerTcpClient - (CLIENT) Lista de peers recibida desde 172.30.92.18:6060: P2P_PEER_LIST|peers=172.30.232.6:6060,172.30.232.6:6061,172.30.143.177:6060,192.168.1.55:6061
+2025-11-07 01:14:28.880 [PeerAutoConnect-172.30.232.6:6061] INFO  c.s.a.peer.PeerTcpServerAdapter - Descubierto peer 172.30.232.6:6061 desde 172.30.92.18:6060, intentando conectar...
+2025-11-07 01:14:28.881 [PeerAutoConnect-172.30.232.6:6061] INFO  c.s.a.p.m.PeerConnectionManager - Conectando a peer 172.30.232.6:6061...
+2025-11-07 01:14:28.883 [PeerAutoConnect-172.30.232.6:6061] INFO  c.s.network.peerTcp.PeerTcpClient - Iniciando conexión a peer 172.30.232.6:6061
+2025-11-07 01:14:28.888 [PeerAutoConnect-172.30.143.177:6060] INFO  c.s.a.peer.PeerTcpServerAdapter - Descubierto peer 172.30.143.177:6060 desde 172.30.92.18:6060, intentando conectar...
+2025-11-07 01:14:28.889 [PeerAutoConnect-192.168.1.55:6061] INFO  c.s.a.peer.PeerTcpServerAdapter - Descubierto peer 192.168.1.55:6061 desde 172.30.92.18:6060, intentando conectar...
+2025-11-07 01:14:28.889 [PeerAutoConnect-192.168.1.55:6061] INFO  c.s.a.p.m.PeerConnectionManager - Conectando a peer 192.168.1.55:6061...
+2025-11-07 01:14:28.890 [PeerAutoConnect-192.168.1.55:6061] INFO  c.s.network.peerTcp.PeerTcpClient - Iniciando conexión a peer 192.168.1.55:6061
+2025-11-07 01:14:28.895 [PeerAutoConnect-172.30.143.177:6060] INFO  c.s.a.p.m.PeerConnectionManager - Conectando a peer 172.30.143.177:6060...
+2025-11-07 01:14:28.896 [PeerAutoConnect-172.30.143.177:6060] INFO  c.s.network.peerTcp.PeerTcpClient - Iniciando conexión a peer 172.30.143.177:6060
+2025-11-07 01:14:28.913 [PeerAutoConnect-172.30.143.177:6060] INFO  c.s.network.peerTcp.PeerTcpClient - Conectado exitosamente a peer 172.30.143.177:6060
+2025-11-07 01:14:28.915 [PeerAutoConnect-172.30.143.177:6060] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:14:28.915 [PeerListener-172.30.143.177:6060] INFO  c.s.network.peerTcp.PeerTcpClient - Iniciando escucha de mensajes desde peer 172.30.143.177:6060
+2025-11-07 01:14:28.917 [PeerAutoConnect-172.30.143.177:6060] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:14:28.918 [PeerAutoConnect-172.30.143.177:6060] INFO  c.s.network.peerTcp.PeerTcpClient - Enviando handshake P2P a peer 172.30.143.177:6060 (advertised myId=172.30.232.6:6060)
+2025-11-07 01:14:28.919 [PeerAutoConnect-172.30.143.177:6060] INFO  c.s.a.p.m.PeerConnectionManager - Conexión inicial establecida con peer 172.30.143.177:6060, validando...
+2025-11-07 01:14:28.931 [PeerListener-172.30.143.177:6060] INFO  c.s.network.peerTcp.PeerTcpClient - Procesando mensaje de 172.30.143.177:6060: P2P_SERVER_HANDSHAKE_ACK|myId=192.168.1.6:6060|status=ACCEPTED
+2025-11-07 01:14:28.932 [PeerListener-172.30.143.177:6060] INFO  c.s.network.peerTcp.PeerTcpClient - Recibido P2P_SERVER_HANDSHAKE_ACK de 172.30.143.177:6060
+2025-11-07 01:14:28.947 [PeerListener-172.30.143.177:6060] INFO  c.s.network.peerTcp.PeerTcpClient - Procesando mensaje de 172.30.143.177:6060: P2P_USER_SYNC|serverId=192.168.1.6:6060|action=SYNC_ALL|users=
+2025-11-07 01:14:28.949 [PeerListener-172.30.143.177:6060] INFO  c.s.network.peerTcp.PeerTcpClient - (CLIENT) Recibida sincronización de usuarios desde 172.30.143.177:6060: P2P_USER_SYNC|serverId=192.168.1.6:6060|action=SYNC_ALL|users=
+2025-11-07 01:14:28.949 [PeerListener-172.30.143.177:6060] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa recibida de 172.30.143.177:6060: 0 usuario(s)
+2025-11-07 01:14:28.950 [PeerListener-172.30.143.177:6060] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa: 0 usuarios remotos de Servidor 172.30.143.177 - 
+2025-11-07 01:14:28.950 [PeerListener-172.30.143.177:6060] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.92.18:6060=0 172.30.143.177:6060=0
+2025-11-07 01:14:28.950 [PeerListener-172.30.143.177:6060] INFO  c.s.network.peerTcp.PeerTcpClient - Primera sincronización completa recibida desde 172.30.143.177:6060, se enviará respuesta
+2025-11-07 01:14:28.951 [PeerListener-172.30.143.177:6060] INFO  c.s.network.peerTcp.PeerTcpClient - Procesando mensaje de 172.30.143.177:6060: P2P_PEER_LIST|peers=172.30.232.6:6060,172.30.92.18:6060
+2025-11-07 01:14:28.951 [PeerListener-172.30.143.177:6060] INFO  c.s.network.peerTcp.PeerTcpClient - (CLIENT) Lista de peers recibida desde 172.30.143.177:6060: P2P_PEER_LIST|peers=172.30.232.6:6060,172.30.92.18:6060
+2025-11-07 01:14:28.964 [PeerAutoConnect-172.30.92.18:6060] INFO  c.s.a.peer.PeerTcpServerAdapter - Descubierto peer 172.30.92.18:6060 desde 172.30.143.177:6060, intentando conectar...
+2025-11-07 01:14:28.971 [PeerAutoConnect-172.30.92.18:6060] WARN  c.s.a.p.m.PeerConnectionManager - Ya existe conexión con peer 172.30.92.18:6060
+2025-11-07 01:14:29.025 [ConnectionValidation-172.30.92.18:6060] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa de 0 usuario(s) enviada a peer 172.30.92.18:6060
+2025-11-07 01:14:29.026 [ConnectionValidation-172.30.92.18:6060] INFO  c.s.a.p.m.PeerConnectionManager - Conectado exitosamente a peer 172.30.92.18:6060
+2025-11-07 01:14:29.056 [PeerListener-172.30.92.18:6060] INFO  c.s.network.peerTcp.PeerTcpClient - Procesando mensaje de 172.30.92.18:6060: P2P_USER_SYNC|serverId=192.168.1.55:6060|action=SYNC_ALL|users=|photos=
+2025-11-07 01:14:29.057 [PeerListener-172.30.92.18:6060] INFO  c.s.network.peerTcp.PeerTcpClient - (CLIENT) Recibida sincronización de usuarios desde 172.30.92.18:6060: P2P_USER_SYNC|serverId=192.168.1.55:6060|action=SYNC_ALL|users=|photos=
+2025-11-07 01:14:29.057 [PeerListener-172.30.92.18:6060] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa recibida de 172.30.92.18:6060: 0 usuario(s)
+2025-11-07 01:14:29.058 [PeerListener-172.30.92.18:6060] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa: 0 usuarios remotos de Servidor 172.30.92.18 - 
+2025-11-07 01:14:29.058 [PeerListener-172.30.92.18:6060] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.92.18:6060=0 172.30.143.177:6060=0
+2025-11-07 01:14:29.134 [ConnectionValidation-172.30.143.177:6060] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa de 0 usuario(s) enviada a peer 172.30.143.177:6060
+2025-11-07 01:14:29.135 [ConnectionValidation-172.30.143.177:6060] INFO  c.s.a.p.m.PeerConnectionManager - Conectado exitosamente a peer 172.30.143.177:6060
+2025-11-07 01:14:29.147 [PeerListener-172.30.143.177:6060] INFO  c.s.network.peerTcp.PeerTcpClient - Procesando mensaje de 172.30.143.177:6060: P2P_USER_SYNC|serverId=192.168.1.6:6060|action=SYNC_ALL|users=
+2025-11-07 01:14:29.148 [PeerListener-172.30.143.177:6060] INFO  c.s.network.peerTcp.PeerTcpClient - (CLIENT) Recibida sincronización de usuarios desde 172.30.143.177:6060: P2P_USER_SYNC|serverId=192.168.1.6:6060|action=SYNC_ALL|users=
+2025-11-07 01:14:29.148 [PeerListener-172.30.143.177:6060] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa recibida de 172.30.143.177:6060: 0 usuario(s)
+2025-11-07 01:14:29.150 [PeerListener-172.30.143.177:6060] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa: 0 usuarios remotos de Servidor 172.30.143.177 - 
+2025-11-07 01:14:29.151 [PeerListener-172.30.143.177:6060] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.92.18:6060=0 172.30.143.177:6060=0
+2025-11-07 01:14:30.927 [PeerAutoConnect-172.30.232.6:6061] ERROR c.s.network.peerTcp.PeerTcpClient - Error conectando a peer 172.30.232.6:6061 - Connection refused: connect
+2025-11-07 01:14:30.928 [PeerAutoConnect-172.30.232.6:6061] ERROR c.s.a.p.m.PeerConnectionManager - No se pudo conectar a peer 172.30.232.6:6061
+2025-11-07 01:14:35.264 [PeerListener-172.30.143.177:6060] INFO  c.s.network.peerTcp.PeerTcpClient - Peer 172.30.143.177:6060 cerró la conexión (end of stream)
+2025-11-07 01:14:35.265 [PeerListener-172.30.143.177:6060] INFO  c.s.network.peerTcp.PeerTcpClient - El hilo de escucha para 172.30.143.177:6060 ha terminado. Notificando desconexión.
+2025-11-07 01:14:35.266 [PeerListener-172.30.143.177:6060] INFO  c.s.a.p.m.PeerConnectionManager - Peer 172.30.143.177:6060 desconectado. Notificando a los observadores de UI.
+2025-11-07 01:14:35.267 [PeerListener-172.30.143.177:6060] INFO  c.s.a.p.managers.PeerUserSyncManager - Peer 172.30.143.177:6060 se desconectó, pero no tenía usuarios remotos registrados o ya fueron limpiados.
+2025-11-07 01:14:35.268 [PeerListener-172.30.143.177:6060] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuarios de peer 172.30.143.177:6060 eliminados del registro de sincronización.
+2025-11-07 01:14:36.442 [PeerServer-Acceptor] INFO  c.s.network.peerTcp.PeerTcpServer - Nueva conexión P2P entrante desde 172.30.143.177:13413
+2025-11-07 01:14:36.443 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Evaluando conexión entrante: 172.30.143.177:13413
+2025-11-07 01:14:36.445 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Handshake P2P válido recibido de 172.30.143.177:6060
+2025-11-07 01:14:36.446 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante almacenada: 172.30.143.177:6060
+2025-11-07 01:14:36.448 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Sincronización inicial enviada a peer conectado 172.30.143.177:6060
+2025-11-07 01:14:36.450 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Enviada P2P_PEER_LIST a peer 172.30.143.177:6060: 4 peers
+2025-11-07 01:14:36.451 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.m.PeerConnectionManager - Peer entrante registrado: 172.30.143.177:6060
+2025-11-07 01:14:36.651 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa recibida de 172.30.143.177:6060: 0 usuario(s)
+2025-11-07 01:14:36.652 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa: 0 usuarios remotos de Servidor 172.30.143.177 - 
+2025-11-07 01:14:36.653 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.92.18:6060=0 172.30.143.177:6060=0
+2025-11-07 01:14:36.654 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Respondiendo con sincronización completa a peer 172.30.143.177:6060 tras recibir SYNC_ALL
+2025-11-07 01:14:44.728 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.m.PeerConnectionManager - Peer 172.30.143.177:6060 desconectado. Notificando a los observadores de UI.
+2025-11-07 01:14:44.729 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Peer 172.30.143.177:6060 se desconectó, pero no tenía usuarios remotos registrados o ya fueron limpiados.
+2025-11-07 01:14:44.730 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuarios de peer 172.30.143.177:6060 eliminados del registro de sincronización.
+2025-11-07 01:14:44.731 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante removida y notificada: 172.30.143.177:6060
+2025-11-07 01:14:44.731 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante cerrada
+2025-11-07 01:14:49.872 [AWT-EventQueue-0] ERROR c.s.network.peerTcp.PeerTcpClient - Error conectando a peer 172.30.92.18:6061 - Connection timed out: connect
+2025-11-07 01:14:49.872 [AWT-EventQueue-0] ERROR c.s.a.p.m.PeerConnectionManager - No se pudo conectar a peer 172.30.92.18:6061
+2025-11-07 01:14:49.873 [AWT-EventQueue-0] INFO  c.s.a.peer.PeerTcpServerAdapter - Reconectando a peer persistido 172.30.143.177:6060
+2025-11-07 01:14:49.880 [AWT-EventQueue-0] INFO  c.s.a.p.m.PeerConnectionManager - Conectando a peer 172.30.143.177:6060...
+2025-11-07 01:14:49.880 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpClient - Iniciando conexión a peer 172.30.143.177:6060
+2025-11-07 01:14:49.935 [PeerAutoConnect-192.168.1.55:6061] ERROR c.s.network.peerTcp.PeerTcpClient - Error conectando a peer 192.168.1.55:6061 - Connection timed out: connect
+2025-11-07 01:14:49.935 [PeerAutoConnect-192.168.1.55:6061] ERROR c.s.a.p.m.PeerConnectionManager - No se pudo conectar a peer 192.168.1.55:6061
+2025-11-07 01:15:07.694 [PeerServer-Acceptor] INFO  c.s.network.peerTcp.PeerTcpServer - Nueva conexión P2P entrante desde 172.30.92.18:52383
+2025-11-07 01:15:07.695 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Evaluando conexión entrante: 172.30.92.18:52383
+2025-11-07 01:15:07.700 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Handshake P2P válido recibido de 172.30.92.18:6061
+2025-11-07 01:15:07.700 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante almacenada: 172.30.92.18:6061
+2025-11-07 01:15:07.703 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Sincronización inicial enviada a peer conectado 172.30.92.18:6061
+2025-11-07 01:15:07.703 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Enviada P2P_PEER_LIST a peer 172.30.92.18:6061: 4 peers
+2025-11-07 01:15:07.704 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.m.PeerConnectionManager - Peer entrante registrado: 172.30.92.18:6061
+2025-11-07 01:15:07.904 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa recibida de 172.30.92.18:6061: 0 usuario(s)
+2025-11-07 01:15:07.905 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa: 0 usuarios remotos de Servidor 172.30.92.18 - 
+2025-11-07 01:15:07.905 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.92.18:6060=0 172.30.92.18:6061=0
+2025-11-07 01:15:07.906 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Respondiendo con sincronización completa a peer 172.30.92.18:6061 tras recibir SYNC_ALL
+2025-11-07 01:15:10.902 [AWT-EventQueue-0] ERROR c.s.network.peerTcp.PeerTcpClient - Error conectando a peer 172.30.143.177:6060 - Connection timed out: connect
+2025-11-07 01:15:10.905 [AWT-EventQueue-0] ERROR c.s.a.p.m.PeerConnectionManager - No se pudo conectar a peer 172.30.143.177:6060
+2025-11-07 01:15:10.907 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Servidor P2P iniciado automáticamente en puerto 6060
+2025-11-07 01:15:27.223 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.m.PeerConnectionManager - Peer 172.30.92.18:6060 desconectado. Notificando a los observadores de UI.
+2025-11-07 01:15:27.224 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Peer 172.30.92.18:6060 se desconectó, pero no tenía usuarios remotos registrados o ya fueron limpiados.
+2025-11-07 01:15:27.224 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuarios de peer 172.30.92.18:6060 eliminados del registro de sincronización.
+2025-11-07 01:15:27.225 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante removida y notificada: 172.30.92.18:6060
+2025-11-07 01:15:27.225 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante cerrada
+2025-11-07 01:15:27.226 [PeerListener-172.30.92.18:6060] INFO  c.s.network.peerTcp.PeerTcpClient - Peer 172.30.92.18:6060 cerró la conexión (end of stream)
+2025-11-07 01:15:27.228 [PeerListener-172.30.92.18:6060] INFO  c.s.network.peerTcp.PeerTcpClient - El hilo de escucha para 172.30.92.18:6060 ha terminado. Notificando desconexión.
+2025-11-07 01:15:33.783 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.m.PeerConnectionManager - Peer 172.30.92.18:6061 desconectado. Notificando a los observadores de UI.
+2025-11-07 01:15:33.783 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Peer 172.30.92.18:6061 se desconectó, pero no tenía usuarios remotos registrados o ya fueron limpiados.
+2025-11-07 01:15:33.783 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuarios de peer 172.30.92.18:6061 eliminados del registro de sincronización.
+2025-11-07 01:15:33.783 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante removida y notificada: 172.30.92.18:6061
+2025-11-07 01:15:33.785 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante cerrada
+2025-11-07 01:15:47.972 [TcpServerThread] INFO  c.s.network.pool.ConnectionPool - Pool: Creando nueva conexión instanciaSeq=1 (total en uso: 1)
+2025-11-07 01:15:47.982 [cliente-1] INFO  c.s.network.handlers.ClientHandler - [cliente-1] Nueva conexión desde /127.0.0.1
+2025-11-07 01:16:17.245 [cliente-1] INFO  c.s.observers.PeerUserSyncObserver - Usuario lucky conectado localmente - notificando a peers P2P
+2025-11-07 01:16:17.245 [cliente-1] INFO  c.s.network.events.UserEventHandler - Usuario logueado: lucky
+2025-11-07 01:16:17.245 [cliente-1] INFO  c.s.n.messaging.MessageBroadcaster - Broadcasting: USER_CONNECTED|e93bd9c3-4d85-4c70-9ac8-2c7588604c28|lucky|
+2025-11-07 01:16:17.245 [cliente-1] INFO  c.s.network.handlers.ClientHandler - [cliente-1] Enviando respuesta: OK|Login exitoso|e93bd9c3-4d85-4c70-9ac8-2c7588604c28|lucky|
+2025-11-07 01:16:18.308 [cliente-1] INFO  c.s.network.handlers.ClientHandler - [cliente-1] Enviando respuesta: OK|
+2025-11-07 01:16:18.317 [cliente-1] INFO  c.s.network.handlers.ClientHandler - [cliente-1] Enviando respuesta: OK|Usuarios obtenidos|
+2025-11-07 01:16:26.577 [PeerServer-Acceptor] INFO  c.s.network.peerTcp.PeerTcpServer - Nueva conexión P2P entrante desde 172.30.143.177:60851
+2025-11-07 01:16:26.578 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Evaluando conexión entrante: 172.30.143.177:60851
+2025-11-07 01:16:26.586 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Handshake P2P válido recibido de 172.30.143.177:6060
+2025-11-07 01:16:26.587 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante almacenada: 172.30.143.177:6060
+2025-11-07 01:16:26.589 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Sincronización inicial enviada a peer conectado 172.30.143.177:6060
+2025-11-07 01:16:26.591 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Enviada P2P_PEER_LIST a peer 172.30.143.177:6060: 4 peers
+2025-11-07 01:16:26.591 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.m.PeerConnectionManager - Peer entrante registrado: 172.30.143.177:6060
+2025-11-07 01:16:26.802 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa recibida de 172.30.143.177:6060: 0 usuario(s)
+2025-11-07 01:16:26.803 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa: 0 usuarios remotos de Servidor 172.30.143.177 - 
+2025-11-07 01:16:26.803 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.143.177:6060=0
+2025-11-07 01:16:26.804 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Respondiendo con sincronización completa a peer 172.30.143.177:6060 tras recibir SYNC_ALL
+2025-11-07 01:17:00.505 [PeerServer-Acceptor] INFO  c.s.network.peerTcp.PeerTcpServer - Nueva conexión P2P entrante desde 172.30.92.18:52581
+2025-11-07 01:17:00.507 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Evaluando conexión entrante: 172.30.92.18:52581
+2025-11-07 01:17:00.508 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Handshake P2P válido recibido de 172.30.92.18:6061
+2025-11-07 01:17:00.508 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante almacenada: 172.30.92.18:6061
+2025-11-07 01:17:00.510 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Sincronización inicial enviada a peer conectado 172.30.92.18:6061
+2025-11-07 01:17:00.512 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Enviada P2P_PEER_LIST a peer 172.30.92.18:6061: 4 peers
+2025-11-07 01:17:00.513 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.m.PeerConnectionManager - Peer entrante registrado: 172.30.92.18:6061
+2025-11-07 01:17:00.716 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa recibida de 172.30.92.18:6061: 0 usuario(s)
+2025-11-07 01:17:00.716 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa: 0 usuarios remotos de Servidor 172.30.92.18 - 
+2025-11-07 01:17:00.716 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.92.18:6061=0 172.30.143.177:6060=0
+2025-11-07 01:17:00.716 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Respondiendo con sincronización completa a peer 172.30.92.18:6061 tras recibir SYNC_ALL
+2025-11-07 01:18:35.427 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuario(s) [stivenzxy] se unió a peer 172.30.143.177:6060
+2025-11-07 01:18:35.428 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuario remoto conectado: Servidor 172.30.143.177 -  stivenzxy
+2025-11-07 01:18:35.429 [IncomingPeerHandler-172.30.143.177] INFO  c.s.n.messaging.MessageBroadcaster - Broadcasting: USER_CONNECTED|172.30.143.177:6060-stivenzxy|Servidor 172.30.143.177 - stivenzxy|
+2025-11-07 01:18:35.430 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.92.18:6061=0 172.30.143.177:6060=1
+2025-11-07 01:19:30.369 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuario(s) [karen_vega] se unió a peer 172.30.92.18:6061
+2025-11-07 01:19:30.370 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuario remoto conectado: Servidor 172.30.92.18 -  karen_vega
+2025-11-07 01:19:30.371 [IncomingPeerHandler-172.30.92.18] INFO  c.s.n.messaging.MessageBroadcaster - Broadcasting: USER_CONNECTED|172.30.92.18:6061-karen_vega|Servidor 172.30.92.18 - karen_vega|
+2025-11-07 01:19:30.372 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.92.18:6061=1 172.30.143.177:6060=1
+2025-11-07 01:19:43.879 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuario(s) [karen_vega] salió de peer 172.30.92.18:6061
+2025-11-07 01:19:43.879 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuario remoto desconectado: Servidor 172.30.92.18 -  karen_vega
+2025-11-07 01:19:43.881 [IncomingPeerHandler-172.30.92.18] INFO  c.s.n.messaging.MessageBroadcaster - Broadcasting: USER_DISCONNECTED|172.30.92.18:6061-karen_vega|Servidor 172.30.92.18 - karen_vega
+2025-11-07 01:19:43.882 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.92.18:6061=0 172.30.143.177:6060=1
+2025-11-07 01:19:48.491 [IncomingPeerHandler-172.30.92.18] ERROR c.s.network.peerTcp.PeerTcpServer - Error manejando peer entrante: Connection reset
+2025-11-07 01:19:48.492 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.m.PeerConnectionManager - Peer 172.30.92.18:6061 desconectado. Notificando a los observadores de UI.
+2025-11-07 01:19:48.492 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Peer 172.30.92.18:6061 se desconectó, pero no tenía usuarios remotos registrados o ya fueron limpiados.
+2025-11-07 01:19:48.493 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuarios de peer 172.30.92.18:6061 eliminados del registro de sincronización.
+2025-11-07 01:19:48.493 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante removida y notificada: 172.30.92.18:6061
+2025-11-07 01:19:48.494 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante cerrada
+2025-11-07 01:20:42.599 [PeerServer-Acceptor] INFO  c.s.network.peerTcp.PeerTcpServer - Nueva conexión P2P entrante desde 172.30.92.18:51741
+2025-11-07 01:20:42.602 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Evaluando conexión entrante: 172.30.92.18:51741
+2025-11-07 01:20:42.607 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Handshake P2P válido recibido de 172.30.92.18:6060
+2025-11-07 01:20:42.607 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante almacenada: 172.30.92.18:6060
+2025-11-07 01:20:42.609 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Sincronización inicial enviada a peer conectado 172.30.92.18:6060
+2025-11-07 01:20:42.610 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Enviada P2P_PEER_LIST a peer 172.30.92.18:6060: 4 peers
+2025-11-07 01:20:42.611 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.m.PeerConnectionManager - Peer entrante registrado: 172.30.92.18:6060
+2025-11-07 01:20:42.900 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa recibida de 172.30.92.18:6060: 0 usuario(s)
+2025-11-07 01:20:42.901 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa: 0 usuarios remotos de Servidor 172.30.92.18 - 
+2025-11-07 01:20:42.902 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.92.18:6060=0 172.30.143.177:6060=1
+2025-11-07 01:20:42.903 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Respondiendo con sincronización completa a peer 172.30.92.18:6060 tras recibir SYNC_ALL
+2025-11-07 01:21:07.104 [cliente-1] INFO  c.s.observers.PeerUserSyncObserver - Usuario lucky desconectado (última sesión) - notificando a peers P2P
+2025-11-07 01:21:07.105 [cliente-1] INFO  c.s.a.p.m.PeerConnectionManager - Mensaje broadcast enviado a 2 de 2 peers
+2025-11-07 01:21:07.105 [cliente-1] INFO  c.s.a.p.managers.PeerUserSyncManager - Notificación de USER_LEFT lucky enviada a peers
+2025-11-07 01:21:07.107 [cliente-1] INFO  c.s.network.events.UserEventHandler - Sesión cerrada: lucky (connectionId: cliente-1)
+2025-11-07 01:21:07.108 [cliente-1] INFO  c.s.network.events.UserEventHandler - Usuario completamente desconectado: lucky
+2025-11-07 01:21:07.109 [cliente-1] INFO  c.s.n.messaging.MessageBroadcaster - Broadcasting: USER_DISCONNECTED|cliente-1|lucky
+2025-11-07 01:21:07.112 [cliente-1] INFO  c.s.network.handlers.ClientHandler - [cliente-1] Enviando respuesta: LOGOUT_SUCCESS|Logout exitoso
+2025-11-07 01:21:07.203 [cliente-1] INFO  c.s.network.handlers.ClientHandler - [cliente-1] Flujo de entrada cerrado por el cliente
+2025-11-07 01:21:07.206 [cliente-1] INFO  c.s.network.handlers.ClientHandler - [cliente-1] desconectado antes de completar login. No se notifica.
+2025-11-07 01:21:07.207 [cliente-1] INFO  c.s.network.pool.ConnectionPool - Pool: Conexión [cliente-1] instanciaSeq=1 liberada -> reuseCount actual 0 (disponibles: 0 → 1)
+2025-11-07 01:21:07.208 [cliente-1] INFO  c.s.network.handlers.ClientHandler - [cliente-1] Cliente desconectado
+2025-11-07 01:21:09.609 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Deteniendo servidor P2P...
+2025-11-07 01:21:09.610 [AWT-EventQueue-0] INFO  c.s.adapters.ServerNetworkAdapter - Deteniendo servidor P2P
+2025-11-07 01:21:09.611 [AWT-EventQueue-0] INFO  c.s.a.peer.PeerTcpServerAdapter - Deteniendo servidor P2P y todas las conexiones...
+2025-11-07 01:21:09.611 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - Deteniendo PeerTcpServer...
+2025-11-07 01:21:09.611 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - Cerrando 2 conexiones entrantes...
+2025-11-07 01:21:09.612 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - Cerrando conexión entrante de peer 172.30.92.18:6060
+2025-11-07 01:21:09.612 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión entrante de peer 172.30.92.18:6060 cerrada
+2025-11-07 01:21:09.614 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - Cerrando conexión entrante de peer 172.30.143.177:6060
+2025-11-07 01:21:09.615 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión entrante de peer 172.30.143.177:6060 cerrada
+2025-11-07 01:21:09.615 [IncomingPeerHandler-172.30.92.18] ERROR c.s.network.peerTcp.PeerTcpServer - Error manejando peer entrante: Socket closed
+2025-11-07 01:21:09.615 [IncomingPeerHandler-172.30.143.177] ERROR c.s.network.peerTcp.PeerTcpServer - Error manejando peer entrante: Socket closed
+2025-11-07 01:21:09.616 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - Socket servidor P2P cerrado
+2025-11-07 01:21:09.616 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.m.PeerConnectionManager - Peer 172.30.92.18:6060 desconectado. Notificando a los observadores de UI.
+2025-11-07 01:21:09.616 [PeerServer-Acceptor] INFO  c.s.network.peerTcp.PeerTcpServer - PeerTcpServer detuvo el loop de aceptación
+2025-11-07 01:21:09.617 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Peer 172.30.92.18:6060 se desconectó, pero no tenía usuarios remotos registrados o ya fueron limpiados.
+2025-11-07 01:21:09.618 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - PeerTcpServer detenido completamente
+2025-11-07 01:21:09.618 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuarios de peer 172.30.92.18:6060 eliminados del registro de sincronización.
+2025-11-07 01:21:09.619 [AWT-EventQueue-0] INFO  c.s.a.peer.PeerTcpServerAdapter - Servidor P2P detenido completamente
+2025-11-07 01:21:09.619 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante removida y notificada: 172.30.92.18:6060
+2025-11-07 01:21:09.619 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.m.PeerConnectionManager - Peer 172.30.143.177:6060 desconectado. Notificando a los observadores de UI.
+2025-11-07 01:21:09.619 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Adaptador está deteniendo el servidor de clientes...
+2025-11-07 01:21:09.620 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante cerrada
+2025-11-07 01:21:09.620 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuarios de peer 172.30.143.177:6060 eliminados del registro de sincronización.
+2025-11-07 01:21:09.620 [AWT-EventQueue-0] INFO  c.s.n.l.ServerShutdownManager - Iniciando cierre del servidor...
+2025-11-07 01:21:09.621 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Peer 172.30.143.177:6060 se desconectó. Se notificará la desconexión de 1 usuario(s) remoto(s).
+2025-11-07 01:21:09.622 [AWT-EventQueue-0] INFO  c.s.n.l.ServerShutdownManager - Notificando a 0 clientes sobre el cierre del servidor
+2025-11-07 01:21:09.623 [IncomingPeerHandler-172.30.143.177] INFO  c.s.n.messaging.MessageBroadcaster - Broadcasting: USER_DISCONNECTED|172.30.143.177:6060-stivenzxy|Servidor 172.30.143.177 - stivenzxy
+2025-11-07 01:21:09.624 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Notificaciones de desconexión para los usuarios de 172.30.143.177:6060 enviadas a los clientes locales.
+2025-11-07 01:21:09.625 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante removida y notificada: 172.30.143.177:6060
+2025-11-07 01:21:09.626 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante cerrada
+2025-11-07 01:21:09.834 [AWT-EventQueue-0] INFO  c.s.n.l.ServerShutdownManager - Servidor cerrado correctamente
+2025-11-07 01:21:09.834 [TcpServerThread] ERROR c.s.network.TcpServer - Error al iniciar el servidor: Socket closed
+2025-11-07 01:21:09.834 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Servidor de clientes detenido.
+2025-11-07 01:21:34.745 [main] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:21:35.447 [main] INFO  c.s.p.config.ConnectionManager - Base de datos inicializada correctamente
+2025-11-07 01:21:35.464 [main] INFO  c.s.adapters.TcpServerAdapter - TcpServerAdapter inicializado para gestión de clientes
+2025-11-07 01:21:35.479 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - RemoteUsersProvider configurado en PeerMessageRoutingManager
+2025-11-07 01:21:35.481 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - PeerMessageSender configurado en PeerMessageRoutingManager
+2025-11-07 01:21:35.482 [main] INFO  c.s.a.peer.PeerTcpServerAdapter - PeerTcpServerAdapter inicializado con managers inyectados
+2025-11-07 01:21:35.485 [main] INFO  c.s.adapters.ServerNetworkAdapter - ServerNetworkAdapter inicializado - Gestión P2P exclusiva con sincronización automática de usuarios
+2025-11-07 01:21:35.486 [main] INFO  c.s.adapters.TcpServerAdapter - PeerNetworkControl configurado para inicio automático
+2025-11-07 01:21:36.049 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:21:36.050 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - PeerTcpServer inicializado - Puerto P2P configurado: 6060
+2025-11-07 01:21:36.090 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:21:36.357 [AWT-EventQueue-0] INFO  c.s.views.components.UserListPanel - Usuarios cargados exitosamente: 5 usuarios
+2025-11-07 01:21:38.075 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:21:38.083 [AWT-EventQueue-0] INFO  c.s.a.p.m.PeerMessageRoutingManager - ClientMessageBroadcaster configurado en PeerMessageRoutingManager
+2025-11-07 01:21:38.084 [AWT-EventQueue-0] INFO  c.s.a.peer.PeerTcpServerAdapter - ClientMessageBroadcaster configurado en managers
+2025-11-07 01:21:38.085 [AWT-EventQueue-0] INFO  c.s.adapters.ServerNetworkAdapter - Callback de broadcast registrado en ServerNetworkAdapter
+2025-11-07 01:21:38.089 [AWT-EventQueue-0] INFO  c.s.a.c.SendPrivateMessageCommandAdapter - Callback de enrutamiento P2P configurado en SendPrivateMessageCommandAdapter
+2025-11-07 01:21:38.090 [AWT-EventQueue-0] INFO  c.s.factories.InfrastructureFactory - Callback de enrutamiento P2P configurado en SendPrivateMessageCommandAdapter
+2025-11-07 01:21:38.092 [AWT-EventQueue-0] INFO  c.s.a.c.SendPrivateAudioCommandAdapter - PeerMessageRouter configurado en SendPrivateAudioCommandAdapter
+2025-11-07 01:21:38.095 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Servidor de clientes iniciado en puerto 9090
+2025-11-07 01:21:38.096 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Iniciando servidor P2P automáticamente...
+2025-11-07 01:21:38.098 [AWT-EventQueue-0] INFO  c.s.adapters.ServerNetworkAdapter - Iniciando servidor P2P (puerto desde configuración)
+2025-11-07 01:21:38.098 [TcpServerThread] INFO  c.s.network.TcpServer - Servidor TCP iniciado y escuchando en el puerto 9090
+2025-11-07 01:21:38.099 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:21:38.100 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - PeerTcpServer inicializado - Puerto P2P configurado: 6060
+2025-11-07 01:21:38.104 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - PeerTcpServer iniciado en puerto 6060 - Esperando conexiones de otros servidores
+2025-11-07 01:21:38.107 [AWT-EventQueue-0] INFO  c.s.a.peer.PeerTcpServerAdapter - ID del servidor local: 192.168.40.91:6060
+2025-11-07 01:21:38.107 [PeerServer-Acceptor] INFO  c.s.network.peerTcp.PeerTcpServer - Esperando conexiones entrantes...
+2025-11-07 01:21:38.108 [AWT-EventQueue-0] INFO  c.s.a.p.managers.PeerUserSyncManager - ID del servidor local establecido: 192.168.40.91:6060
+2025-11-07 01:21:38.109 [AWT-EventQueue-0] INFO  c.s.a.peer.PeerTcpServerAdapter - Servidor P2P iniciado exitosamente en puerto 6060
+2025-11-07 01:21:38.113 [AWT-EventQueue-0] INFO  c.s.a.peer.managers.PeerRegistry - Cargados 0 peers conocidos desde C:\Users\duvan\OneDrive\Escritorio\SW2 - 2025-2\cliente servidor\chat-app\known_peers.txt
+2025-11-07 01:21:38.113 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Servidor P2P iniciado automáticamente en puerto 6060
+2025-11-07 01:22:03.458 [TcpServerThread] INFO  c.s.network.pool.ConnectionPool - Pool: Creando nueva conexión instanciaSeq=1 (total en uso: 1)
+2025-11-07 01:22:03.467 [cliente-1] INFO  c.s.network.handlers.ClientHandler - [cliente-1] Nueva conexión desde /127.0.0.1
+2025-11-07 01:22:04.323 [PeerServer-Acceptor] INFO  c.s.network.peerTcp.PeerTcpServer - Nueva conexión P2P entrante desde 172.30.143.177:39703
+2025-11-07 01:22:04.328 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Evaluando conexión entrante: 172.30.143.177:39703
+2025-11-07 01:22:04.336 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Handshake P2P válido recibido de 172.30.143.177:6060
+2025-11-07 01:22:04.337 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante almacenada: 172.30.143.177:6060
+2025-11-07 01:22:04.342 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Sincronización inicial enviada a peer conectado 172.30.143.177:6060
+2025-11-07 01:22:04.342 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.peer.managers.PeerRegistry - Nuevo peer conocido agregado (string): 172.30.143.177:6060
+2025-11-07 01:22:04.349 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.peer.managers.PeerRegistry - Persistidos 1 peers en C:\Users\duvan\OneDrive\Escritorio\SW2 - 2025-2\cliente servidor\chat-app\known_peers.txt
+2025-11-07 01:22:04.352 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Enviada P2P_PEER_LIST a peer 172.30.143.177:6060: 1 peers
+2025-11-07 01:22:04.354 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.m.PeerConnectionManager - Peer entrante registrado: 172.30.143.177:6060
+2025-11-07 01:22:04.545 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa recibida de 172.30.143.177:6060: 0 usuario(s)
+2025-11-07 01:22:04.546 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa: 0 usuarios remotos de Servidor 172.30.143.177 - 
+2025-11-07 01:22:04.547 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.143.177:6060=0
+2025-11-07 01:22:04.549 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Respondiendo con sincronización completa a peer 172.30.143.177:6060 tras recibir SYNC_ALL
+2025-11-07 01:22:11.621 [cliente-1] INFO  c.s.observers.PeerUserSyncObserver - Usuario herduma conectado localmente - notificando a peers P2P
+2025-11-07 01:22:11.622 [cliente-1] INFO  c.s.a.p.m.PeerConnectionManager - Mensaje broadcast enviado a 1 de 1 peers
+2025-11-07 01:22:11.623 [cliente-1] INFO  c.s.a.p.managers.PeerUserSyncManager - Notificación de USER_JOINED herduma enviada a peers
+2025-11-07 01:22:11.624 [cliente-1] INFO  c.s.network.events.UserEventHandler - Usuario logueado: herduma
+2025-11-07 01:22:11.626 [cliente-1] INFO  c.s.n.messaging.MessageBroadcaster - Broadcasting: USER_CONNECTED|e063f54a-e3ee-4c35-8c69-f0aae8e6df27|herduma|
+2025-11-07 01:22:11.628 [cliente-1] INFO  c.s.network.handlers.ClientHandler - [cliente-1] Enviando respuesta: OK|Login exitoso|e063f54a-e3ee-4c35-8c69-f0aae8e6df27|herduma|
+2025-11-07 01:22:12.675 [cliente-1] INFO  c.s.network.handlers.ClientHandler - [cliente-1] Enviando respuesta: OK|
+2025-11-07 01:22:12.683 [cliente-1] INFO  c.s.network.handlers.ClientHandler - [cliente-1] Enviando respuesta: OK|Usuarios obtenidos|
+2025-11-07 01:22:34.700 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuario(s) [stivenzxy] se unió a peer 172.30.143.177:6060
+2025-11-07 01:22:34.701 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuario remoto conectado: Servidor 172.30.143.177 -  stivenzxy
+2025-11-07 01:22:34.703 [IncomingPeerHandler-172.30.143.177] INFO  c.s.n.messaging.MessageBroadcaster - Broadcasting: USER_CONNECTED|172.30.143.177:6060-stivenzxy|Servidor 172.30.143.177 - stivenzxy|
+2025-11-07 01:22:34.705 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.143.177:6060=1
+2025-11-07 01:23:06.462 [PeerServer-Acceptor] INFO  c.s.network.peerTcp.PeerTcpServer - Nueva conexión P2P entrante desde 172.30.92.18:61076
+2025-11-07 01:23:06.463 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Evaluando conexión entrante: 172.30.92.18:61076
+2025-11-07 01:23:06.468 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Handshake P2P válido recibido de 172.30.92.18:6060
+2025-11-07 01:23:06.469 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante almacenada: 172.30.92.18:6060
+2025-11-07 01:23:06.472 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Sincronización inicial enviada a peer conectado 172.30.92.18:6060
+2025-11-07 01:23:06.473 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.peer.managers.PeerRegistry - Nuevo peer conocido agregado (string): 172.30.92.18:6060
+2025-11-07 01:23:06.475 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.peer.managers.PeerRegistry - Persistidos 2 peers en C:\Users\duvan\OneDrive\Escritorio\SW2 - 2025-2\cliente servidor\chat-app\known_peers.txt
+2025-11-07 01:23:06.476 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Enviada P2P_PEER_LIST a peer 172.30.92.18:6060: 2 peers
+2025-11-07 01:23:06.478 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.m.PeerConnectionManager - Peer entrante registrado: 172.30.92.18:6060
+2025-11-07 01:23:06.686 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa recibida de 172.30.92.18:6060: 0 usuario(s)
+2025-11-07 01:23:06.687 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa: 0 usuarios remotos de Servidor 172.30.92.18 - 
+2025-11-07 01:23:06.688 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.92.18:6060=0 172.30.143.177:6060=1
+2025-11-07 01:23:06.688 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Respondiendo con sincronización completa a peer 172.30.92.18:6060 tras recibir SYNC_ALL
+2025-11-07 01:23:50.756 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuario(s) [tatiana_vega] se unió a peer 172.30.92.18:6060
+2025-11-07 01:23:50.757 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuario remoto conectado: Servidor 172.30.92.18 -  tatiana_vega
+2025-11-07 01:23:50.757 [IncomingPeerHandler-172.30.92.18] INFO  c.s.n.messaging.MessageBroadcaster - Broadcasting: USER_CONNECTED|172.30.92.18:6060-tatiana_vega|Servidor 172.30.92.18 - tatiana_vega|
+2025-11-07 01:23:50.759 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.92.18:6060=1 172.30.143.177:6060=1
+2025-11-07 01:24:20.979 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.m.PeerConnectionManager - Peer 172.30.143.177:6060 desconectado. Notificando a los observadores de UI.
+2025-11-07 01:24:20.980 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuarios de peer 172.30.143.177:6060 eliminados del registro de sincronización.
+2025-11-07 01:24:20.982 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Peer 172.30.143.177:6060 se desconectó. Se notificará la desconexión de 1 usuario(s) remoto(s).
+2025-11-07 01:24:20.984 [IncomingPeerHandler-172.30.143.177] INFO  c.s.n.messaging.MessageBroadcaster - Broadcasting: USER_DISCONNECTED|172.30.143.177:6060-stivenzxy|Servidor 172.30.143.177 - stivenzxy
+2025-11-07 01:24:20.984 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Notificaciones de desconexión para los usuarios de 172.30.143.177:6060 enviadas a los clientes locales.
+2025-11-07 01:24:20.985 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante removida y notificada: 172.30.143.177:6060
+2025-11-07 01:24:20.986 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante cerrada
+2025-11-07 01:24:49.677 [PeerServer-Acceptor] INFO  c.s.network.peerTcp.PeerTcpServer - Nueva conexión P2P entrante desde 172.30.143.177:31840
+2025-11-07 01:24:49.679 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Evaluando conexión entrante: 172.30.143.177:31840
+2025-11-07 01:24:49.682 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Handshake P2P válido recibido de 172.30.143.177:6060
+2025-11-07 01:24:49.683 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante almacenada: 172.30.143.177:6060
+2025-11-07 01:24:49.685 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Sincronización inicial enviada a peer conectado 172.30.143.177:6060
+2025-11-07 01:24:49.687 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Enviada P2P_PEER_LIST a peer 172.30.143.177:6060: 2 peers
+2025-11-07 01:24:49.688 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.m.PeerConnectionManager - Peer entrante registrado: 172.30.143.177:6060
+2025-11-07 01:24:49.898 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa recibida de 172.30.143.177:6060: 0 usuario(s)
+2025-11-07 01:24:49.898 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Sincronización completa: 0 usuarios remotos de Servidor 172.30.143.177 - 
+2025-11-07 01:24:49.899 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.92.18:6060=1 172.30.143.177:6060=0
+2025-11-07 01:24:49.899 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Respondiendo con sincronización completa a peer 172.30.143.177:6060 tras recibir SYNC_ALL
+2025-11-07 01:25:04.811 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuario(s) [stivenzxy] se unió a peer 172.30.143.177:6060
+2025-11-07 01:25:04.811 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuario remoto conectado: Servidor 172.30.143.177 -  stivenzxy
+2025-11-07 01:25:04.812 [IncomingPeerHandler-172.30.143.177] INFO  c.s.n.messaging.MessageBroadcaster - Broadcasting: USER_CONNECTED|172.30.143.177:6060-stivenzxy|Servidor 172.30.143.177 - stivenzxy|
+2025-11-07 01:25:04.813 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.92.18:6060=1 172.30.143.177:6060=1
+2025-11-07 01:25:15.629 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuario(s) [stivenzxy] salió de peer 172.30.143.177:6060
+2025-11-07 01:25:15.630 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuario remoto desconectado: Servidor 172.30.143.177 -  stivenzxy
+2025-11-07 01:25:15.631 [IncomingPeerHandler-172.30.143.177] INFO  c.s.n.messaging.MessageBroadcaster - Broadcasting: USER_DISCONNECTED|172.30.143.177:6060-stivenzxy|Servidor 172.30.143.177 - stivenzxy
+2025-11-07 01:25:15.632 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.92.18:6060=1 172.30.143.177:6060=0
+2025-11-07 01:25:30.094 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.m.PeerConnectionManager - Peer 172.30.143.177:6060 desconectado. Notificando a los observadores de UI.
+2025-11-07 01:25:30.100 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Peer 172.30.143.177:6060 se desconectó, pero no tenía usuarios remotos registrados o ya fueron limpiados.
+2025-11-07 01:25:30.100 [IncomingPeerHandler-172.30.143.177] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuarios de peer 172.30.143.177:6060 eliminados del registro de sincronización.
+2025-11-07 01:25:30.100 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante removida y notificada: 172.30.143.177:6060
+2025-11-07 01:25:30.100 [IncomingPeerHandler-172.30.143.177] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante cerrada
+2025-11-07 01:25:42.224 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuario(s) [tatiana_vega] salió de peer 172.30.92.18:6060
+2025-11-07 01:25:42.224 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuario remoto desconectado: Servidor 172.30.92.18 -  tatiana_vega
+2025-11-07 01:25:42.226 [IncomingPeerHandler-172.30.92.18] INFO  c.s.n.messaging.MessageBroadcaster - Broadcasting: USER_DISCONNECTED|172.30.92.18:6060-tatiana_vega|Servidor 172.30.92.18 - tatiana_vega
+2025-11-07 01:25:42.227 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Estado usuarios remotos: 172.30.92.18:6060=0
+2025-11-07 01:25:45.415 [cliente-1] INFO  c.s.observers.PeerUserSyncObserver - Usuario herduma desconectado (última sesión) - notificando a peers P2P
+2025-11-07 01:25:45.416 [cliente-1] INFO  c.s.a.p.m.PeerConnectionManager - Mensaje broadcast enviado a 1 de 1 peers
+2025-11-07 01:25:45.417 [cliente-1] INFO  c.s.a.p.managers.PeerUserSyncManager - Notificación de USER_LEFT herduma enviada a peers
+2025-11-07 01:25:45.417 [cliente-1] INFO  c.s.network.events.UserEventHandler - Sesión cerrada: herduma (connectionId: cliente-1)
+2025-11-07 01:25:45.418 [cliente-1] INFO  c.s.network.events.UserEventHandler - Usuario completamente desconectado: herduma
+2025-11-07 01:25:45.419 [cliente-1] INFO  c.s.n.messaging.MessageBroadcaster - Broadcasting: USER_DISCONNECTED|cliente-1|herduma
+2025-11-07 01:25:45.421 [cliente-1] INFO  c.s.network.handlers.ClientHandler - [cliente-1] Enviando respuesta: LOGOUT_SUCCESS|Logout exitoso
+2025-11-07 01:25:45.514 [cliente-1] INFO  c.s.network.handlers.ClientHandler - [cliente-1] Flujo de entrada cerrado por el cliente
+2025-11-07 01:25:45.517 [cliente-1] INFO  c.s.network.handlers.ClientHandler - [cliente-1] desconectado antes de completar login. No se notifica.
+2025-11-07 01:25:45.518 [cliente-1] INFO  c.s.network.pool.ConnectionPool - Pool: Conexión [cliente-1] instanciaSeq=1 liberada -> reuseCount actual 0 (disponibles: 0 → 1)
+2025-11-07 01:25:45.520 [cliente-1] INFO  c.s.network.handlers.ClientHandler - [cliente-1] Cliente desconectado
+2025-11-07 01:25:47.581 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Deteniendo servidor P2P...
+2025-11-07 01:25:47.583 [AWT-EventQueue-0] INFO  c.s.adapters.ServerNetworkAdapter - Deteniendo servidor P2P
+2025-11-07 01:25:47.583 [AWT-EventQueue-0] INFO  c.s.a.peer.PeerTcpServerAdapter - Deteniendo servidor P2P y todas las conexiones...
+2025-11-07 01:25:47.584 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - Deteniendo PeerTcpServer...
+2025-11-07 01:25:47.584 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - Cerrando 1 conexiones entrantes...
+2025-11-07 01:25:47.585 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - Cerrando conexión entrante de peer 172.30.92.18:6060
+2025-11-07 01:25:47.585 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión entrante de peer 172.30.92.18:6060 cerrada
+2025-11-07 01:25:47.586 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - Socket servidor P2P cerrado
+2025-11-07 01:25:47.586 [PeerServer-Acceptor] INFO  c.s.network.peerTcp.PeerTcpServer - PeerTcpServer detuvo el loop de aceptación
+2025-11-07 01:25:47.586 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - PeerTcpServer detenido completamente
+2025-11-07 01:25:47.586 [AWT-EventQueue-0] INFO  c.s.a.peer.PeerTcpServerAdapter - Servidor P2P detenido completamente
+2025-11-07 01:25:47.587 [IncomingPeerHandler-172.30.92.18] ERROR c.s.network.peerTcp.PeerTcpServer - Error manejando peer entrante: Socket closed
+2025-11-07 01:25:47.587 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Adaptador está deteniendo el servidor de clientes...
+2025-11-07 01:25:47.587 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.m.PeerConnectionManager - Peer 172.30.92.18:6060 desconectado. Notificando a los observadores de UI.
+2025-11-07 01:25:47.588 [AWT-EventQueue-0] INFO  c.s.n.l.ServerShutdownManager - Iniciando cierre del servidor...
+2025-11-07 01:25:47.588 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Peer 172.30.92.18:6060 se desconectó, pero no tenía usuarios remotos registrados o ya fueron limpiados.
+2025-11-07 01:25:47.588 [IncomingPeerHandler-172.30.92.18] INFO  c.s.a.p.managers.PeerUserSyncManager - Usuarios de peer 172.30.92.18:6060 eliminados del registro de sincronización.
+2025-11-07 01:25:47.588 [AWT-EventQueue-0] INFO  c.s.n.l.ServerShutdownManager - Notificando a 0 clientes sobre el cierre del servidor
+2025-11-07 01:25:47.588 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante removida y notificada: 172.30.92.18:6060
+2025-11-07 01:25:47.588 [IncomingPeerHandler-172.30.92.18] INFO  c.s.network.peerTcp.PeerTcpServer - Conexión P2P entrante cerrada
+2025-11-07 01:25:47.795 [AWT-EventQueue-0] INFO  c.s.n.l.ServerShutdownManager - Servidor cerrado correctamente
+2025-11-07 01:25:47.796 [TcpServerThread] ERROR c.s.network.TcpServer - Error al iniciar el servidor: Socket closed
+2025-11-07 01:25:47.796 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Servidor de clientes detenido.
+2025-11-07 01:25:49.668 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Servidor de clientes detenido.
+2025-11-07 01:31:21.630 [main] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:31:22.256 [main] INFO  c.s.p.config.ConnectionManager - Base de datos inicializada correctamente
+2025-11-07 01:31:22.274 [main] INFO  c.s.adapters.TcpServerAdapter - TcpServerAdapter inicializado para gestión de clientes
+2025-11-07 01:31:22.289 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - RemoteUsersProvider configurado en PeerMessageRoutingManager
+2025-11-07 01:31:22.290 [main] INFO  c.s.a.p.m.PeerMessageRoutingManager - PeerMessageSender configurado en PeerMessageRoutingManager
+2025-11-07 01:31:22.291 [main] INFO  c.s.a.peer.PeerTcpServerAdapter - PeerTcpServerAdapter inicializado con managers inyectados
+2025-11-07 01:31:22.296 [main] INFO  c.s.adapters.ServerNetworkAdapter - ServerNetworkAdapter inicializado - Gestión P2P exclusiva con sincronización automática de usuarios
+2025-11-07 01:31:22.296 [main] INFO  c.s.adapters.TcpServerAdapter - PeerNetworkControl configurado para inicio automático
+2025-11-07 01:31:22.886 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:31:22.887 [AWT-EventQueue-0] INFO  c.s.network.peerTcp.PeerTcpServer - PeerTcpServer inicializado - Puerto P2P configurado: 6060
+2025-11-07 01:31:22.923 [AWT-EventQueue-0] INFO  com.chatCommon.utils.AppProperties - Archivo de configuración 'server-configuration' cargado.
+2025-11-07 01:31:23.244 [AWT-EventQueue-0] INFO  c.s.views.components.UserListPanel - Usuarios cargados exitosamente: 5 usuarios
+2025-11-07 01:32:14.835 [AWT-EventQueue-0] INFO  c.s.controllers.UserController - Registrando usuario usando controller: 1747575117
+2025-11-07 01:32:15.930 [AWT-EventQueue-0] INFO  c.s.controllers.UserController - Usuario creado exitosamente!
+2025-11-07 01:32:16.151 [AWT-EventQueue-0] INFO  c.s.views.components.UserListPanel - Usuarios cargados exitosamente: 6 usuarios
+2025-11-07 01:32:28.183 [AWT-EventQueue-0] INFO  c.s.adapters.TcpServerAdapter - Servidor de clientes detenido.
