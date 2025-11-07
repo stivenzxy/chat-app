@@ -20,19 +20,20 @@ public class PeerConnectionManager {
     private final Map<String, ConnectedPeerInfo> connectedPeers = new ConcurrentHashMap<>();
     private PeerTcpServer peerServer;
     
-    // ======== NUEVO CAMPO AÑADIDO ========
     private PeerObserverNotifier observerNotifier;
+    private PeerUserSyncManager userSyncManager;
 
     public void setPeerServer(PeerTcpServer peerServer) {
         this.peerServer = peerServer;
-        // ======== NUEVA LÍNEA AÑADIDA ========
-        // Configurar el callback para cuando un peer entrante se desconecta.
         this.peerServer.setOnIncomingPeerDisconnected(this::handleDisconnection);
     }
     
-    // ======== NUEVO MÉTODO AÑADIDO ========
     public void setObserverNotifier(PeerObserverNotifier notifier) {
         this.observerNotifier = notifier;
+    }
+
+    public void setUserSyncManager(PeerUserSyncManager userSyncManager) {
+        this.userSyncManager = userSyncManager;
     }
 
     public boolean connectToPeer(
@@ -156,26 +157,26 @@ public class PeerConnectionManager {
         }
     }
 
-    // ======== NUEVO MÉTODO AÑADIDO ========
     /**
      * Centraliza la lógica de limpieza y notificación para cualquier tipo de desconexión (activa o pasiva).
      * Este método es seguro para ser llamado múltiples veces para el mismo peerId.
      * @param peerId El ID del peer que se ha desconectado.
      */
     private synchronized void handleDisconnection(String peerId) {
-        // Remover de las conexiones salientes activas
         peerClients.remove(peerId);
 
-        // Remover de la lista general de peers conectados (la que usa la UI)
         ConnectedPeerInfo removedPeerInfo = connectedPeers.remove(peerId);
 
-        // Si el peer realmente estaba en nuestra lista, notificar a los observadores.
         if (removedPeerInfo != null) {
-            logger.info("Peer {} desconectado. Notificando a los observadores.", peerId);
+            logger.info("Peer {} desconectado. Notificando a los observadores de UI.", peerId);
             if (observerNotifier != null) {
-                // Notificar con un estado claro de "Desconectado".
                 observerNotifier.notifyPeerDisconnected(removedPeerInfo.withStatus("Desconectado"));
             }
+            
+            if (userSyncManager != null) {
+                userSyncManager.handlePeerDisconnection(peerId);
+            }
+
         } else {
             logger.debug("handleDisconnection llamado para {}, pero ya no estaba en la lista de conectados.", peerId);
         }
