@@ -1,6 +1,7 @@
-package com.serverInfrastructure.adapters.peer.managers;
+package com.serverInfrastructure.adapters.peer.Managers;
 
 import com.serverApplication.dto.ConnectedPeerInfo;
+import com.serverInfrastructure.adapters.peer.utils.PeerIdParser;
 import com.serverInfrastructure.network.peerTcp.PeerTcpClient;
 import com.serverInfrastructure.network.peerTcp.PeerTcpServer;
 import org.slf4j.Logger;
@@ -41,11 +42,11 @@ public class PeerConnectionManager {
         int port,
         Runnable onConnectionRejected,
         Consumer<String> onUserSyncReceived,
-        java.util.function.Consumer<String> onPeerListReceived,
+        Consumer<String> onPeerListReceived,
         BiConsumer<String, String> onPrivateMessageReceived,
         Consumer<String> onConnectionSuccess
     ) {
-        String peerId = ip + ":" + port;
+        String peerId = PeerIdParser.create(ip, port);
         
         if (peerClients.containsKey(peerId)) {
             logger.warn("Ya existe conexión con peer {}", peerId);
@@ -56,57 +57,47 @@ public class PeerConnectionManager {
             logger.info("Conectando a peer {}...", peerId);
             
             PeerTcpClient client = new PeerTcpClient();
-
             client.setOnDisconnected(() -> handleDisconnection(peerId));
-            
             client.setOnConnectionRejected(() -> {
                 logger.error("Conexión rechazada por peer {} - limpiando registros", peerId);
                 peerClients.remove(peerId);
                 connectedPeers.remove(peerId);
                 onConnectionRejected.run();
             });
-            
             client.setOnUserSyncReceived(onUserSyncReceived);
             client.setOnPeerListReceived(onPeerListReceived);
             client.setOnPrivateMessageReceived(onPrivateMessageReceived);
             
-            boolean connected = client.connectToPeer(ip, port);
-            
-            if (connected) {
-                peerClients.put(peerId, client);
-
-                ConnectedPeerInfo peerInfo = ConnectedPeerInfo.create(ip, port, "Conectado");
-                connectedPeers.put(peerId, peerInfo);
-
-                try {
-                    logger.debug("Intentando registrar peer conocido en PeerRegistry: {}", peerId);
-                    com.serverInfrastructure.adapters.peer.managers.PeerRegistry.getInstance().addKnownPeer(peerInfo);
-                    logger.debug("Registro solicitado para peer {}", peerId);
-                } catch (Exception e) {
-                    logger.warn("No se pudo persistir peer conocido {}: {}", peerId, e.getMessage());
-                }
-
-                client.sendHandshake();
-
-                new Thread(() -> {
-                    try {
-                        Thread.sleep(200);
-                        if (peerClients.containsKey(peerId) && client.isConnected()) {
-                            onConnectionSuccess.accept(peerId);
-                            logger.info("Conectado exitosamente a peer {}", peerId);
-                        }
-                    } catch (Exception e) {
-                        logger.error("Error en validación post-conexión: {}", e.getMessage());
-                    }
-                }, "ConnectionValidation-" + peerId).start();
-                
-                logger.info("Conexión inicial establecida con peer {}, validando...", peerId);
-                return true;
-                
-            } else {
+            if (!client.connectToPeer(ip, port)) {
                 logger.error("No se pudo conectar a peer {}", peerId);
                 return false;
             }
+            
+            peerClients.put(peerId, client);
+            connectedPeers.put(peerId, ConnectedPeerInfo.create(ip, port, "Conectado"));
+
+            try {
+                PeerRegistry.getInstance().addKnownPeer(connectedPeers.get(peerId));
+            } catch (Exception e) {
+                logger.warn("No se pudo persistir peer conocido {}: {}", peerId, e.getMessage());
+            }
+
+            client.sendHandshake();
+
+            new Thread(() -> {
+                try {
+                    Thread.sleep(200);
+                    if (peerClients.containsKey(peerId) && client.isConnected()) {
+                        onConnectionSuccess.accept(peerId);
+                        logger.info("Conectado exitosamente a peer {}", peerId);
+                    }
+                } catch (Exception e) {
+                    logger.error("Error en validación post-conexión: {}", e.getMessage());
+                }
+            }, "ConnectionValidation-" + peerId).start();
+            
+            logger.info("Conexión inicial establecida con peer {}, validando...", peerId);
+            return true;
             
         } catch (Exception e) {
             logger.error("Error conectando a peer {}: {}", peerId, e.getMessage());
@@ -245,7 +236,7 @@ public class PeerConnectionManager {
         if (info == null) return;
         connectedPeers.put(info.peerId(), info);
         try {
-            com.serverInfrastructure.adapters.peer.managers.PeerRegistry.getInstance().addKnownPeer(info);
+            PeerRegistry.getInstance().addKnownPeer(info);
         } catch (Exception e) {
             logger.warn("No se pudo persistir peer entrante {}: {}", info.peerId(), e.getMessage());
         }

@@ -1,6 +1,7 @@
 package com.serverInfrastructure.network.peerTcp;
 
 import com.chatCommon.utils.AppProperties;
+import com.serverInfrastructure.adapters.peer.Managers.PeerRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -203,7 +204,7 @@ public class PeerTcpServer {
 
                 // Registrar peer entrante como conocido SOLO si el puerto coincide con PEER_SERVER_PORT
                 try {
-                    com.serverInfrastructure.adapters.peer.managers.PeerRegistry registry = com.serverInfrastructure.adapters.peer.managers.PeerRegistry.getInstance();
+                    PeerRegistry registry = PeerRegistry.getInstance();
                     if (registry != null) {
                         registry.addKnownPeer(peerId); // registry will filter invalid ports
                     }
@@ -213,7 +214,7 @@ public class PeerTcpServer {
 
                 // Enviar lista de peers conocidos al peer entrante (solo válidos)
                 try {
-                    com.serverInfrastructure.adapters.peer.managers.PeerRegistry registry = com.serverInfrastructure.adapters.peer.managers.PeerRegistry.getInstance();
+                    PeerRegistry registry = PeerRegistry.getInstance();
                     java.util.Set<String> peers = registry.getValidPeers();
                     if (!peers.isEmpty()) {
                         String payload = String.join(",", peers);

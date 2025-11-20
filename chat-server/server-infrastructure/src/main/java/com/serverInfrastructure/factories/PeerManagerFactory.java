@@ -1,6 +1,6 @@
 package com.serverInfrastructure.factories;
 
-import com.serverInfrastructure.adapters.peer.managers.*;
+import com.serverInfrastructure.adapters.peer.Managers.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

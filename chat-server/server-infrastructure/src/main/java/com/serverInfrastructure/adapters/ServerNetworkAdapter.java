@@ -5,6 +5,7 @@ import com.serverApplication.ports.PeerConnectionObserver;
 import com.serverApplication.ports.peer.ClientMessageBroadcaster;
 import com.serverApplication.ports.peer.PeerNetworkControl;
 import com.serverInfrastructure.adapters.peer.PeerTcpServerAdapter;
+import com.serverInfrastructure.factories.PeerTcpServerAdapterFactory;
 import com.serverInfrastructure.observers.ActiveUserManager;
 import com.serverInfrastructure.observers.PeerUserSyncObserver;
 import org.slf4j.Logger;
@@ -19,7 +20,7 @@ public class ServerNetworkAdapter implements PeerNetworkControl {
     private final PeerTcpServerAdapter peerAdapter;
     
     public ServerNetworkAdapter() {
-        this.peerAdapter = PeerTcpServerAdapter.create();
+        this.peerAdapter = PeerTcpServerAdapterFactory.create();
 
         PeerUserSyncObserver syncObserver = new PeerUserSyncObserver(this.peerAdapter);
         ActiveUserManager.getInstance().addObserver(syncObserver);

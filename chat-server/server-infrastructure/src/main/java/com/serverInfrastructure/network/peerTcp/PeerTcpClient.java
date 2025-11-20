@@ -1,6 +1,7 @@
 package com.serverInfrastructure.network.peerTcp;
 
 import com.chatCommon.utils.AppProperties;
+import com.serverInfrastructure.adapters.peer.Managers.PeerRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -243,7 +244,7 @@ public class PeerTcpClient {
     public void sendPeerList() {
         // Construir mensaje con peers conocidos (si existe registry)
         try {
-            com.serverInfrastructure.adapters.peer.managers.PeerRegistry registry = com.serverInfrastructure.adapters.peer.managers.PeerRegistry.getInstance();
+            PeerRegistry registry = PeerRegistry.getInstance();
             java.util.Set<String> peers = registry.getValidPeers();
             if (peers.isEmpty()) return;
             String payload = String.join(",", peers);

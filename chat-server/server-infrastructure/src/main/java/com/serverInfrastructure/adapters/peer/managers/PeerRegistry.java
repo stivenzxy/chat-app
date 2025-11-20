@@ -1,6 +1,7 @@
-package com.serverInfrastructure.adapters.peer.managers;
+package com.serverInfrastructure.adapters.peer.Managers;
 
 import com.serverApplication.dto.ConnectedPeerInfo;
+import com.serverInfrastructure.adapters.peer.utils.PeerIdParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +41,7 @@ public class PeerRegistry {
     private void loadFromDisk() {
         try {
             if (!Files.exists(storagePath)) {
-                logger.info("No existe archivo de peers conocidos, se creará al guardar: {}", storagePath);
+                logger.info("No existe el archivo de peers conocidos, se creará al guardar: {}", storagePath);
                 return;
             }
 
@@ -68,9 +69,9 @@ public class PeerRegistry {
     private boolean isPeerPortValid(String peerId) {
         try {
             if (peerId == null || peerId.isBlank()) return false;
-            String[] parts = peerId.split(":");
-            if (parts.length < 2) return false;
-            int port = Integer.parseInt(parts[1]);
+            
+            int port = PeerIdParser.extractPort(peerId);
+            if (port == -1) return false;
 
             int EPHEMERAL_LOWER = 49152;
             int EPHEMERAL_UPPER = 65535;

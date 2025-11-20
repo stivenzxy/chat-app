@@ -1,4 +1,4 @@
-package com.serverInfrastructure.adapters.peer.managers;
+package com.serverInfrastructure.adapters.peer.Managers;
 
 import com.serverApplication.dto.ConnectedPeerInfo;
 import com.serverApplication.ports.PeerConnectionObserver;

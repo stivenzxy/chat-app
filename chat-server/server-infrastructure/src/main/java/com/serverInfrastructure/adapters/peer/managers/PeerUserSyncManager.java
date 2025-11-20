@@ -1,9 +1,10 @@
-package com.serverInfrastructure.adapters.peer.managers;
+package com.serverInfrastructure.adapters.peer.Managers;
 
 import com.chatCommon.protocol.ProtocolParser;
 import com.serverApplication.dto.UserSyncInfo;
-import com.serverDomain.entities.User;
-import com.serverInfrastructure.observers.ActiveUserManager;
+import com.serverInfrastructure.adapters.peer.user.LocalUserRepository;
+import com.serverInfrastructure.adapters.peer.user.RemoteUserPhotoStore;
+import com.serverInfrastructure.adapters.peer.user.ServerPrefixFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,25 +14,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
-import java.util.Collections;
 
 public class PeerUserSyncManager {
 
     private static final Logger logger = LoggerFactory.getLogger(PeerUserSyncManager.class);
     private final ProtocolParser protocolParser;
     private final Map<String, List<String>> remoteServerUsers = new ConcurrentHashMap<>();
-    private final Map<String, String> lastReceivedPhotos = new ConcurrentHashMap<>();
+    private final RemoteUserPhotoStore photoStore;
+    private final LocalUserRepository userRepository;
 
     private String localServerId;
+    private Consumer<String> peerBroadcastCallback;
+    private Consumer<String> clientBroadcastCallback;
+    
     public PeerUserSyncManager() {
         this.protocolParser = new ProtocolParser('|', '\\');
+        this.photoStore = new RemoteUserPhotoStore();
+        this.userRepository = new LocalUserRepository();
     }
-    private Consumer<String> peerBroadcastCallback;
-
-    private Consumer<String> clientBroadcastCallback;
-
-    private Supplier<List<String>> localUsersProvider;
 
     public void setLocalServerId(String serverId) {
         this.localServerId = serverId;
@@ -46,10 +46,6 @@ public class PeerUserSyncManager {
         this.clientBroadcastCallback = callback;
     }
 
-    public void setLocalUsersProvider(Supplier<List<String>> provider) {
-        this.localUsersProvider = provider;
-    }
-
     public void handleUserSyncMessage(String peerId, String message) {
         try {
             UserSyncInfo syncInfo = UserSyncInfo.fromProtocol(message);
@@ -57,10 +53,10 @@ public class PeerUserSyncManager {
             String action = syncInfo.action();
             List<String> users = syncInfo.connectedUsers();
             Map<String, String> photos = syncInfo.userPhotos();
-            String serverPrefix = "Servidor " + peerId.split(":")[0] + " - ";
+            String serverPrefix = ServerPrefixFormatter.createPrefix(peerId);
 
             if (photos != null && !photos.isEmpty()) {
-                lastReceivedPhotos.putAll(photos);
+                photoStore.storePhotos(photos);
             }
 
             if ("SYNC_ALL".equals(action)) {
@@ -118,10 +114,9 @@ public class PeerUserSyncManager {
                     if ("USER_LEFT".equals(action)) {
                         String msg = protocolParser.encode("USER_DISCONNECTED", uniqueId, serverPrefix + username);
                         clientBroadcastCallback.accept(msg);
-
-                        lastReceivedPhotos.remove(username);
+                        photoStore.removePhoto(username);
                     } else {
-                        String photoBase64 = lastReceivedPhotos.getOrDefault(username, "");
+                        String photoBase64 = photoStore.getPhoto(username);
                         String msg = protocolParser.encode("USER_CONNECTED", uniqueId, serverPrefix + username, photoBase64);
                         clientBroadcastCallback.accept(msg);
                     }
@@ -144,7 +139,7 @@ public class PeerUserSyncManager {
 
         UserSyncInfo syncInfo;
         if ("USER_JOINED".equals(action)) {
-            String photoBase64 = getUserPhoto(username);
+            String photoBase64 = userRepository.getUserPhoto(username);
             syncInfo = UserSyncInfo.createUserJoined(serverId, username, photoBase64);
         } else if ("USER_LEFT".equals(action)) {
             syncInfo = UserSyncInfo.createUserLeft(serverId, username);
@@ -162,7 +157,7 @@ public class PeerUserSyncManager {
     }
 
     public void sendFullUserSyncToPeer(String peerId, Consumer<String> sendCallback) {
-        Map<String, String> localUsersWithPhotos = getLocalUsersWithPhotos();
+        Map<String, String> localUsersWithPhotos = userRepository.getLocalUsersWithPhotos();
         List<String> localUsers = new ArrayList<>(localUsersWithPhotos.keySet());
         String serverId = getServerIdOrDefault();
 
@@ -173,65 +168,8 @@ public class PeerUserSyncManager {
         logger.info("Sincronización completa de {} usuario(s) enviada a peer {}", localUsers.size(), peerId);
     }
 
-    private List<String> getLocalUsers() {
-        if (localUsersProvider != null) {
-            return localUsersProvider.get();
-        }
-
-        try {
-            ActiveUserManager userManager =
-                    ActiveUserManager.getInstance();
-            return new ArrayList<>(userManager.getAllUserSessions().keySet());
-        } catch (Exception e) {
-            logger.error("Error obteniendo usuarios locales: {}", e.getMessage());
-            return new ArrayList<>();
-        }
-    }
-
-    private Map<String, String> getLocalUsersWithPhotos() {
-        Map<String, String> usersWithPhotos = new HashMap<>();
-        try {
-            ActiveUserManager userManager = ActiveUserManager.getInstance();
-            Map<String, List<User>> allSessions = userManager.getAllUserSessions();
-
-            for (Map.Entry<String, List<User>> entry : allSessions.entrySet()) {
-                String username = entry.getKey();
-                List<User> sessions = entry.getValue();
-
-                if (!sessions.isEmpty()) {
-                    byte[] photoData = sessions.get(0).getPhotoData();
-                    String photoBase64 = "";
-                    if (photoData != null && photoData.length > 0) {
-                        photoBase64 = java.util.Base64.getEncoder().encodeToString(photoData);
-                    }
-                    usersWithPhotos.put(username, photoBase64);
-                }
-            }
-        } catch (Exception e) {
-            logger.error("Error obteniendo usuarios con fotos: {}", e.getMessage(), e);
-        }
-        return usersWithPhotos;
-    }
-
-    private String getUserPhoto(String username) {
-        try {
-            ActiveUserManager userManager = ActiveUserManager.getInstance();
-            List<User> sessions = userManager.getUserSessions(username);
-
-            if (!sessions.isEmpty()) {
-                byte[] photoData = sessions.get(0).getPhotoData();
-                if (photoData != null && photoData.length > 0) {
-                    return java.util.Base64.getEncoder().encodeToString(photoData);
-                }
-            }
-        } catch (Exception e) {
-            logger.error("Error obteniendo foto de usuario {}: {}", username, e.getMessage());
-        }
-        return "";
-    }
-
     public String generateInitialSyncMessage(int peerPort) {
-        Map<String, String> localUsersWithPhotos = getLocalUsersWithPhotos();
+        Map<String, String> localUsersWithPhotos = userRepository.getLocalUsersWithPhotos();
         List<String> localUsers = new ArrayList<>(localUsersWithPhotos.keySet());
 
         String serverId = localServerId;
@@ -253,7 +191,7 @@ public class PeerUserSyncManager {
     }
 
     public String getRemoteUserPhoto(String username) {
-        return lastReceivedPhotos.getOrDefault(username, "");
+        return photoStore.getPhoto(username);
     }
 
     public void handlePeerDisconnection(String peerId) {
@@ -275,7 +213,7 @@ public class PeerUserSyncManager {
             return;
         }
 
-        String serverPrefix = "Servidor " + peerId.split(":")[0] + " - ";
+        String serverPrefix = ServerPrefixFormatter.createPrefix(peerId);
         for (String username : usersToNotify) {
             String uniqueId = peerId + "-" + username;
             String fullUsername = serverPrefix + username;

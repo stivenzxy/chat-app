@@ -1,9 +1,11 @@
-package com.serverInfrastructure.adapters.peer.managers;
+package com.serverInfrastructure.adapters.peer.Managers;
 
 import com.chatCommon.protocol.ProtocolParser;
+import com.serverApplication.ports.peer.*;
 import com.serverDomain.entities.User;
 import com.serverDomain.repositories.ChannelInviteRepository;
-import com.serverApplication.ports.peer.*;
+import com.serverInfrastructure.adapters.peer.user.LocalUserRepository;
+import com.serverInfrastructure.adapters.peer.user.ServerPrefixFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +16,7 @@ public class PeerMessageRoutingManager {
     private static final Logger logger = LoggerFactory.getLogger(PeerMessageRoutingManager.class);
 
     private final ProtocolParser protocolParser;
+    private final LocalUserRepository userRepository;
 
     private ClientMessageBroadcaster clientBroadcaster;
     private RemoteUsersProvider remoteUsersProvider;
@@ -22,6 +25,7 @@ public class PeerMessageRoutingManager {
     
     public PeerMessageRoutingManager() {
         this.protocolParser = new ProtocolParser('|', '\\');
+        this.userRepository = new LocalUserRepository();
     }
     
     public void setInviteRepository(ChannelInviteRepository repository) {
@@ -97,9 +101,7 @@ public class PeerMessageRoutingManager {
                 return;
             }
 
-            String serverPrefix = "Servidor " + sourcePeerId.split(":")[0] + " - ";
-            String senderWithPrefix = serverPrefix + senderUsername;
-
+            String senderWithPrefix = ServerPrefixFormatter.formatUsername(sourcePeerId, senderUsername);
             String deliverMessage = protocolParser.encode("RECEIVE_PRIVATE_MESSAGE", senderWithPrefix, content);
 
             deliverLocalMessage(recipientUsername, deliverMessage);
@@ -129,8 +131,7 @@ public class PeerMessageRoutingManager {
                 return;
             }
 
-            String serverPrefix = "Servidor " + sourcePeerId.split(":")[0] + " - ";
-            String senderWithPrefix = serverPrefix + senderUsername;
+            String senderWithPrefix = ServerPrefixFormatter.formatUsername(sourcePeerId, senderUsername);
             String deliverMessage = protocolParser.encode("RECEIVE_PRIVATE_AUDIO", senderWithPrefix, audioBase64);
 
             deliverLocalMessage(recipientUsername, deliverMessage);
@@ -141,10 +142,7 @@ public class PeerMessageRoutingManager {
 
     private void deliverLocalMessage(String recipientUsername, String deliverMessage) {
         try {
-            com.serverInfrastructure.observers.ActiveUserManager aum = 
-                com.serverInfrastructure.observers.ActiveUserManager.getInstance();
-            
-            List<User> userSessions = aum.getUserSessions(recipientUsername);
+            List<User> userSessions = userRepository.getUserSessions(recipientUsername);
             
             if (userSessions.isEmpty()) {
                 logger.warn("Usuario destinatario {} no está conectado localmente", recipientUsername);
@@ -209,15 +207,14 @@ public class PeerMessageRoutingManager {
             logger.info("Procesando invitación de canal {} de {} a usuario local {}", 
                        channelName, inviterUsername, invitedUsername);
 
-            var aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
-            var invitedUserSessions = aum.getUserSessions(invitedUsername);
+            var invitedUserSessions = userRepository.getUserSessions(invitedUsername);
             
             if (invitedUserSessions == null || invitedUserSessions.isEmpty()) {
                 logger.warn("Usuario invitado {} no encontrado localmente", invitedUsername);
                 return;
             }
             
-            String invitedUserId = aum.getUserIdFromConnection(invitedUserSessions.get(0).getId());
+            String invitedUserId = userRepository.getUserIdFromConnection(invitedUserSessions.get(0).getId());
             if (invitedUserId == null) {
                 logger.error("No se pudo obtener userId para {}", invitedUsername);
                 return;
@@ -226,8 +223,7 @@ public class PeerMessageRoutingManager {
             logger.info("Invitación de canal remoto - NO se guarda en BD local, solo notificación al cliente");
             
             if (clientBroadcaster != null) {
-                String serverPrefix = "Servidor " + sourcePeerId.split(":")[0] + " - ";
-                String inviterWithPrefix = serverPrefix + inviterUsername;
+                String inviterWithPrefix = ServerPrefixFormatter.formatUsername(sourcePeerId, inviterUsername);
 
                 String deliverMessage = protocolParser.encode("INVITE_RECEIVED", 
                         String.valueOf(-Integer.parseInt(channelIdStr)),
@@ -291,13 +287,16 @@ public class PeerMessageRoutingManager {
             }
 
             if ("SYSTEM".equals(senderUsername) && content.startsWith("MEMBER_JOINED:")) {
-                String newMemberUsername = content.substring("MEMBER_JOINED:".length());
-                String deliverMessage = protocolParser.encode("CHANNEL_MEMBERS_UPDATED", 
-                        channelId, newMemberUsername);
-                deliverLocalMessage(recipientUsername, deliverMessage);
+                // Parse MEMBER_JOINED:username using ProtocolParser
+                List<String> memberJoinedParts = protocolParser.decode(content);
+                if (memberJoinedParts.size() >= 2) {
+                    String newMemberUsername = memberJoinedParts.get(1);
+                    String deliverMessage = protocolParser.encode("CHANNEL_MEMBERS_UPDATED", 
+                            channelId, newMemberUsername);
+                    deliverLocalMessage(recipientUsername, deliverMessage);
+                }
             } else {
-                String serverPrefix = "Servidor " + sourcePeerId.split(":")[0] + " - ";
-                String senderWithPrefix = serverPrefix + senderUsername;
+                String senderWithPrefix = ServerPrefixFormatter.formatUsername(sourcePeerId, senderUsername);
 
                 String deliverMessage = protocolParser.encode("RECEIVE_CHANNEL_MESSAGE", 
                         channelId, senderWithPrefix, content);
