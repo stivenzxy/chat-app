@@ -1,8 +1,8 @@
 package com.serverInfrastructure.adapters.peer.connection;
 
 import com.serverApplication.dto.ConnectedPeerInfo;
-import com.serverInfrastructure.adapters.peer.Managers.PeerConnectionManager;
-import com.serverInfrastructure.adapters.peer.Managers.PeerObserverNotifier;
+import com.serverInfrastructure.adapters.peer.managers.PeerConnectionManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerObserverNotifier;
 import com.serverInfrastructure.adapters.peer.utils.PeerIdParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

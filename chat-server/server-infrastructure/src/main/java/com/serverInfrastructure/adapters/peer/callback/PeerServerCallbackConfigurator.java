@@ -1,10 +1,10 @@
 package com.serverInfrastructure.adapters.peer.callback;
 
-import com.serverInfrastructure.adapters.peer.Managers.PeerMessageRoutingManager;
-import com.serverInfrastructure.adapters.peer.Managers.PeerUserSyncManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerMessageRoutingManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerUserSyncManager;
 import com.serverInfrastructure.adapters.peer.connection.IncomingConnectionHandler;
-import com.serverInfrastructure.adapters.peer.Managers.PeerPeerReplicationManager;
-import com.serverInfrastructure.adapters.peer.Managers.PeerUserReplicationManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerPeerReplicationManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerUserReplicationManager;
 import com.serverInfrastructure.network.peerTcp.PeerTcpServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

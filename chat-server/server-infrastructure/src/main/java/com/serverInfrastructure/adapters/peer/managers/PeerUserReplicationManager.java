@@ -1,4 +1,4 @@
-package com.serverInfrastructure.adapters.peer.Managers;
+package com.serverInfrastructure.adapters.peer.managers;
 
 import com.chatCommon.dto.ReplicatedUserDTO;
 import com.serverDomain.repositories.UserRepository;

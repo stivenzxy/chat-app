@@ -1,6 +1,6 @@
 package com.serverInfrastructure.adapters.peer.discovery;
 
-import com.serverInfrastructure.adapters.peer.Managers.PeerRegistry;
+import com.serverInfrastructure.adapters.peer.managers.PeerRegistry;
 import com.serverInfrastructure.adapters.peer.utils.PeerIdParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

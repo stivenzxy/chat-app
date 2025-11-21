@@ -1,7 +1,7 @@
 package com.serverInfrastructure.network.peerTcp;
 
 import com.chatCommon.utils.AppProperties;
-import com.serverInfrastructure.adapters.peer.Managers.PeerRegistry;
+import com.serverInfrastructure.adapters.peer.managers.PeerRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,9 +1,9 @@
 package com.serverInfrastructure.factories;
 
-import com.serverInfrastructure.adapters.peer.Managers.PeerConnectionManager;
-import com.serverInfrastructure.adapters.peer.Managers.PeerMessageRoutingManager;
-import com.serverInfrastructure.adapters.peer.Managers.PeerObserverNotifier;
-import com.serverInfrastructure.adapters.peer.Managers.PeerUserSyncManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerConnectionManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerMessageRoutingManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerObserverNotifier;
+import com.serverInfrastructure.adapters.peer.managers.PeerUserSyncManager;
 import com.serverInfrastructure.adapters.peer.PeerTcpServerAdapter;
 import com.serverInfrastructure.adapters.peer.callback.PeerServerCallbackConfigurator;
 import com.serverInfrastructure.adapters.peer.connection.IncomingConnectionHandler;
@@ -13,8 +13,8 @@ import com.serverInfrastructure.adapters.peer.discovery.PeerAutoReconnectService
 import com.serverInfrastructure.adapters.peer.discovery.PeerDiscoveryHandler;
 import com.serverInfrastructure.adapters.peer.lifecycle.LocalServerIdentityProvider;
 import com.serverInfrastructure.adapters.peer.lifecycle.ServerLifecycleManager;
-import com.serverInfrastructure.adapters.peer.Managers.PeerPeerReplicationManager;
-import com.serverInfrastructure.adapters.peer.Managers.PeerUserReplicationManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerPeerReplicationManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerUserReplicationManager;
 
 public class PeerTcpServerAdapterFactory {
 

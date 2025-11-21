@@ -1,18 +1,16 @@
 package com.serverInfrastructure.adapters.peer.connection;
 
 import com.serverApplication.dto.ConnectedPeerInfo;
-import com.serverInfrastructure.adapters.peer.Managers.PeerConnectionManager;
-import com.serverInfrastructure.adapters.peer.Managers.PeerMessageRoutingManager;
-import com.serverInfrastructure.adapters.peer.Managers.PeerObserverNotifier;
-import com.serverInfrastructure.adapters.peer.Managers.PeerUserSyncManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerConnectionManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerMessageRoutingManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerObserverNotifier;
+import com.serverInfrastructure.adapters.peer.managers.PeerUserSyncManager;
 import com.serverInfrastructure.adapters.peer.discovery.PeerDiscoveryHandler;
-import com.serverInfrastructure.adapters.peer.Managers.PeerPeerReplicationManager;
-import com.serverInfrastructure.adapters.peer.Managers.PeerUserReplicationManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerPeerReplicationManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerUserReplicationManager;
 import com.serverInfrastructure.adapters.peer.utils.PeerIdParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.function.Consumer;
 
 public class OutgoingConnectionHandler {
 

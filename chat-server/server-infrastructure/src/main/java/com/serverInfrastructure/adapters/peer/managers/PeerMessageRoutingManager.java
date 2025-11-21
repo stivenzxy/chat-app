@@ -1,4 +1,4 @@
-package com.serverInfrastructure.adapters.peer.Managers;
+package com.serverInfrastructure.adapters.peer.managers;
 
 import com.chatCommon.protocol.ProtocolParser;
 import com.serverApplication.ports.peer.*;

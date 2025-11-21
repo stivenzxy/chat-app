@@ -2,7 +2,7 @@ package com.serverInfrastructure.factories;
 
 import com.serverDomain.repositories.PeerRegistryRepository;
 import com.serverDomain.repositories.UserRepository;
-import com.serverInfrastructure.adapters.peer.Managers.*;
+import com.serverInfrastructure.adapters.peer.managers.*;
 import com.serverInfrastructure.persistence.config.ConnectionManager;
 import com.serverInfrastructure.persistence.repositories.PeerRegistryRepositoryImpl;
 import com.serverInfrastructure.persistence.repository.UserManagementRepository;
