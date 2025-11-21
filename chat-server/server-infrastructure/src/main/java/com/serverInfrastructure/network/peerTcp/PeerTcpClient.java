@@ -188,6 +188,18 @@ public class PeerTcpClient {
                 onPrivateMessageReceived.accept(peerId, message);
             }
             
+        } else if (message.startsWith("P2P_BATCH_USER_REPLICATION")) {
+            logger.info("(CLIENT) Replicación de usuarios recibida desde {}", peerId);
+            if (onPrivateMessageReceived != null) {
+                onPrivateMessageReceived.accept(peerId, message);
+            }
+            
+        } else if (message.startsWith("P2P_BATCH_PEER_DISCOVERY")) {
+            logger.info("(CLIENT) Descubrimiento de peers recibido desde {}", peerId);
+            if (onPrivateMessageReceived != null) {
+                onPrivateMessageReceived.accept(peerId, message);
+            }
+            
         } else if (message.startsWith("USER_JOINED")) {
             logger.info("Usuario se unió en peer {}", peerId);
             

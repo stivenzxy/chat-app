@@ -304,6 +304,16 @@ public class PeerTcpServer {
                         if (onPrivateMessageReceived != null) {
                             onPrivateMessageReceived.accept(peerId, message);
                         }
+                    } else if (message.startsWith("P2P_BATCH_USER_REPLICATION")) {
+                        logger.info("(SERVER) Replicación de usuarios recibida de peer {}", peerId);
+                        if (onPrivateMessageReceived != null) {
+                            onPrivateMessageReceived.accept(peerId, message);
+                        }
+                    } else if (message.startsWith("P2P_BATCH_PEER_DISCOVERY")) {
+                        logger.info("(SERVER) Descubrimiento de peers recibido de peer {}", peerId);
+                        if (onPrivateMessageReceived != null) {
+                            onPrivateMessageReceived.accept(peerId, message);
+                        }
                     }
                     
                     logger.debug("Mensaje de peer {}: {}", peerId, message);
