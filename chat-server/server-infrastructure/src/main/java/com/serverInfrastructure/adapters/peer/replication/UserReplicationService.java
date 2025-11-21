@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 
 public class UserReplicationService {
@@ -17,9 +18,18 @@ public class UserReplicationService {
     private static final Logger logger = LoggerFactory.getLogger(UserReplicationService.class);
     
     private final UserRepository userRepository;
+    private Consumer<Void> onUserReplicationCallback;
     
     public UserReplicationService(UserRepository userRepository) {
         this.userRepository = userRepository;
+    }
+    
+    /**
+     * Sets callback to be invoked when users are successfully replicated.
+     * Used to notify UI components to refresh user lists.
+     */
+    public void setOnUserReplicationCallback(Consumer<Void> callback) {
+        this.onUserReplicationCallback = callback;
     }
     
     public List<ReplicatedUserDTO> getLocalUsersForReplication(String localServerId) {
@@ -89,6 +99,16 @@ public class UserReplicationService {
         
         logger.info("Replicación completada: {} insertados, {} omitidos, {} errores", 
                    inserted, skipped, errors);
+        
+        // Notify UI if users were successfully replicated
+        if (inserted > 0 && onUserReplicationCallback != null) {
+            try {
+                onUserReplicationCallback.accept(null);
+                logger.debug("Notificación de replicación enviada a UI");
+            } catch (Exception e) {
+                logger.warn("Error notificando replicación a UI: {}", e.getMessage());
+            }
+        }
         
         return new ReplicationResult(inserted, skipped, errors);
     }

@@ -20,7 +20,11 @@ public class ServerNetworkAdapter implements PeerNetworkControl {
     private final PeerTcpServerAdapter peerAdapter;
     
     public ServerNetworkAdapter() {
-        this.peerAdapter = PeerTcpServerAdapterFactory.create();
+        this(null);
+    }
+    
+    public ServerNetworkAdapter(Consumer<Void> userReplicationCallback) {
+        this.peerAdapter = PeerTcpServerAdapterFactory.create(userReplicationCallback);
 
         PeerUserSyncObserver syncObserver = new PeerUserSyncObserver(this.peerAdapter);
         ActiveUserManager.getInstance().addObserver(syncObserver);

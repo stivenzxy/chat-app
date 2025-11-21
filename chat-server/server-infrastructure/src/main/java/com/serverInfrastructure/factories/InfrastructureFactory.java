@@ -19,6 +19,8 @@ import com.serverDomain.repositories.ChannelInviteRepository;
 import com.serverInfrastructure.persistence.repository.ChannelInviteRepositoryImpl;
 import com.serverInfrastructure.adapters.commands.SendChannelMessageCommandAdapter;
 import com.serverInfrastructure.adapters.commands.SendChannelAudioCommandAdapter;
+
+import java.util.function.Consumer;
 import com.serverInfrastructure.adapters.commands.InviteToChannelCommandAdapter;
 import com.serverInfrastructure.adapters.commands.RespondInviteCommandAdapter;
 import com.serverInfrastructure.adapters.commands.TranscribeAudioCommandAdapter;
@@ -135,14 +137,27 @@ public class InfrastructureFactory {
         return server;
     }
 
+    private Consumer<Void> userReplicationCallback;
+    
     private ServerNetworkAdapter getOrCreateServerNetworkAdapter() {
         if (serverNetworkAdapter == null) {
-            serverNetworkAdapter = new ServerNetworkAdapter();
+            serverNetworkAdapter = new ServerNetworkAdapter(userReplicationCallback);
         }
         return serverNetworkAdapter;
     }
 
     public ServerNetworkAdapter createServerNetworkAdapter() {
         return getOrCreateServerNetworkAdapter();
+    }
+    
+    /**
+     * Sets callback to be invoked when users are replicated from other peers.
+     * Must be called before createServerNetworkAdapter().
+     */
+    public void setUserReplicationCallback(Consumer<Void> callback) {
+        if (serverNetworkAdapter != null) {
+            throw new IllegalStateException("Cannot set callback after ServerNetworkAdapter is created");
+        }
+        this.userReplicationCallback = callback;
     }
 }

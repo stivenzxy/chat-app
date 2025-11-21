@@ -9,6 +9,8 @@ import com.serverInfrastructure.persistence.repository.UserManagementRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.function.Consumer;
+
 public class PeerManagerFactory {
     private static final Logger logger = LoggerFactory.getLogger(PeerManagerFactory.class);
 
@@ -33,9 +35,18 @@ public class PeerManagerFactory {
     }
     
     public static PeerUserReplicationManager createUserReplicationManager() {
-        logger.debug("Creando PeerUserReplicationManager");
+        return createUserReplicationManager(null);
+    }
+    
+    public static PeerUserReplicationManager createUserReplicationManager(Consumer<Void> userReplicationCallback) {
+        logger.debug("Creando PeerUserReplicationManager" + 
+                    (userReplicationCallback != null ? " con callback de notificación" : ""));
         UserRepository userRepository = new UserManagementRepository();
-        return new PeerUserReplicationManager(userRepository);
+        PeerUserReplicationManager manager = new PeerUserReplicationManager(userRepository);
+        if (userReplicationCallback != null) {
+            manager.setOnUserReplicationCallback(userReplicationCallback);
+        }
+        return manager;
     }
     
     public static PeerPeerReplicationManager createPeerReplicationManager() {

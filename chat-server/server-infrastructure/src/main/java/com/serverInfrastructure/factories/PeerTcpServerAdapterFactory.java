@@ -16,9 +16,15 @@ import com.serverInfrastructure.adapters.peer.lifecycle.ServerLifecycleManager;
 import com.serverInfrastructure.adapters.peer.managers.PeerPeerReplicationManager;
 import com.serverInfrastructure.adapters.peer.managers.PeerUserReplicationManager;
 
+import java.util.function.Consumer;
+
 public class PeerTcpServerAdapterFactory {
 
     public static PeerTcpServerAdapter create() {
+        return create(null);
+    }
+    
+    public static PeerTcpServerAdapter create(Consumer<Void> userReplicationCallback) {
         PeerConnectionValidator validator = new PeerConnectionValidator();
         LocalServerIdentityProvider identityProvider = new LocalServerIdentityProvider();
         ServerLifecycleManager lifecycleManager = new ServerLifecycleManager();
@@ -27,7 +33,7 @@ public class PeerTcpServerAdapterFactory {
         PeerUserSyncManager userSyncManager = PeerManagerFactory.createUserSyncManager();
         PeerMessageRoutingManager messageRoutingManager = PeerManagerFactory.createMessageRoutingManager();
         PeerObserverNotifier observerNotifier = PeerManagerFactory.createObserverNotifier();
-        PeerUserReplicationManager userReplicationManager = PeerManagerFactory.createUserReplicationManager();
+        PeerUserReplicationManager userReplicationManager = PeerManagerFactory.createUserReplicationManager(userReplicationCallback);
         PeerPeerReplicationManager peerReplicationManager = PeerManagerFactory.createPeerReplicationManager();
 
         IncomingConnectionHandler incomingHandler = new IncomingConnectionHandler(

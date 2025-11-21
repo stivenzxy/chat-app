@@ -58,4 +58,15 @@ public class UserController {
     public void addUserRegistrationObserver(UserRegistrationObserver observer) {
         observable.addObserver(observer);
     }
+    
+    /**
+     * Returns a callback that notifies all observers when user list is updated.
+     * Used by P2P replication system to notify UI when remote users are replicated.
+     */
+    public Runnable getUserListUpdateCallback() {
+        return () -> {
+            logger.debug("Notificando actualización de lista de usuarios desde replicación");
+            observable.notifyUserListUpdated();
+        };
+    }
 }

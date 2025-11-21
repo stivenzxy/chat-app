@@ -15,23 +15,28 @@ public class PresentationFactory {
     private final ServiceFactory serviceFactory;
     private final InfrastructureFactory infrastructureFactory;
     private final ServerControl serverControl;
-    private final PeerNetworkControl serverNetworkControl; // <-- Ya tienes el campo, solo cambiaremos cómo se inicializa
+    private PeerNetworkControl serverNetworkControl;
 
     private UserController userController;
 
-    // ============== CONSTRUCTOR MODIFICADO ==============
     public PresentationFactory(
             ServiceFactory serviceFactory, 
             InfrastructureFactory infrastructureFactory, 
             ServerControl serverControl,
-            PeerNetworkControl serverNetworkControl // <-- AÑADIR este parámetro
+            PeerNetworkControl serverNetworkControl
     ) {
         this.serviceFactory = serviceFactory;
         this.infrastructureFactory = infrastructureFactory;
         this.serverControl = serverControl;
-        
-        // Asigna la instancia única que recibes, en lugar de crear una nueva.
         this.serverNetworkControl = serverNetworkControl; 
+    }
+    
+    /**
+     * Sets the network control after initialization.
+     * Used when network control needs to be configured with dependencies from this factory.
+     */
+    public void setServerNetworkControl(PeerNetworkControl serverNetworkControl) {
+        this.serverNetworkControl = serverNetworkControl;
     }
 
     public UserController createUserController() {
@@ -53,6 +58,9 @@ public class PresentationFactory {
     }
     
     public ServerNetworkPanel createServerNetworkPanel() {
+        if (serverNetworkControl == null) {
+            throw new IllegalStateException("ServerNetworkControl must be set before creating ServerNetworkPanel");
+        }
         return new ServerNetworkPanel(serverNetworkControl);
     }
 

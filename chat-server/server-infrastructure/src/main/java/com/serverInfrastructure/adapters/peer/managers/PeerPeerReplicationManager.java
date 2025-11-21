@@ -6,6 +6,7 @@ import com.serverInfrastructure.adapters.peer.replication.PeerReplicationService
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -88,8 +89,24 @@ public class PeerPeerReplicationManager {
             logger.info("Recibidos {} peers para descubrimiento desde {}", 
                        remotePeers.size(), sourcePeerId);
             
+            // Filter out self-references to prevent registering own server as discovered peer
+            List<ReplicatedPeerDTO> filteredPeers = new ArrayList<>();
+            for (ReplicatedPeerDTO peer : remotePeers) {
+                if (peer.getPeerId().equals(localServerId)) {
+                    logger.debug("Omitiendo registro de mi propia IP {} compartida por {}", 
+                               peer.getPeerId(), sourcePeerId);
+                    continue;
+                }
+                filteredPeers.add(peer);
+            }
+            
+            if (filteredPeers.isEmpty()) {
+                logger.info("No hay peers válidos para registrar después de filtrar auto-referencias");
+                return;
+            }
+            
             PeerReplicationService.ReplicationResult result = 
-                replicationService.replicatePeers(remotePeers, sourcePeerId);
+                replicationService.replicatePeers(filteredPeers, sourcePeerId);
             
             logger.info("Descubrimiento desde {}: {} nuevos, {} actualizados, {} errores",
                        sourcePeerId, result.getInserted(), result.getSkipped(), result.getErrors());

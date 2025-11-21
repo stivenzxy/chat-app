@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * Manager responsible for coordinating user replication across P2P servers.
@@ -25,6 +26,13 @@ public class PeerUserReplicationManager {
     
     public PeerUserReplicationManager(UserRepository userRepository) {
         this.replicationService = new UserReplicationService(userRepository);
+    }
+    
+    /**
+     * Sets callback to be invoked when users are replicated, to notify UI.
+     */
+    public void setOnUserReplicationCallback(Consumer<Void> callback) {
+        this.replicationService.setOnUserReplicationCallback(callback);
     }
     
     public void setLocalServerId(String serverId) {
