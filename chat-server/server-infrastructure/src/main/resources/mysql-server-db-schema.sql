@@ -7,6 +7,9 @@ CREATE TABLE IF NOT EXISTS users (
                                      password_hash VARCHAR(255) NOT NULL,
                                      photo_data LONGBLOB,
                                      ip_address VARCHAR(45),
+                                     is_replicated BOOLEAN DEFAULT FALSE,
+                                     origin_server_id VARCHAR(50),
+                                     last_sync_at TIMESTAMP NULL,
                                      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -58,4 +61,17 @@ CREATE TABLE IF NOT EXISTS audio_transcriptions (
                                                     audio_format VARCHAR(20),
                                                     transcribed_text TEXT,
                                                     FOREIGN KEY (message_id) REFERENCES messages(message_id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE IF NOT EXISTS peer_registry (
+                                             peer_id VARCHAR(50) PRIMARY KEY,
+                                             ip_address VARCHAR(45) NOT NULL,
+                                             port INT NOT NULL,
+                                             last_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                             is_active BOOLEAN DEFAULT TRUE,
+                                             discovered_from VARCHAR(50),
+                                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                             INDEX idx_active (is_active),
+                                             INDEX idx_last_seen (last_seen_at)
 );

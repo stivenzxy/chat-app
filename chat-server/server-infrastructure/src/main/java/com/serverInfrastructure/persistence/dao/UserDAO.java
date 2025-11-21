@@ -91,10 +91,60 @@ public class UserDAO {
             logger.error("Error al eliminar usuario con id {}: {}", id, exception.getMessage());
         }
     }
+    
+    /**
+     * Inserts a replicated user from a remote server.
+     */
+    public void insertReplicated(User user) {
+        String sql = "INSERT INTO users (user_id, username, password_hash, email, photo_data, ip_address, " +
+                    "is_replicated, origin_server_id, last_sync_at, created_at) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection conn = connectionManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, user.getId());
+            stmt.setString(2, user.getUsername().value());
+            stmt.setString(3, user.getPasswordHash());
+            stmt.setString(4, user.getEmail().value());
+            stmt.setBytes(5, user.getPhotoData());
+            stmt.setString(6, user.getIpAddress());
+            stmt.setBoolean(7, user.isReplicated());
+            stmt.setString(8, user.getOriginServerId());
+            stmt.setTimestamp(9, user.getLastSyncAt());
+            stmt.setTimestamp(10, Timestamp.valueOf(user.getCreatedAt()));
+            
+            stmt.executeUpdate();
+            logger.info("Usuario replicado insertado: {} (origen: {})", 
+                       user.getUsername().value(), user.getOriginServerId());
+            
+        } catch (SQLException exception) {
+            logger.error("Error al insertar usuario replicado: {}", exception.getMessage());
+            throw new RuntimeException("Error insertando usuario replicado", exception);
+        }
+    }
+    
+    /**
+     * Updates the last_sync_at timestamp for all replicated users from a specific server.
+     */
+    public void updateReplicatedTimestamp(String originServerId) {
+        String sql = "UPDATE users SET last_sync_at = ? WHERE is_replicated = TRUE AND origin_server_id = ?";
+        try (Connection conn = connectionManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
+            stmt.setString(2, originServerId);
+            int updated = stmt.executeUpdate();
+            
+            logger.debug("Actualizados {} usuarios replicados del servidor {}", updated, originServerId);
+            
+        } catch (SQLException exception) {
+            logger.error("Error actualizando timestamp de usuarios replicados: {}", exception.getMessage());
+        }
+    }
 
     private User mapToUser(ResultSet rs) {
         try {
-            return new User(
+            User user = new User(
                     rs.getString("user_id"),
                     new Username(rs.getString("username")),
                     new Email(rs.getString("email")),
@@ -103,6 +153,20 @@ public class UserDAO {
                     rs.getString("ip_address"),
                     rs.getTimestamp("created_at").toLocalDateTime()
             );
+            
+            // Map replication fields if they exist
+            try {
+                user.setReplicated(rs.getBoolean("is_replicated"));
+                user.setOriginServerId(rs.getString("origin_server_id"));
+                Timestamp lastSync = rs.getTimestamp("last_sync_at");
+                if (lastSync != null) {
+                    user.setLastSyncAt(lastSync);
+                }
+            } catch (SQLException e) {
+                // Columns might not exist in older schema, ignore
+            }
+            
+            return user;
         } catch (SQLException exception) {
             logger.error("Error al mapear ResultSet a User: {}", exception.getMessage());
             return null;

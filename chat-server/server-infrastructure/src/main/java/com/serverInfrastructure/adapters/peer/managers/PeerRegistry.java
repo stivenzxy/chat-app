@@ -1,15 +1,14 @@
 package com.serverInfrastructure.adapters.peer.Managers;
 
 import com.serverApplication.dto.ConnectedPeerInfo;
+import com.serverDomain.entities.Peer;
+import com.serverDomain.repositories.PeerRegistryRepository;
 import com.serverInfrastructure.adapters.peer.utils.PeerIdParser;
+import com.serverInfrastructure.persistence.config.ConnectionManager;
+import com.serverInfrastructure.persistence.repositories.PeerRegistryRepositoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.chatCommon.utils.AppProperties;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -17,54 +16,25 @@ import java.util.stream.Collectors;
 
 public class PeerRegistry {
     private static final Logger logger = LoggerFactory.getLogger(PeerRegistry.class);
-    private static final String DEFAULT_FILE = "known_peers.txt";
 
-    private final Path storagePath;
-    private final Set<String> knownPeers = Collections.synchronizedSet(new HashSet<>());
-
+    private final PeerRegistryRepository repository;
     private static PeerRegistry instance;
 
-    private PeerRegistry(Path path) {
-        this.storagePath = path;
-        loadFromDisk();
+    private PeerRegistry(PeerRegistryRepository repository) {
+        this.repository = repository;
+        logger.info("PeerRegistry inicializado con persistencia en base de datos");
     }
 
     public static synchronized PeerRegistry getInstance() {
         if (instance == null) {
-            Path p = Path.of(System.getProperty("user.dir"), DEFAULT_FILE);
-            logger.debug("Inicializando PeerRegistry con path de almacenamiento: {}", p);
-            instance = new PeerRegistry(p);
+            ConnectionManager connManager = ConnectionManager.getInstance();
+            PeerRegistryRepository repo = new PeerRegistryRepositoryImpl(connManager);
+            instance = new PeerRegistry(repo);
+            logger.debug("Instancia de PeerRegistry creada con repository");
         }
         return instance;
     }
 
-    private void loadFromDisk() {
-        try {
-            if (!Files.exists(storagePath)) {
-                logger.info("No existe el archivo de peers conocidos, se creará al guardar: {}", storagePath);
-                return;
-            }
-
-            List<String> lines = Files.readAllLines(storagePath);
-            for (String line : lines) {
-                String t = line.trim();
-                if (!t.isEmpty()) knownPeers.add(t);
-            }
-            logger.info("Cargados {} peers conocidos desde {}", knownPeers.size(), storagePath);
-        } catch (Exception e) {
-            logger.error("Error cargando peers conocidos: {}", e.getMessage());
-        }
-    }
-
-    private int getConfiguredPeerPort() {
-        try {
-            AppProperties props = new AppProperties("server-configuration");
-            return props.getInt("PEER_SERVER_PORT");
-        } catch (Exception e) {
-            logger.warn("No se pudo leer PEER_SERVER_PORT desde configuración: {}", e.getMessage());
-            return -1;
-        }
-    }
 
     private boolean isPeerPortValid(String peerId) {
         try {
@@ -75,72 +45,108 @@ public class PeerRegistry {
 
             int EPHEMERAL_LOWER = 49152;
             int EPHEMERAL_UPPER = 65535;
-            if (port >= EPHEMERAL_LOWER && port <= EPHEMERAL_UPPER) {
-                return false;
-            }
-            return true;
+            return port < EPHEMERAL_LOWER || port > EPHEMERAL_UPPER;
         } catch (Exception e) {
             logger.debug("Error validando puerto de peer {}: {}", peerId, e.getMessage());
             return false;
         }
     }
 
-    private void persistToDisk() {
-        try {
-            Files.write(storagePath, knownPeers.stream().sorted().collect(Collectors.toList()),
-                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-            logger.info("Persistidos {} peers en {}", knownPeers.size(), storagePath);
-        } catch (Exception e) {
-            logger.error("Error persistiendo peers conocidos: {}", e.getMessage());
-        }
+    private Peer createPeerFromId(String peerId) {
+        String ip = PeerIdParser.extractIp(peerId);
+        int port = PeerIdParser.extractPort(peerId);
+        return new Peer(peerId, ip, port);
     }
 
     public synchronized void addKnownPeer(ConnectedPeerInfo peerInfo) {
         if (peerInfo == null) return;
         String id = peerInfo.peerId();
-        logger.debug("PeerRegistry.addKnownPeer called with ConnectedPeerInfo={}", id);
-        if (!knownPeers.contains(id) && isPeerPortValid(id)) {
-            knownPeers.add(id);
-            logger.info("Nuevo peer conocido agregado: {}", id);
-            persistToDisk();
-        } else if (!isPeerPortValid(id)) {
+        logger.debug("PeerRegistry.addKnownPeer llamado con ConnectedPeerInfo={}", id);
+        
+        if (!isPeerPortValid(id)) {
             logger.debug("Ignorando registro de peer con puerto no válido: {}", id);
+            return;
+        }
+        
+        try {
+            Peer peer = createPeerFromId(id);
+            peer.markActive();
+            repository.saveOrUpdate(peer);
+            logger.info("Peer conocido agregado/actualizado: {}", id);
+        } catch (Exception e) {
+            logger.error("Error agregando peer {}: {}", id, e.getMessage());
         }
     }
 
     public synchronized void addKnownPeer(String peerId) {
         if (peerId == null || peerId.isBlank()) return;
-        logger.debug("PeerRegistry.addKnownPeer called with String={}", peerId);
-        if (!knownPeers.contains(peerId) && isPeerPortValid(peerId)) {
-            knownPeers.add(peerId);
-            logger.info("Nuevo peer conocido agregado (string): {}", peerId);
-            persistToDisk();
-        } else if (!isPeerPortValid(peerId)) {
+        logger.debug("PeerRegistry.addKnownPeer llamado con String={}", peerId);
+        
+        if (!isPeerPortValid(peerId)) {
             logger.debug("Ignorando registro de peer con puerto no válido (string): {}", peerId);
+            return;
+        }
+        
+        try {
+            Peer peer = createPeerFromId(peerId);
+            peer.markActive();
+            repository.saveOrUpdate(peer);
+            logger.info("Peer conocido agregado/actualizado (string): {}", peerId);
+        } catch (Exception e) {
+            logger.error("Error agregando peer nuevo {}: {}", peerId, e.getMessage());
         }
     }
 
     public synchronized Set<String> getKnownPeers() {
-        return new HashSet<>(knownPeers);
+        try {
+            return repository.findAll().stream()
+                    .map(Peer::getPeerId)
+                    .collect(Collectors.toSet());
+        } catch (Exception e) {
+            logger.error("Error recuperando peers conocidos: {}", e.getMessage());
+            return new HashSet<>();
+        }
     }
 
     public synchronized Set<String> getValidPeers() {
-        return knownPeers.stream().filter(this::isPeerPortValid).collect(Collectors.toSet());
+        try {
+            return repository.findAllActive().stream()
+                    .map(Peer::getPeerId)
+                    .filter(this::isPeerPortValid)
+                    .collect(Collectors.toSet());
+        } catch (Exception e) {
+            logger.error("Error recuperando peers válidos: {}", e.getMessage());
+            return new HashSet<>();
+        }
     }
 
     public synchronized void addAll(List<String> peers) {
-        boolean changed = false;
-        for (String p : peers) {
-            if (p != null && !p.isBlank()) {
-                if (knownPeers.add(p)) changed = true;
+        if (peers == null || peers.isEmpty()) return;
+        
+        int added = 0;
+        for (String peerId : peers) {
+            if (peerId != null && !peerId.isBlank() && isPeerPortValid(peerId)) {
+                try {
+                    Peer peer = createPeerFromId(peerId);
+                    peer.markActive();
+                    repository.saveOrUpdate(peer);
+                    added++;
+                } catch (Exception e) {
+                    logger.warn("Error agregando peer {}: {}", peerId, e.getMessage());
+                }
             }
         }
-        logger.debug("PeerRegistry.addAll called, peers size={}, changed={}", peers == null ? 0 : peers.size(), changed);
-        if (changed) persistToDisk();
+        
+        logger.debug("PeerRegistry.addAll: {} peers procesados, {} agregados/actualizados", 
+                    peers.size(), added);
     }
 
     public synchronized void clear() {
-        knownPeers.clear();
-        persistToDisk();
+        try {
+            repository.deleteAll();
+            logger.warn("Registry de peers limpiado completamente");
+        } catch (Exception e) {
+            logger.error("Error limpiando registry de peers: {}", e.getMessage());
+        }
     }
 }

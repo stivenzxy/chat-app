@@ -37,4 +37,14 @@ public class UserManagementRepository implements UserRepository {
     public void deleteById(String id) {
         userDAO.deleteById(id);
     }
+    
+    @Override
+    public void saveReplicatedUser(User user) {
+        userDAO.insertReplicated(user);
+    }
+    
+    @Override
+    public void updateReplicatedUsersTimestamp(String originServerId) {
+        userDAO.updateReplicatedTimestamp(originServerId);
+    }
 }

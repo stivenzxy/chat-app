@@ -17,6 +17,8 @@ import com.serverInfrastructure.adapters.peer.discovery.PeerAutoReconnectService
 import com.serverInfrastructure.adapters.peer.discovery.PeerDiscoveryHandler;
 import com.serverInfrastructure.adapters.peer.lifecycle.LocalServerIdentityProvider;
 import com.serverInfrastructure.adapters.peer.lifecycle.ServerLifecycleManager;
+import com.serverInfrastructure.adapters.peer.Managers.PeerPeerReplicationManager;
+import com.serverInfrastructure.adapters.peer.Managers.PeerUserReplicationManager;
 import com.serverInfrastructure.adapters.peer.utils.PeerIdParser;
 import com.serverInfrastructure.observers.ActiveUserManager;
 import org.slf4j.Logger;
@@ -46,13 +48,16 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
     private final PeerUserSyncManager userSyncManager;
     private final PeerMessageRoutingManager messageRoutingManager;
     private final PeerObserverNotifier observerNotifier;
+    private final PeerUserReplicationManager userReplicationManager;
+    private final PeerPeerReplicationManager peerReplicationManager;
 
     public PeerTcpServerAdapter(ServerLifecycleManager lifecycleManager, LocalServerIdentityProvider identityProvider,
                                 IncomingConnectionHandler incomingHandler, OutgoingConnectionHandler outgoingHandler,
                                 PeerDiscoveryHandler discoveryHandler, PeerAutoReconnectService autoReconnectService,
                                 PeerServerCallbackConfigurator callbackConfigurator, PeerConnectionManager connectionManager,
                                 PeerUserSyncManager userSyncManager, PeerMessageRoutingManager messageRoutingManager,
-                                PeerObserverNotifier observerNotifier) {
+                                PeerObserverNotifier observerNotifier, PeerUserReplicationManager userReplicationManager,
+                                PeerPeerReplicationManager peerReplicationManager) {
         
         this.lifecycleManager = lifecycleManager;
         this.identityProvider = identityProvider;
@@ -65,6 +70,8 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
         this.userSyncManager = userSyncManager;
         this.messageRoutingManager = messageRoutingManager;
         this.observerNotifier = observerNotifier;
+        this.userReplicationManager = userReplicationManager;
+        this.peerReplicationManager = peerReplicationManager;
 
         configureManagerDependencies();
     }
@@ -97,6 +104,33 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
                 logger.debug("Mensaje enviado exitosamente via conexión saliente a {}", peerId);
             }
         });
+        
+        // Configure user replication manager
+        userReplicationManager.setPeerMessageSender(connectionManager::sendMessageToPeer);
+        
+        // Configure peer replication manager  
+        peerReplicationManager.setPeerMessageSender(connectionManager::sendMessageToPeer);
+        peerReplicationManager.setAutoConnectCallback(this::connectToPeerById);
+    }
+    
+    /**
+     * Helper method to connect to a peer using only its peerId.
+     * Extracts IP and port from peerId and delegates to connectToPeer(ip, port).
+     */
+    private void connectToPeerById(String peerId) {
+        try {
+            String ip = PeerIdParser.extractIp(peerId);
+            int port = PeerIdParser.extractPort(peerId);
+            
+            if (ip != null && port != -1) {
+                logger.debug("Auto-conectando a peer descubierto transitivamente: {}:{}", ip, port);
+                connectToPeer(ip, port);
+            } else {
+                logger.warn("No se pudo extraer IP/puerto de peerId: {}", peerId);
+            }
+        } catch (Exception e) {
+            logger.error("Error auto-conectando a peer {}: {}", peerId, e.getMessage());
+        }
     }
 
 
@@ -120,6 +154,8 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
         // Establish local server identity
         this.localServerId = identityProvider.resolveLocalServerId(peerPort);
         userSyncManager.setLocalServerId(this.localServerId);
+        userReplicationManager.setLocalServerId(this.localServerId);
+        peerReplicationManager.setLocalServerId(this.localServerId);
         
         // Set local port in handlers for self-connection prevention
         outgoingHandler.setLocalServerPort(peerPort);

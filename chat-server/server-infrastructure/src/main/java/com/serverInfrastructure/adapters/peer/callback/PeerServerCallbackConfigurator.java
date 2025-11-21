@@ -3,6 +3,8 @@ package com.serverInfrastructure.adapters.peer.callback;
 import com.serverInfrastructure.adapters.peer.Managers.PeerMessageRoutingManager;
 import com.serverInfrastructure.adapters.peer.Managers.PeerUserSyncManager;
 import com.serverInfrastructure.adapters.peer.connection.IncomingConnectionHandler;
+import com.serverInfrastructure.adapters.peer.Managers.PeerPeerReplicationManager;
+import com.serverInfrastructure.adapters.peer.Managers.PeerUserReplicationManager;
 import com.serverInfrastructure.network.peerTcp.PeerTcpServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,15 +20,21 @@ public class PeerServerCallbackConfigurator {
     private final IncomingConnectionHandler incomingHandler;
     private final PeerUserSyncManager userSyncManager;
     private final PeerMessageRoutingManager messageRoutingManager;
+    private final PeerUserReplicationManager userReplicationManager;
+    private final PeerPeerReplicationManager peerReplicationManager;
     
     public PeerServerCallbackConfigurator(
             IncomingConnectionHandler incomingHandler,
             PeerUserSyncManager userSyncManager,
-            PeerMessageRoutingManager messageRoutingManager) {
+            PeerMessageRoutingManager messageRoutingManager,
+            PeerUserReplicationManager userReplicationManager,
+            PeerPeerReplicationManager peerReplicationManager) {
         
         this.incomingHandler = incomingHandler;
         this.userSyncManager = userSyncManager;
         this.messageRoutingManager = messageRoutingManager;
+        this.userReplicationManager = userReplicationManager;
+        this.peerReplicationManager = peerReplicationManager;
     }
     
     /**
@@ -89,7 +97,13 @@ public class PeerServerCallbackConfigurator {
      */
     private void configurePrivateMessageCallback(PeerTcpServer peerServer) {
         peerServer.setOnPrivateMessageReceived((peerId, message) -> {
-            if (message.startsWith("P2P_ROUTE_PRIVATE_AUDIO")) {
+            if (message.startsWith("P2P_BATCH_USER_REPLICATION")) {
+                logger.info("Recibiendo replicación de usuarios desde peer entrante {}", peerId);
+                userReplicationManager.handleIncomingUserReplication(peerId, message);
+            } else if (message.startsWith("P2P_BATCH_PEER_DISCOVERY")) {
+                logger.info("Recibiendo descubrimiento de peers desde peer entrante {}", peerId);
+                peerReplicationManager.handleIncomingPeerReplication(peerId, message);
+            } else if (message.startsWith("P2P_ROUTE_PRIVATE_AUDIO")) {
                 messageRoutingManager.handlePrivateAudioRouted(peerId, message);
             } else if (message.startsWith("P2P_ROUTE_PRIVATE")) {
                 messageRoutingManager.handlePrivateMessageRouted(peerId, message);

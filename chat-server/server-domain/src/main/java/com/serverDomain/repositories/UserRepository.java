@@ -13,4 +13,8 @@ public interface UserRepository {
     Optional<User> findByUsername(Username username);
     List<User> findAll();
     void deleteById(String id);
+    
+    // P2P Replication methods
+    void saveReplicatedUser(User user);
+    void updateReplicatedUsersTimestamp(String originServerId);
 }

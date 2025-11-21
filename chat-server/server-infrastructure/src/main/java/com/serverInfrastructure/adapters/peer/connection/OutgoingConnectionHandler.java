@@ -6,6 +6,8 @@ import com.serverInfrastructure.adapters.peer.Managers.PeerMessageRoutingManager
 import com.serverInfrastructure.adapters.peer.Managers.PeerObserverNotifier;
 import com.serverInfrastructure.adapters.peer.Managers.PeerUserSyncManager;
 import com.serverInfrastructure.adapters.peer.discovery.PeerDiscoveryHandler;
+import com.serverInfrastructure.adapters.peer.Managers.PeerPeerReplicationManager;
+import com.serverInfrastructure.adapters.peer.Managers.PeerUserReplicationManager;
 import com.serverInfrastructure.adapters.peer.utils.PeerIdParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +24,8 @@ public class OutgoingConnectionHandler {
     private final PeerObserverNotifier observerNotifier;
     private final PeerDiscoveryHandler discoveryHandler;
     private final PeerMessageRoutingManager messageRoutingManager;
+    private final PeerUserReplicationManager userReplicationManager;
+    private final PeerPeerReplicationManager peerReplicationManager;
 
     private int localServerPort = -1;
 
@@ -31,7 +35,9 @@ public class OutgoingConnectionHandler {
             PeerUserSyncManager userSyncManager,
             PeerObserverNotifier observerNotifier,
             PeerDiscoveryHandler discoveryHandler,
-            PeerMessageRoutingManager messageRoutingManager) {
+            PeerMessageRoutingManager messageRoutingManager,
+            PeerUserReplicationManager userReplicationManager,
+            PeerPeerReplicationManager peerReplicationManager) {
 
         this.validator = validator;
         this.connectionManager = connectionManager;
@@ -39,6 +45,8 @@ public class OutgoingConnectionHandler {
         this.observerNotifier = observerNotifier;
         this.discoveryHandler = discoveryHandler;
         this.messageRoutingManager = messageRoutingManager;
+        this.userReplicationManager = userReplicationManager;
+        this.peerReplicationManager = peerReplicationManager;
     }
 
     public void setLocalServerPort(int port) {
@@ -72,10 +80,16 @@ public class OutgoingConnectionHandler {
             },
             // onPeerListReceived
             peerListMessage -> discoveryHandler.processPeerList(peerId, peerListMessage),
-            
+
             // onPrivateMessageReceived
             (sourcePeerId, message) -> {
-                if (message.startsWith("P2P_ROUTE_PRIVATE_AUDIO")) {
+                if (message.startsWith("P2P_BATCH_USER_REPLICATION")) {
+                    logger.info("Recibiendo replicación de usuarios desde peer {}", sourcePeerId);
+                    userReplicationManager.handleIncomingUserReplication(sourcePeerId, message);
+                } else if (message.startsWith("P2P_BATCH_PEER_DISCOVERY")) {
+                    logger.info("Recibiendo descubrimiento de peers desde {}", sourcePeerId);
+                    peerReplicationManager.handleIncomingPeerReplication(sourcePeerId, message);
+                } else if (message.startsWith("P2P_ROUTE_PRIVATE_AUDIO")) {
                     messageRoutingManager.handlePrivateAudioRouted(sourcePeerId, message);
                 } else if (message.startsWith("P2P_ROUTE_PRIVATE")) {
                     messageRoutingManager.handlePrivateMessageRouted(sourcePeerId, message);
@@ -93,6 +107,14 @@ public class OutgoingConnectionHandler {
                 }
                 userSyncManager.sendFullUserSyncToPeer(confirmedPeerId,
                     msg -> connectionManager.sendMessageToPeer(confirmedPeerId, msg));
+                    
+                // Send user replication after connection
+                logger.info("Enviando usuarios para replicación al peer {}", confirmedPeerId);
+                userReplicationManager.sendUsersToPeer(confirmedPeerId);
+                
+                // Send known peers for transitive discovery
+                logger.info("Enviando peers conocidos para descubrimiento transitivo a {}", confirmedPeerId);
+                peerReplicationManager.sendPeersToPeer(confirmedPeerId);
             }
         );
     }

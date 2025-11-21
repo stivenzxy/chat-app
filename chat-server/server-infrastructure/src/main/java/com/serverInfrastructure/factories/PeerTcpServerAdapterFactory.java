@@ -13,6 +13,8 @@ import com.serverInfrastructure.adapters.peer.discovery.PeerAutoReconnectService
 import com.serverInfrastructure.adapters.peer.discovery.PeerDiscoveryHandler;
 import com.serverInfrastructure.adapters.peer.lifecycle.LocalServerIdentityProvider;
 import com.serverInfrastructure.adapters.peer.lifecycle.ServerLifecycleManager;
+import com.serverInfrastructure.adapters.peer.Managers.PeerPeerReplicationManager;
+import com.serverInfrastructure.adapters.peer.Managers.PeerUserReplicationManager;
 
 public class PeerTcpServerAdapterFactory {
 
@@ -25,6 +27,8 @@ public class PeerTcpServerAdapterFactory {
         PeerUserSyncManager userSyncManager = PeerManagerFactory.createUserSyncManager();
         PeerMessageRoutingManager messageRoutingManager = PeerManagerFactory.createMessageRoutingManager();
         PeerObserverNotifier observerNotifier = PeerManagerFactory.createObserverNotifier();
+        PeerUserReplicationManager userReplicationManager = PeerManagerFactory.createUserReplicationManager();
+        PeerPeerReplicationManager peerReplicationManager = PeerManagerFactory.createPeerReplicationManager();
 
         IncomingConnectionHandler incomingHandler = new IncomingConnectionHandler(
             validator, connectionManager, observerNotifier
@@ -35,11 +39,11 @@ public class PeerTcpServerAdapterFactory {
 
         OutgoingConnectionHandler outgoingHandler = new OutgoingConnectionHandler(
             validator, connectionManager, userSyncManager, observerNotifier, 
-            discoveryHandler, messageRoutingManager
+            discoveryHandler, messageRoutingManager, userReplicationManager, peerReplicationManager
         );
         
         PeerServerCallbackConfigurator callbackConfigurator = new PeerServerCallbackConfigurator(
-            incomingHandler, userSyncManager, messageRoutingManager
+            incomingHandler, userSyncManager, messageRoutingManager, userReplicationManager, peerReplicationManager
         );
         
         discoveryHandler.setConnectionCallback(outgoingHandler::connectToPeer);
@@ -51,7 +55,8 @@ public class PeerTcpServerAdapterFactory {
         return new PeerTcpServerAdapter(
             lifecycleManager, identityProvider, incomingHandler, outgoingHandler,
             discoveryHandler, autoReconnectService, callbackConfigurator,
-            connectionManager, userSyncManager, messageRoutingManager, observerNotifier
+            connectionManager, userSyncManager, messageRoutingManager, observerNotifier,
+            userReplicationManager, peerReplicationManager
         );
     }
 }
