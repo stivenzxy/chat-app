@@ -38,6 +38,7 @@ public class PeerTcpServer {
     private BiConsumer<String, String> onPrivateMessageReceived;
     private java.util.function.Consumer<com.serverApplication.dto.ConnectedPeerInfo> onPeerConnected;
     private Consumer<String> onIncomingPeerDisconnected;
+    private Consumer<String> onIncomingPeerConnected;
 
 
 
@@ -61,6 +62,10 @@ public class PeerTcpServer {
 
     public void setOnPeerConnected(java.util.function.Consumer<com.serverApplication.dto.ConnectedPeerInfo> callback) {
         this.onPeerConnected = callback;
+    }
+    
+    public void setOnIncomingPeerConnected(Consumer<String> callback) {
+        this.onIncomingPeerConnected = callback;
     }
 
     public boolean sendMessageToIncomingPeer(String peerId, String message) {
@@ -238,6 +243,16 @@ public class PeerTcpServer {
                     }
                 } catch (Exception e) {
                     logger.warn("Error notificando peer entrante a capas superiores: {}", e.getMessage());
+                }
+                
+                // Trigger replication for incoming peer connection
+                try {
+                    if (onIncomingPeerConnected != null) {
+                        onIncomingPeerConnected.accept(peerId);
+                        logger.debug("Callback de replicación ejecutado para peer entrante {}", peerId);
+                    }
+                } catch (Exception e) {
+                    logger.warn("Error ejecutando callback de replicación para peer entrante {}: {}", peerId, e.getMessage());
                 }
 
                 peerSocket.setSoTimeout(0);

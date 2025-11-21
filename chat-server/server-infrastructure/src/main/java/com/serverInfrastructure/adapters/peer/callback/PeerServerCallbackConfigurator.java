@@ -53,6 +53,7 @@ public class PeerServerCallbackConfigurator {
         configurePeerConnectionCallback(peerServer);
         configureLocalUserSyncCallback(peerServer, peerPort);
         configurePrivateMessageCallback(peerServer);
+        configureIncomingPeerReplicationCallback(peerServer);
         
         logger.info("Callbacks del servidor P2P configurados exitosamente");
     }
@@ -111,6 +112,33 @@ public class PeerServerCallbackConfigurator {
                 messageRoutingManager.handleChannelInviteRouted(peerId, message);
             } else if (message.startsWith("P2P_CHANNEL_MESSAGE")) {
                 messageRoutingManager.handleChannelMessageRouted(peerId, message);
+            }
+        });
+    }
+    
+    /**
+     * Configures the callback to send replication data to incoming peers.
+     * 
+     * @param peerServer the server to configure
+     */
+    private void configureIncomingPeerReplicationCallback(PeerTcpServer peerServer) {
+        peerServer.setOnIncomingPeerConnected(peerId -> {
+            logger.info("Enviando replicación a peer entrante {}", peerId);
+            
+            // Send users replication
+            try {
+                userReplicationManager.sendUsersToPeer(peerId);
+                logger.debug("Usuarios enviados a peer entrante {}", peerId);
+            } catch (Exception e) {
+                logger.error("Error enviando usuarios a peer entrante {}: {}", peerId, e.getMessage());
+            }
+            
+            // Send peers replication  
+            try {
+                peerReplicationManager.sendPeersToPeer(peerId);
+                logger.debug("Peers enviados a peer entrante {}", peerId);
+            } catch (Exception e) {
+                logger.error("Error enviando peers a peer entrante {}: {}", peerId, e.getMessage());
             }
         });
     }
