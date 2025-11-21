@@ -105,8 +105,24 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
             }
         });
         
-        // Configure user replication manager
-        userReplicationManager.setPeerMessageSender(connectionManager::sendMessageToPeer);
+        // Configure user replication manager - usar misma lógica que messageRoutingManager
+        userReplicationManager.setPeerMessageSender((peerId, message) -> {
+            logger.debug("Enviando replicación de usuarios a {}", peerId);
+            boolean sentViaOutgoing = connectionManager.sendMessageToPeer(peerId, message);
+            if (!sentViaOutgoing) {
+                logger.debug("No se pudo enviar via saliente, intentando via entrante para {}", peerId);
+                if (lifecycleManager.isRunning()) {
+                    boolean sentViaIncoming = lifecycleManager.getServer().sendMessageToIncomingPeer(peerId, message);
+                    if (sentViaIncoming) {
+                        logger.debug("Replicación de usuarios enviada via conexión entrante a {}", peerId);
+                    } else {
+                        logger.warn("No se pudo enviar replicación de usuarios a {} (ni saliente ni entrante)", peerId);
+                    }
+                }
+            } else {
+                logger.debug("Replicación de usuarios enviada exitosamente a {}", peerId);
+            }
+        });
         
         // Configure peer replication manager  
         peerReplicationManager.setPeerMessageSender(connectionManager::sendMessageToPeer);
