@@ -262,4 +262,82 @@ public class MessageDAO {
         }
         return transcriptions;
     }
+    public java.util.List<com.serverApplication.dto.sync.MessageSyncDTO> findAll() {
+        String sql = "SELECT * FROM messages";
+        java.util.List<com.serverApplication.dto.sync.MessageSyncDTO> messages = new java.util.ArrayList<>();
+        try (Connection conn = connectionManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                Integer recipientChannelId = rs.getObject("recipient_channel_id") != null ? rs.getInt("recipient_channel_id") : null;
+                messages.add(new com.serverApplication.dto.sync.MessageSyncDTO(
+                    rs.getInt("message_id"),
+                    rs.getString("author_id"),
+                    rs.getString("recipient_user_id"),
+                    recipientChannelId,
+                    rs.getString("content"),
+                    rs.getString("message_type"),
+                    rs.getBytes("audio_content"),
+                    rs.getTimestamp("created_at").toLocalDateTime()
+                ));
+            }
+        } catch (SQLException e) {
+            logger.error("Error al listar todos los mensajes: {}", e.getMessage());
+        }
+        return messages;
+    }
+
+    public java.util.List<com.serverApplication.dto.sync.AudioTranscriptionSyncDTO> findAllTranscriptions() {
+        String sql = "SELECT * FROM audio_transcriptions";
+        java.util.List<com.serverApplication.dto.sync.AudioTranscriptionSyncDTO> transcriptions = new java.util.ArrayList<>();
+        try (Connection conn = connectionManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                transcriptions.add(new com.serverApplication.dto.sync.AudioTranscriptionSyncDTO(
+                    rs.getInt("message_id"),
+                    rs.getString("audio_format"),
+                    rs.getString("transcribed_text")
+                ));
+            }
+        } catch (SQLException e) {
+            logger.error("Error al listar todas las transcripciones: {}", e.getMessage());
+        }
+        return transcriptions;
+    }
+
+    public void insertReplicated(com.serverApplication.dto.sync.MessageSyncDTO message) {
+        String sql = "INSERT INTO messages (message_id, author_id, recipient_user_id, recipient_channel_id, content, message_type, audio_content, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection conn = connectionManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, message.messageId());
+            stmt.setString(2, message.authorId());
+            stmt.setString(3, message.recipientUserId());
+            if (message.recipientChannelId() != null) {
+                stmt.setInt(4, message.recipientChannelId());
+            } else {
+                stmt.setNull(4, Types.INTEGER);
+            }
+            stmt.setString(5, message.content());
+            stmt.setString(6, message.messageType());
+            stmt.setBytes(7, message.audioContent());
+            stmt.setTimestamp(8, Timestamp.valueOf(message.createdAt()));
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Error al insertar mensaje replicado: {}", e.getMessage());
+        }
+    }
+
+    public void insertTranscriptionReplicated(com.serverApplication.dto.sync.AudioTranscriptionSyncDTO transcription) {
+        String sql = "INSERT INTO audio_transcriptions (message_id, audio_format, transcribed_text) VALUES (?, ?, ?)";
+        try (Connection conn = connectionManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, transcription.messageId());
+            stmt.setString(2, transcription.audioFormat());
+            stmt.setString(3, transcription.transcribedText());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Error al insertar transcripción replicada: {}", e.getMessage());
+        }
+    }
 }

@@ -2,9 +2,16 @@ package com.serverInfrastructure.adapters.peer.managers;
 
 import com.chatCommon.protocol.ProtocolParser;
 import com.serverApplication.dto.UserSyncInfo;
+import com.serverApplication.dto.sync.*;
 import com.serverInfrastructure.adapters.peer.user.LocalUserRepository;
 import com.serverInfrastructure.adapters.peer.user.RemoteUserPhotoStore;
 import com.serverInfrastructure.adapters.peer.user.ServerPrefixFormatter;
+import com.serverInfrastructure.persistence.dao.ChannelDAO;
+import com.serverInfrastructure.persistence.dao.ChannelInviteDAO;
+import com.serverInfrastructure.persistence.dao.MessageDAO;
+import com.serverInfrastructure.persistence.dao.UserDAO;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class PeerUserSyncManager {
 
@@ -22,6 +30,12 @@ public class PeerUserSyncManager {
     private final Map<String, List<String>> remoteServerUsers = new ConcurrentHashMap<>();
     private final RemoteUserPhotoStore photoStore;
     private final LocalUserRepository userRepository;
+    
+    private final UserDAO userDAO;
+    private final ChannelDAO channelDAO;
+    private final ChannelInviteDAO channelInviteDAO;
+    private final MessageDAO messageDAO;
+    private final ObjectMapper objectMapper;
 
     private String localServerId;
     private Consumer<String> peerBroadcastCallback;
@@ -31,6 +45,13 @@ public class PeerUserSyncManager {
         this.protocolParser = new ProtocolParser('|', '\\');
         this.photoStore = new RemoteUserPhotoStore();
         this.userRepository = new LocalUserRepository();
+        
+        this.userDAO = new UserDAO();
+        this.channelDAO = new ChannelDAO();
+        this.channelInviteDAO = new ChannelInviteDAO();
+        this.messageDAO = new MessageDAO();
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.registerModule(new JavaTimeModule());
     }
 
     public void setLocalServerId(String serverId) {
@@ -47,6 +68,11 @@ public class PeerUserSyncManager {
     }
 
     public void handleUserSyncMessage(String peerId, String message) {
+        if (message.startsWith("P2P_DB_SYNC|")) {
+            handleFullDatabaseSync(peerId, message);
+            return;
+        }
+
         try {
             UserSyncInfo syncInfo = UserSyncInfo.fromProtocol(message);
 
@@ -71,6 +97,101 @@ public class PeerUserSyncManager {
 
         } catch (Exception e) {
             logger.error("Error procesando mensaje de sincronización de usuarios: {}", e.getMessage(), e);
+        }
+    }
+
+    private void handleFullDatabaseSync(String peerId, String message) {
+        try {
+            String json = message.substring("P2P_DB_SYNC|".length());
+            FullDatabaseSyncDTO syncData = objectMapper.readValue(json, FullDatabaseSyncDTO.class);
+            
+            logger.info("Recibida sincronización completa de BD de peer {}. Procesando...", peerId);
+            
+            // Sync Users
+            if (syncData.users() != null) {
+                for (UserSyncDTO userDTO : syncData.users()) {
+                    try {
+                        if (userDAO.findByUsername(new com.serverDomain.valueObjects.Username(userDTO.username())).isEmpty()) {
+                            com.serverDomain.entities.User user = new com.serverDomain.entities.User(
+                                userDTO.userId(),
+                                new com.serverDomain.valueObjects.Username(userDTO.username()),
+                                new com.serverDomain.valueObjects.Email(userDTO.email()),
+                                userDTO.passwordHash(),
+                                userDTO.photoData(),
+                                userDTO.ipAddress(),
+                                userDTO.createdAt()
+                            );
+                            user.setReplicated(true);
+                            user.setOriginServerId(userDTO.originServerId() != null ? userDTO.originServerId() : peerId);
+                            user.setLastSyncAt(java.sql.Timestamp.valueOf(java.time.LocalDateTime.now()));
+                            userDAO.insertReplicated(user);
+                        }
+                    } catch (Exception e) { logger.error("Error syncing user {}: {}", userDTO.username(), e.getMessage()); }
+                }
+            }
+            
+            // Sync Channels
+            if (syncData.channels() != null) {
+                for (ChannelSyncDTO channelDTO : syncData.channels()) {
+                    try {
+                        if (channelDAO.findById(channelDTO.channelId()).isEmpty()) {
+                            com.serverDomain.entities.Channel channel = new com.serverDomain.entities.Channel(
+                                channelDTO.channelId(),
+                                channelDTO.name(),
+                                channelDTO.ownerId(),
+                                com.serverDomain.entities.Channel.Visibility.valueOf(channelDTO.visibility()),
+                                channelDTO.createdAt()
+                            );
+                            channelDAO.insertReplicated(channel);
+                        }
+                    } catch (Exception e) { logger.error("Error syncing channel {}: {}", channelDTO.channelId(), e.getMessage()); }
+                }
+            }
+            
+            // Sync Channel Members
+            if (syncData.channelMembers() != null) {
+                for (ChannelMemberSyncDTO memberDTO : syncData.channelMembers()) {
+                    try {
+                        if (!channelDAO.isMember(memberDTO.channelId(), memberDTO.userId())) {
+                            channelDAO.addMember(memberDTO.channelId(), memberDTO.userId());
+                        }
+                    } catch (Exception e) { logger.error("Error syncing channel member: {}", e.getMessage()); }
+                }
+            }
+            
+            // Sync Channel Invites
+            if (syncData.channelInvites() != null) {
+                for (ChannelInviteSyncDTO inviteDTO : syncData.channelInvites()) {
+                    try {
+                        channelInviteDAO.insertReplicated(inviteDTO);
+                    } catch (Exception e) { 
+                        // Likely duplicate, ignore
+                    }
+                }
+            }
+            
+            // Messages
+            if (syncData.messages() != null) {
+                for (MessageSyncDTO messageDTO : syncData.messages()) {
+                    try {
+                        messageDAO.insertReplicated(messageDTO);
+                    } catch (Exception e) { }
+                }
+            }
+            
+            // Transcriptions
+            if (syncData.transcriptions() != null) {
+                for (AudioTranscriptionSyncDTO transDTO : syncData.transcriptions()) {
+                    try {
+                        messageDAO.insertTranscriptionReplicated(transDTO);
+                    } catch (Exception e) { }
+                }
+            }
+            
+            logger.info("Sincronización de BD completada con peer {}", peerId);
+            
+        } catch (Exception e) {
+             logger.error("Error procesando sincronización completa de BD: {}", e.getMessage(), e);
         }
     }
 
@@ -157,6 +278,12 @@ public class PeerUserSyncManager {
     }
 
     public void sendFullUserSyncToPeer(String peerId, Consumer<String> sendCallback) {
+        // This method was for user sync only. We might want to keep it or upgrade it.
+        // But for now, let's keep it as is or redirect to full DB sync if needed.
+        // However, this is called by PeerUserReplicationManager which handles batch user replication.
+        // The requirement is about "discovering a new server".
+        // So generateInitialSyncMessage is the key.
+        
         Map<String, String> localUsersWithPhotos = userRepository.getLocalUsersWithPhotos();
         List<String> localUsers = new ArrayList<>(localUsersWithPhotos.keySet());
         String serverId = getServerIdOrDefault();
@@ -169,21 +296,45 @@ public class PeerUserSyncManager {
     }
 
     public String generateInitialSyncMessage(int peerPort) {
-        Map<String, String> localUsersWithPhotos = userRepository.getLocalUsersWithPhotos();
-        List<String> localUsers = new ArrayList<>(localUsersWithPhotos.keySet());
-
-        String serverId = localServerId;
-        if (serverId == null) {
-            try {
-                serverId = java.net.InetAddress.getLocalHost().getHostAddress() + ":" + peerPort;
-            } catch (Exception e) {
-                serverId = "localhost:" + peerPort;
+        try {
+            String serverId = localServerId;
+            if (serverId == null) {
+                try {
+                    serverId = java.net.InetAddress.getLocalHost().getHostAddress() + ":" + peerPort;
+                } catch (Exception e) {
+                    serverId = "localhost:" + peerPort;
+                }
             }
+            
+            // Collect all data
+            List<UserSyncDTO> users = userDAO.selectAll().stream().map(u -> new UserSyncDTO(
+                u.getId(), u.getUsername().value(), u.getEmail().value(), u.getPasswordHash(),
+                u.getPhotoData(), u.getIpAddress(), u.isReplicated(), u.getOriginServerId(),
+                u.getLastSyncAt() != null ? u.getLastSyncAt().toLocalDateTime() : null,
+                u.getCreatedAt()
+            )).collect(Collectors.toList());
+            
+            List<ChannelSyncDTO> channels = channelDAO.findAll().stream().map(c -> new ChannelSyncDTO(
+                c.getId(), c.getName(), c.getOwnerId(), c.getVisibility().name(), c.getCreatedAt()
+            )).collect(Collectors.toList());
+            
+            List<ChannelMemberSyncDTO> members = channelDAO.findAllMembers();
+            
+            List<ChannelInviteSyncDTO> invites = channelInviteDAO.findAll();
+            
+            List<MessageSyncDTO> messages = messageDAO.findAll();
+            
+            List<AudioTranscriptionSyncDTO> transcriptions = messageDAO.findAllTranscriptions();
+            
+            FullDatabaseSyncDTO syncData = new FullDatabaseSyncDTO(users, channels, members, invites, messages, transcriptions);
+            
+            String json = objectMapper.writeValueAsString(syncData);
+            return "P2P_DB_SYNC|" + json;
+            
+        } catch (Exception e) {
+            logger.error("Error generando mensaje de sincronización inicial: {}", e.getMessage());
+            return "";
         }
-
-        UserSyncInfo syncInfo = UserSyncInfo.createFullSync(serverId, localUsers, localUsersWithPhotos);
-        logger.debug("Preparando sincronización inicial: {} usuarios de {}", localUsers.size(), serverId);
-        return syncInfo.toProtocol();
     }
 
     public Map<String, List<String>> getAllUsersAcrossPeers() {

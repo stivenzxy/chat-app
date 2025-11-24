@@ -55,36 +55,6 @@ public class UserDAO {
         return Optional.empty();
     }
 
-    public Optional<User> findByEmail(Email email) {
-        String sql = "SELECT * FROM users WHERE BINARY email = ?";
-        return getUser(email.value(), sql);
-    }
-
-    public List<User> selectAll() {
-        List<User> users = new ArrayList<>();
-        String sql = "SELECT user_id, username, email, password_hash, photo_data, ip_address, created_at FROM users";
-
-        try (Connection conn = connectionManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
-
-            while (rs.next()) {
-                User user = mapToUser(rs);
-                if (user != null) {
-                    users.add(user);
-                }
-            }
-        } catch (SQLException exception) {
-            logger.error("Error al obtener todos los usuarios: {}", exception.getMessage());
-        }
-        return users;
-    }
-
-    public void deleteById(String id) {
-        String sql = "DELETE FROM users WHERE user_id = ?";
-        try (Connection conn = connectionManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setString(1, id);
             stmt.executeUpdate();
         } catch (SQLException exception) {

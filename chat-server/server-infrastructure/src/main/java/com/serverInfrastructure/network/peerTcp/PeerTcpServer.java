@@ -284,6 +284,11 @@ public class PeerTcpServer {
                                 }
                             }
                         }
+                    } else if (message.startsWith("P2P_DB_SYNC")) {
+                        logger.info("Sincronización completa de BD de peer {}", peerId);
+                        if (onUserSyncReceived != null) {
+                            onUserSyncReceived.accept(peerId, message);
+                        }
                     } else if (message.startsWith("P2P_ROUTE_PRIVATE_AUDIO")) {
                         logger.info("(SERVER) Audio privado enrutado recibido de peer {}", peerId);
                         if (onPrivateMessageReceived != null) {

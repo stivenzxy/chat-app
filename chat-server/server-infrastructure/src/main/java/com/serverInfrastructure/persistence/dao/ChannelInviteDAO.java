@@ -86,6 +86,43 @@ public class ChannelInviteDAO {
         LocalDateTime createdAt = rs.getTimestamp("created_at").toLocalDateTime();
         return new ChannelInvite(id, channelId, inviterUserId, invitedUserId, inviterUsername, channelName, status, createdAt);
     }
+    public java.util.List<com.serverApplication.dto.sync.ChannelInviteSyncDTO> findAll() {
+        String sql = "SELECT * FROM channel_invites";
+        java.util.List<com.serverApplication.dto.sync.ChannelInviteSyncDTO> invites = new java.util.ArrayList<>();
+        try (Connection conn = connectionManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                invites.add(new com.serverApplication.dto.sync.ChannelInviteSyncDTO(
+                    rs.getInt("invite_id"),
+                    rs.getInt("channel_id"),
+                    rs.getString("inviter_user_id"),
+                    rs.getString("invited_user_id"),
+                    rs.getString("status"),
+                    rs.getTimestamp("created_at").toLocalDateTime()
+                ));
+            }
+        } catch (SQLException e) {
+            logger.error("Error al listar todas las invitaciones: {}", e.getMessage());
+        }
+        return invites;
+    }
+
+    public void insertReplicated(com.serverApplication.dto.sync.ChannelInviteSyncDTO invite) {
+        String sql = "INSERT INTO channel_invites (invite_id, channel_id, inviter_user_id, invited_user_id, status, created_at) VALUES (?, ?, ?, ?, ?, ?)";
+        try (Connection conn = connectionManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, invite.inviteId());
+            stmt.setInt(2, invite.channelId());
+            stmt.setString(3, invite.inviterUserId());
+            stmt.setString(4, invite.invitedUserId());
+            stmt.setString(5, invite.status());
+            stmt.setTimestamp(6, Timestamp.valueOf(invite.createdAt()));
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Error al insertar invitación replicada: {}", e.getMessage());
+        }
+    }
 }
 
 

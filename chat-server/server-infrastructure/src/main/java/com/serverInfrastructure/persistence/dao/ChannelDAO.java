@@ -137,6 +137,38 @@ public class ChannelDAO {
         LocalDateTime createdAt = rs.getTimestamp("created_at").toLocalDateTime();
         return new Channel(id, name, ownerId, visibility, createdAt);
     }
+    public void insertReplicated(Channel channel) {
+        String sql = "INSERT INTO channels (channel_id, name, owner_id, visibility, created_at) VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = connectionManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, channel.getId());
+            stmt.setString(2, channel.getName());
+            stmt.setString(3, channel.getOwnerId());
+            stmt.setString(4, channel.getVisibility().name());
+            stmt.setTimestamp(5, Timestamp.valueOf(channel.getCreatedAt()));
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Error al insertar canal replicado: {}", e.getMessage());
+        }
+    }
+
+    public List<com.serverApplication.dto.sync.ChannelMemberSyncDTO> findAllMembers() {
+        String sql = "SELECT channel_id, user_id FROM channel_members";
+        List<com.serverApplication.dto.sync.ChannelMemberSyncDTO> members = new ArrayList<>();
+        try (Connection conn = connectionManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                members.add(new com.serverApplication.dto.sync.ChannelMemberSyncDTO(
+                    rs.getInt("channel_id"),
+                    rs.getString("user_id")
+                ));
+            }
+        } catch (SQLException e) {
+            logger.error("Error al listar todos los miembros de canales: {}", e.getMessage());
+        }
+        return members;
+    }
 }
 
 
