@@ -23,11 +23,28 @@ public class AppProperties {
     }
 
     public String getProperty(String key) {
-        return resourceBundle.getString(key);
+        String envValue = System.getenv(key);
+        if (envValue != null && !envValue.isBlank()) {
+            return envValue;
+        }
+        try {
+            return resourceBundle.getString(key);
+        } catch (MissingResourceException e) {
+            logger.warn("Clave '{}' no encontrada en archivo de propiedades ni variables de entorno.", key);
+            return null;
+        }
     }
 
     // Este método NO debe ser estático
     public int getInt(String key) {
+        String envValue = System.getenv(key);
+        if (envValue != null && !envValue.isBlank()) {
+            try {
+                return Integer.parseInt(envValue);
+            } catch (NumberFormatException e) {
+                logger.warn("Variable de entorno '{}' no es un entero válido: {}", key, envValue);
+            }
+        }
         try {
             return Integer.parseInt(resourceBundle.getString(key));
         } catch (Exception exception) {

@@ -15,10 +15,10 @@ public class MessageDAO {
     private static final Logger logger = LoggerFactory.getLogger(MessageDAO.class);
     private final ConnectionManager connectionManager = ConnectionManager.getInstance();
 
-    public void saveChannelTextMessage(String authorId, int channelId, String content) {
+    public int saveChannelTextMessage(String authorId, int channelId, String content) {
         String sql = "INSERT INTO messages (author_id, recipient_channel_id, content, message_type, created_at) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = connectionManager.getConnection(); 
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             
             stmt.setString(1, authorId);
             stmt.setInt(2, channelId);
@@ -27,9 +27,19 @@ public class MessageDAO {
             stmt.setTimestamp(5, Timestamp.valueOf(LocalDateTime.now()));
             stmt.executeUpdate();
             
+            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    int messageId = generatedKeys.getInt(1);
+                    logger.debug("Mensaje de texto de canal guardado: canal={}, autor={}, message_id={}", channelId, authorId, messageId);
+                    return messageId;
+                }
+            }
+            
             logger.debug("Mensaje de texto de canal guardado: canal={}, autor={}", channelId, authorId);
+            return -1;
         } catch (SQLException e) {
             logger.error("Error al guardar mensaje de texto de canal: {}", e.getMessage());
+            return -1;
         }
     }
 

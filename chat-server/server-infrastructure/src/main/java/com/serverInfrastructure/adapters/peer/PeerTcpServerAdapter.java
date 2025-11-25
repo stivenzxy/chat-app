@@ -7,6 +7,7 @@ import com.serverApplication.ports.peer.PeerNetworkControl;
 import com.serverDomain.entities.User;
 import com.serverDomain.repositories.ChannelInviteRepository;
 import com.serverInfrastructure.adapters.peer.managers.PeerConnectionManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerEntityReplicationManager;
 import com.serverInfrastructure.adapters.peer.managers.PeerMessageRoutingManager;
 import com.serverInfrastructure.adapters.peer.managers.PeerObserverNotifier;
 import com.serverInfrastructure.adapters.peer.managers.PeerUserSyncManager;
@@ -50,6 +51,7 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
     private final PeerObserverNotifier observerNotifier;
     private final PeerUserReplicationManager userReplicationManager;
     private final PeerPeerReplicationManager peerReplicationManager;
+    private final PeerEntityReplicationManager entityReplicationManager;
 
     public PeerTcpServerAdapter(ServerLifecycleManager lifecycleManager, LocalServerIdentityProvider identityProvider,
                                 IncomingConnectionHandler incomingHandler, OutgoingConnectionHandler outgoingHandler,
@@ -57,7 +59,7 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
                                 PeerServerCallbackConfigurator callbackConfigurator, PeerConnectionManager connectionManager,
                                 PeerUserSyncManager userSyncManager, PeerMessageRoutingManager messageRoutingManager,
                                 PeerObserverNotifier observerNotifier, PeerUserReplicationManager userReplicationManager,
-                                PeerPeerReplicationManager peerReplicationManager) {
+                                PeerPeerReplicationManager peerReplicationManager, PeerEntityReplicationManager entityReplicationManager) {
         
         this.lifecycleManager = lifecycleManager;
         this.identityProvider = identityProvider;
@@ -72,6 +74,7 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
         this.observerNotifier = observerNotifier;
         this.userReplicationManager = userReplicationManager;
         this.peerReplicationManager = peerReplicationManager;
+        this.entityReplicationManager = entityReplicationManager;
 
         configureManagerDependencies();
     }
@@ -127,6 +130,9 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
         // Configure peer replication manager  
         peerReplicationManager.setPeerMessageSender(connectionManager::sendMessageToPeer);
         peerReplicationManager.setAutoConnectCallback(this::connectToPeerById);
+        
+        // Configure entity replication manager
+        entityReplicationManager.setBroadcaster(connectionManager::broadcastToPeers);
     }
     
     /**
@@ -356,5 +362,29 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
 
         logger.info("Usuario '{}' no encontrado (ni local ni remoto)", actualUsername);
         return false;
+    }
+
+    public void broadcastNewUser(User user) {
+        userReplicationManager.broadcastNewUser(user, connectionManager::broadcastToPeers);
+    }
+
+    public void broadcastChannel(com.serverDomain.entities.Channel channel) {
+        entityReplicationManager.broadcastChannel(channel);
+    }
+
+    public void broadcastChannelMember(int channelId, String userId) {
+        entityReplicationManager.broadcastChannelMember(channelId, userId);
+    }
+
+    public void broadcastChannelMessage(com.serverApplication.dto.sync.MessageSyncDTO message) {
+        entityReplicationManager.broadcastChannelMessage(message);
+    }
+
+    public void broadcastChannelInvite(com.serverDomain.entities.ChannelInvite invite) {
+        entityReplicationManager.broadcastChannelInvite(invite);
+    }
+
+    public void broadcastTranscription(com.serverApplication.dto.sync.AudioTranscriptionSyncDTO transcription) {
+        entityReplicationManager.broadcastTranscription(transcription);
     }
 }

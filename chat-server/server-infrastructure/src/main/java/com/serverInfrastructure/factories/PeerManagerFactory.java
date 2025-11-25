@@ -55,4 +55,9 @@ public class PeerManagerFactory {
         PeerRegistryRepository peerRepository = new PeerRegistryRepositoryImpl(connManager);
         return new PeerPeerReplicationManager(peerRepository);
     }
+
+    public static PeerEntityReplicationManager createEntityReplicationManager() {
+        logger.debug("Creando PeerEntityReplicationManager");
+        return new PeerEntityReplicationManager();
+    }
 }

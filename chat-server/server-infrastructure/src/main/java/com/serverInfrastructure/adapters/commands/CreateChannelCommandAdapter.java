@@ -6,14 +6,21 @@ import com.serverDomain.repositories.ChannelRepository;
 import com.serverInfrastructure.adapters.ProtocolCommandAdapter;
 import com.serverInfrastructure.network.ClientConnection;
 
+import com.serverInfrastructure.adapters.ServerNetworkAdapter;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
 public class CreateChannelCommandAdapter implements ProtocolCommandAdapter {
     private final ChannelRepository channelRepository;
+    private ServerNetworkAdapter networkAdapter;
 
     public CreateChannelCommandAdapter(ChannelRepository channelRepository) {
         this.channelRepository = channelRepository;
+    }
+    
+    public void setNetworkAdapter(ServerNetworkAdapter networkAdapter) {
+        this.networkAdapter = networkAdapter;
     }
 
     @Override
@@ -43,6 +50,10 @@ public class CreateChannelCommandAdapter implements ProtocolCommandAdapter {
         Channel saved = channelRepository.save(channel);
         channelRepository.addMember(saved.getId(), ownerUserId);
         
+        if (networkAdapter != null) {
+            networkAdapter.broadcastChannel(saved);
+            networkAdapter.broadcastChannelMember(saved.getId(), ownerUserId);
+        }
 
         return parser.encode("OK", String.valueOf(saved.getId()));
     }

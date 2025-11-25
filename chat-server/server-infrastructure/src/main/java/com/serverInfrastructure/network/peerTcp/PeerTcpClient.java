@@ -200,6 +200,11 @@ public class PeerTcpClient {
                 onPrivateMessageReceived.accept(peerId, message);
             }
             
+        } else if (message.startsWith("P2P_REPLICATE_")) {
+            logger.info("(CLIENT) Replicación de entidad recibida desde {}", peerId);
+            if (onPrivateMessageReceived != null) {
+                onPrivateMessageReceived.accept(peerId, message);
+            }
         } else if (message.startsWith("USER_JOINED")) {
             logger.info("Usuario se unió en peer {}", peerId);
             

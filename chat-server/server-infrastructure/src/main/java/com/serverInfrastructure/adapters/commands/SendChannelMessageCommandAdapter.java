@@ -11,6 +11,9 @@ import com.serverInfrastructure.adapters.ServerNetworkAdapter;
 import java.util.List;
 import java.util.Map;
 
+import com.serverApplication.dto.sync.MessageSyncDTO;
+import java.time.LocalDateTime;
+
 public class SendChannelMessageCommandAdapter implements ProtocolCommandAdapter {
     private final ChannelRepository channelRepository;
     private final CommandHandler handler;
@@ -63,8 +66,24 @@ public class SendChannelMessageCommandAdapter implements ProtocolCommandAdapter 
             return parser.encode("ERROR", "No eres miembro del canal");
         }
 
+        int messageId = -1;
         if (!content.startsWith("[TRANSCRIPCIÓN]")) {
-            messageDAO.saveChannelTextMessage(senderUserId, channelId, content);
+            messageId = messageDAO.saveChannelTextMessage(senderUserId, channelId, content);
+        }
+        
+        // Replicar mensaje a todos los peers
+        if (messageId != -1 && networkAdapter != null) {
+            MessageSyncDTO syncDTO = new MessageSyncDTO(
+                messageId,
+                senderUserId,
+                null,
+                channelId,
+                content,
+                "TEXT",
+                null,
+                LocalDateTime.now()
+            );
+            networkAdapter.broadcastChannelMessage(syncDTO);
         }
 
         List<String> memberUsernames = channelRepository.findMemberUsernames(channelId);

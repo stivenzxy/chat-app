@@ -1,5 +1,6 @@
 package com.serverInfrastructure.adapters.peer.callback;
 
+import com.serverInfrastructure.adapters.peer.managers.PeerEntityReplicationManager;
 import com.serverInfrastructure.adapters.peer.managers.PeerMessageRoutingManager;
 import com.serverInfrastructure.adapters.peer.managers.PeerUserSyncManager;
 import com.serverInfrastructure.adapters.peer.connection.IncomingConnectionHandler;
@@ -22,19 +23,22 @@ public class PeerServerCallbackConfigurator {
     private final PeerMessageRoutingManager messageRoutingManager;
     private final PeerUserReplicationManager userReplicationManager;
     private final PeerPeerReplicationManager peerReplicationManager;
+    private final PeerEntityReplicationManager entityReplicationManager;
     
     public PeerServerCallbackConfigurator(
             IncomingConnectionHandler incomingHandler,
             PeerUserSyncManager userSyncManager,
             PeerMessageRoutingManager messageRoutingManager,
             PeerUserReplicationManager userReplicationManager,
-            PeerPeerReplicationManager peerReplicationManager) {
+            PeerPeerReplicationManager peerReplicationManager,
+            PeerEntityReplicationManager entityReplicationManager) {
         
         this.incomingHandler = incomingHandler;
         this.userSyncManager = userSyncManager;
         this.messageRoutingManager = messageRoutingManager;
         this.userReplicationManager = userReplicationManager;
         this.peerReplicationManager = peerReplicationManager;
+        this.entityReplicationManager = entityReplicationManager;
     }
     
     /**
@@ -104,6 +108,8 @@ public class PeerServerCallbackConfigurator {
             } else if (message.startsWith("P2P_BATCH_PEER_DISCOVERY")) {
                 logger.info("Recibiendo descubrimiento de peers desde peer entrante {}", peerId);
                 peerReplicationManager.handleIncomingPeerReplication(peerId, message);
+            } else if (message.startsWith("P2P_REPLICATE_")) {
+                entityReplicationManager.handleIncomingReplication(peerId, message);
             } else if (message.startsWith("P2P_ROUTE_PRIVATE_AUDIO")) {
                 messageRoutingManager.handlePrivateAudioRouted(peerId, message);
             } else if (message.startsWith("P2P_ROUTE_PRIVATE")) {

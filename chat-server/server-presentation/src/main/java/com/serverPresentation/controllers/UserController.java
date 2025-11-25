@@ -47,7 +47,6 @@ public class UserController {
     public List<UserPresentationDTO> getAllUsers() {
         try {
             List<UserPresentationDTO> users = getUsersPresentationService.getAllUsersForPresentation();
-            observable.notifyUserListUpdated();
             return users;
         } catch (Exception e) {
             logger.error("Error al obtener todos los usuarios: {}", e.getMessage());

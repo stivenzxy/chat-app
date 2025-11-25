@@ -2,6 +2,7 @@ package com.serverInfrastructure.adapters.peer.connection;
 
 import com.serverApplication.dto.ConnectedPeerInfo;
 import com.serverInfrastructure.adapters.peer.managers.PeerConnectionManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerEntityReplicationManager;
 import com.serverInfrastructure.adapters.peer.managers.PeerMessageRoutingManager;
 import com.serverInfrastructure.adapters.peer.managers.PeerObserverNotifier;
 import com.serverInfrastructure.adapters.peer.managers.PeerUserSyncManager;
@@ -24,6 +25,7 @@ public class OutgoingConnectionHandler {
     private final PeerMessageRoutingManager messageRoutingManager;
     private final PeerUserReplicationManager userReplicationManager;
     private final PeerPeerReplicationManager peerReplicationManager;
+    private final PeerEntityReplicationManager entityReplicationManager;
 
     private int localServerPort = -1;
 
@@ -35,7 +37,8 @@ public class OutgoingConnectionHandler {
             PeerDiscoveryHandler discoveryHandler,
             PeerMessageRoutingManager messageRoutingManager,
             PeerUserReplicationManager userReplicationManager,
-            PeerPeerReplicationManager peerReplicationManager) {
+            PeerPeerReplicationManager peerReplicationManager,
+            PeerEntityReplicationManager entityReplicationManager) {
 
         this.validator = validator;
         this.connectionManager = connectionManager;
@@ -45,6 +48,7 @@ public class OutgoingConnectionHandler {
         this.messageRoutingManager = messageRoutingManager;
         this.userReplicationManager = userReplicationManager;
         this.peerReplicationManager = peerReplicationManager;
+        this.entityReplicationManager = entityReplicationManager;
     }
 
     public void setLocalServerPort(int port) {
@@ -87,6 +91,8 @@ public class OutgoingConnectionHandler {
                 } else if (message.startsWith("P2P_BATCH_PEER_DISCOVERY")) {
                     logger.info("Recibiendo descubrimiento de peers desde {}", sourcePeerId);
                     peerReplicationManager.handleIncomingPeerReplication(sourcePeerId, message);
+                } else if (message.startsWith("P2P_REPLICATE_")) {
+                    entityReplicationManager.handleIncomingReplication(sourcePeerId, message);
                 } else if (message.startsWith("P2P_ROUTE_PRIVATE_AUDIO")) {
                     messageRoutingManager.handlePrivateAudioRouted(sourcePeerId, message);
                 } else if (message.startsWith("P2P_ROUTE_PRIVATE")) {

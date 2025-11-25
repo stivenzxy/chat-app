@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import com.serverDomain.entities.User;
+import java.util.Collections;
+
 /**
  * Manager responsible for coordinating user replication across P2P servers.
  * Handles both sending local users and receiving remote users.
@@ -71,6 +74,36 @@ public class PeerUserReplicationManager {
             
         } catch (Exception e) {
             logger.error("Error enviando usuarios al peer {}: {}", peerId, e.getMessage());
+        }
+    }
+
+    public void broadcastNewUser(User user, Consumer<String> broadcaster) {
+        if (localServerId == null) {
+            logger.warn("LocalServerId no configurado, no se puede difundir nuevo usuario");
+            return;
+        }
+
+        try {
+            String photoBase64 = "";
+            if (user.getPhotoData() != null && user.getPhotoData().length > 0) {
+                photoBase64 = java.util.Base64.getEncoder().encodeToString(user.getPhotoData());
+            }
+
+            ReplicatedUserDTO dto = new ReplicatedUserDTO(
+                user.getId(),
+                user.getUsername().value(),
+                user.getEmail().value(),
+                user.getPasswordHash(),
+                photoBase64,
+                localServerId
+            );
+
+            String message = ReplicatedUserDTO.toBatchProtocol(Collections.singletonList(dto), localServerId);
+            broadcaster.accept(message);
+            logger.info("Difundido nuevo usuario {} a todos los peers", user.getUsername().value());
+
+        } catch (Exception e) {
+            logger.error("Error difundiendo nuevo usuario: {}", e.getMessage());
         }
     }
     

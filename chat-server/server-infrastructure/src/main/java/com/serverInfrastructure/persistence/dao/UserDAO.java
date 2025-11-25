@@ -55,11 +55,48 @@ public class UserDAO {
         return Optional.empty();
     }
 
+    public void deleteById(String id) {
+        String sql = "DELETE FROM users WHERE user_id = ?";
+        try (Connection conn = connectionManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, id);
             stmt.executeUpdate();
         } catch (SQLException exception) {
             logger.error("Error al eliminar usuario con id {}: {}", id, exception.getMessage());
         }
+    }
+
+    public List<User> selectAll() {
+        String sql = "SELECT * FROM users";
+        List<User> users = new ArrayList<>();
+        try (Connection conn = connectionManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                User user = mapToUser(rs);
+                if (user != null) {
+                    users.add(user);
+                }
+            }
+        } catch (SQLException exception) {
+            logger.error("Error al obtener todos los usuarios: {}", exception.getMessage());
+        }
+        return users;
+    }
+
+    public Optional<User> findByEmail(Email email) {
+        String sql = "SELECT * FROM users WHERE email = ?";
+        try (Connection conn = connectionManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, email.value());
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return Optional.ofNullable(mapToUser(rs));
+            }
+        } catch (SQLException exception) {
+            logger.error("Error al obtener usuario por email {}: {}", email.value(), exception.getMessage());
+        }
+        return Optional.empty();
     }
     
     /**

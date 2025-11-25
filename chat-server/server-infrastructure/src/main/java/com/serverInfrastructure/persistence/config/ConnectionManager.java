@@ -73,7 +73,12 @@ public class ConnectionManager {
                     .collect(Collectors.joining("\n"));
 
             try (Connection conn = this.getConnection(); Statement stmt = conn.createStatement()) {
-                stmt.execute(scriptSql);
+                String[] statements = scriptSql.split(";");
+                for (String sql : statements) {
+                    if (!sql.trim().isEmpty()) {
+                        stmt.execute(sql.trim());
+                    }
+                }
                 logger.info("Base de datos inicializada correctamente");
             }
         } catch (Exception e) {

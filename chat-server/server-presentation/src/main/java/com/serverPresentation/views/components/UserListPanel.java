@@ -230,7 +230,7 @@ public class UserListPanel extends JPanel implements UserRegistrationObserver {
 
     @Override
     public void onUserListUpdated() {
-        SwingUtilities.invokeLater(this::updateStatusLabel);
+        SwingUtilities.invokeLater(this::loadUsers);
     }
 
     // --- INICIO DE NUEVAS CLASES INTERNAS ---

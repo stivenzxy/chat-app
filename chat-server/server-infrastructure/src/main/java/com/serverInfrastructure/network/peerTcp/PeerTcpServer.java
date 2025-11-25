@@ -319,6 +319,11 @@ public class PeerTcpServer {
                         if (onPrivateMessageReceived != null) {
                             onPrivateMessageReceived.accept(peerId, message);
                         }
+                    } else if (message.startsWith("P2P_REPLICATE_")) {
+                        logger.info("(SERVER) Replicación de entidad recibida de peer {}", peerId);
+                        if (onPrivateMessageReceived != null) {
+                            onPrivateMessageReceived.accept(peerId, message);
+                        }
                     }
                     
                     logger.debug("Mensaje de peer {}: {}", peerId, message);
@@ -345,109 +350,3 @@ public class PeerTcpServer {
                     if (output != null) output.close();
                     if (!peerSocket.isClosed()) peerSocket.close();
                     logger.info("Conexión P2P entrante cerrada");
-                } catch (IOException e) {
-                    logger.error("Error cerrando socket de peer: {}", e.getMessage());
-                }
-            }
-        }, "IncomingPeerHandler-" + peerSocket.getInetAddress().getHostAddress());
-        
-        peerHandler.start();
-    }
-
-    private String extractPeerIdFromHandshake(String handshake) {
-        try {
-            for (String part : handshake.split("\\|")) {
-                if (part.startsWith("myId=")) {
-                    return part.substring(5);
-                }
-            }
-        } catch (Exception e) {
-            logger.warn("No se pudo extraer peerId del handshake: {}", e.getMessage());
-        }
-        return null;
-    }
-
-    public boolean disconnectIncomingPeer(String peerId) {
-        Socket socket = incomingPeerSockets.get(peerId);
-        Thread thread = incomingPeerThreads.get(peerId);
-        
-        if (socket == null) {
-            logger.info("No hay conexión entrante activa con peer {}", peerId);
-            return false;
-        }
-        
-        try {
-            logger.info("Cerrando conexión entrante de peer {}", peerId);
-
-            socket.close();
-
-            if (thread != null && thread.isAlive()) {
-                thread.interrupt();
-            }
-
-            incomingPeerSockets.remove(peerId);
-            incomingPeerThreads.remove(peerId);
-            
-            logger.info("Conexión entrante de peer {} cerrada", peerId);
-            return true;
-            
-        } catch (Exception e) {
-            logger.error("Error cerrando conexión entrante de peer {}: {}", peerId, e.getMessage());
-            return false;
-        }
-    }
-
-    public void stopPeerServer() {
-        if (!isRunning.get()) {
-            logger.info("PeerTcpServer ya está detenido");
-            return;
-        }
-        
-        logger.info("Deteniendo PeerTcpServer...");
-        isRunning.set(false);
-        
-        try {
-            logger.info("Cerrando {} conexiones entrantes...", incomingPeerSockets.size());
-            for (String peerId : incomingPeerSockets.keySet()) {
-                disconnectIncomingPeer(peerId);
-            }
-
-            if (peerServerSocket != null && !peerServerSocket.isClosed()) {
-                peerServerSocket.close();
-                logger.info("Socket servidor P2P cerrado");
-            }
-
-            if (acceptorThread != null && acceptorThread.isAlive()) {
-                acceptorThread.join(3000);
-                if (acceptorThread.isAlive()) {
-                    logger.warn("Hilo acceptor no terminó en tiempo esperado");
-                }
-            }
-            
-        } catch (IOException e) {
-            logger.error("Error cerrando PeerTcpServer: {}", e.getMessage());
-        } catch (InterruptedException e) {
-            logger.error("Interrumpido esperando cierre de PeerTcpServer: {}", e.getMessage());
-            Thread.currentThread().interrupt();
-        }
-        
-        logger.info("PeerTcpServer detenido completamente");
-    }
-
-    public boolean isRunning() {
-        return isRunning.get();
-    }
-    
-    public int getPeerPort() {
-        return peerPort;
-    }
-
-    private String getLocalIp() {
-        try {
-            return java.net.InetAddress.getLocalHost().getHostAddress();
-        } catch (Exception e) {
-            logger.warn("No se pudo obtener IP local, usando 127.0.0.1: {}", e.getMessage());
-            return "127.0.0.1";
-        }
-    }
-}

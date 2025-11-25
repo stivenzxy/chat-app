@@ -99,6 +99,11 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
         ChannelInvite invite = new ChannelInvite(null, channelId, inviterUserId, invitedUserId,
                 ChannelInvite.Status.PENDING, LocalDateTime.now());
         ChannelInvite saved = inviteRepository.save(invite);
+        
+        // Replicar invitación a todos los peers
+        if (networkAdapter != null) {
+            networkAdapter.broadcastChannelInvite(saved);
+        }
 
         var channelOpt = channelRepository.findById(channelId);
         String channelName = channelOpt.map(c -> c.getName()).orElse("Canal");

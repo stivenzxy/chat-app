@@ -47,6 +47,10 @@ public class RespondInviteCommandAdapter implements ProtocolCommandAdapter {
         inviteRepository.updateStatus(inviteId, status);
         if (status == ChannelInvite.Status.ACCEPTED) {
             channelRepository.addMember(channelId, userId);
+            
+            if (networkAdapter != null) {
+                networkAdapter.broadcastChannelMember(channelId, userId);
+            }
 
             String newMemberUsername = ActiveUserManager.getInstance().getAllUserSessions().entrySet().stream()
                     .filter(entry -> entry.getValue().stream()

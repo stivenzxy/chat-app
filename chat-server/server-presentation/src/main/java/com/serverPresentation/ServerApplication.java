@@ -32,6 +32,12 @@ public class ServerApplication {
         
         // Now create ServerNetworkAdapter with callback configured
         ServerNetworkAdapter singlePeerNetworkControl = infraFactory.createServerNetworkAdapter();
+        
+        // Wire up the replication notifier proxy to the actual implementation
+        if (serviceFactory instanceof DefaultServiceFactory) {
+            ((DefaultServiceFactory) serviceFactory).getReplicationNotifierProxy().setDelegate(singlePeerNetworkControl);
+        }
+
         serverControl.setPeerNetworkControl(singlePeerNetworkControl);
         presentationFactory.setServerNetworkControl(singlePeerNetworkControl);
 

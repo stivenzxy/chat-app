@@ -13,6 +13,12 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 
+import com.serverInfrastructure.adapters.ServerNetworkAdapter;
+import com.serverApplication.dto.sync.MessageSyncDTO;
+import java.time.LocalDateTime;
+
+import com.serverApplication.dto.sync.AudioTranscriptionSyncDTO;
+
 public class SendChannelAudioCommandAdapter implements ProtocolCommandAdapter {
     private static final Logger logger = LoggerFactory.getLogger(SendChannelAudioCommandAdapter.class);
     
@@ -20,11 +26,16 @@ public class SendChannelAudioCommandAdapter implements ProtocolCommandAdapter {
     private final CommandHandler handler;
     private final MessageDAO messageDAO;
     private final AudioTranscriptionService audioTranscriptionService = new AudioTranscriptionService();
+    private ServerNetworkAdapter networkAdapter;
 
     public SendChannelAudioCommandAdapter(ChannelRepository channelRepository, CommandHandler handler) {
         this.channelRepository = channelRepository;
         this.handler = handler;
         this.messageDAO = new MessageDAO();
+    }
+    
+    public void setNetworkAdapter(ServerNetworkAdapter networkAdapter) {
+        this.networkAdapter = networkAdapter;
     }
 
     @Override
@@ -67,6 +78,21 @@ public class SendChannelAudioCommandAdapter implements ProtocolCommandAdapter {
         
         int messageId = messageDAO.saveChannelAudioMessage(senderUserId, channelId, audioData);
         
+        // Replicar mensaje de audio a todos los peers
+        if (messageId > 0 && networkAdapter != null) {
+            MessageSyncDTO syncDTO = new MessageSyncDTO(
+                messageId,
+                senderUserId,
+                null,
+                channelId,
+                null, // Content is null for audio
+                "AUDIO",
+                audioData,
+                LocalDateTime.now()
+            );
+            networkAdapter.broadcastChannelMessage(syncDTO);
+        }
+        
         final int finalMessageId = messageId;
         final byte[] finalAudioData = audioData;
         if (finalMessageId > 0 && finalAudioData != null) {
@@ -76,6 +102,15 @@ public class SendChannelAudioCommandAdapter implements ProtocolCommandAdapter {
                     
                     if (transcribedText != null && !transcribedText.trim().isEmpty()) {
                         messageDAO.saveTranscription(finalMessageId, "WAV", transcribedText);
+                        
+                        if (networkAdapter != null) {
+                            AudioTranscriptionSyncDTO transDTO = new AudioTranscriptionSyncDTO(
+                                finalMessageId,
+                                "WAV",
+                                transcribedText
+                            );
+                            networkAdapter.broadcastTranscription(transDTO);
+                        }
                     }
                 } catch (Exception e) {
                 }

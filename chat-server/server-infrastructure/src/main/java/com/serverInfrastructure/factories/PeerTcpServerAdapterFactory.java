@@ -15,6 +15,7 @@ import com.serverInfrastructure.adapters.peer.lifecycle.LocalServerIdentityProvi
 import com.serverInfrastructure.adapters.peer.lifecycle.ServerLifecycleManager;
 import com.serverInfrastructure.adapters.peer.managers.PeerPeerReplicationManager;
 import com.serverInfrastructure.adapters.peer.managers.PeerUserReplicationManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerEntityReplicationManager;
 
 import java.util.function.Consumer;
 
@@ -31,10 +32,14 @@ public class PeerTcpServerAdapterFactory {
         
         PeerConnectionManager connectionManager = PeerManagerFactory.createConnectionManager();
         PeerUserSyncManager userSyncManager = PeerManagerFactory.createUserSyncManager();
+        if (userReplicationCallback != null) {
+            userSyncManager.setUiUpdateCallback(userReplicationCallback);
+        }
         PeerMessageRoutingManager messageRoutingManager = PeerManagerFactory.createMessageRoutingManager();
         PeerObserverNotifier observerNotifier = PeerManagerFactory.createObserverNotifier();
         PeerUserReplicationManager userReplicationManager = PeerManagerFactory.createUserReplicationManager(userReplicationCallback);
         PeerPeerReplicationManager peerReplicationManager = PeerManagerFactory.createPeerReplicationManager();
+        PeerEntityReplicationManager entityReplicationManager = PeerManagerFactory.createEntityReplicationManager();
 
         IncomingConnectionHandler incomingHandler = new IncomingConnectionHandler(
             validator, connectionManager, observerNotifier
@@ -45,11 +50,11 @@ public class PeerTcpServerAdapterFactory {
 
         OutgoingConnectionHandler outgoingHandler = new OutgoingConnectionHandler(
             validator, connectionManager, userSyncManager, observerNotifier, 
-            discoveryHandler, messageRoutingManager, userReplicationManager, peerReplicationManager
+            discoveryHandler, messageRoutingManager, userReplicationManager, peerReplicationManager, entityReplicationManager
         );
         
         PeerServerCallbackConfigurator callbackConfigurator = new PeerServerCallbackConfigurator(
-            incomingHandler, userSyncManager, messageRoutingManager, userReplicationManager, peerReplicationManager
+            incomingHandler, userSyncManager, messageRoutingManager, userReplicationManager, peerReplicationManager, entityReplicationManager
         );
         
         discoveryHandler.setConnectionCallback(outgoingHandler::connectToPeer);
@@ -62,7 +67,7 @@ public class PeerTcpServerAdapterFactory {
             lifecycleManager, identityProvider, incomingHandler, outgoingHandler,
             discoveryHandler, autoReconnectService, callbackConfigurator,
             connectionManager, userSyncManager, messageRoutingManager, observerNotifier,
-            userReplicationManager, peerReplicationManager
+            userReplicationManager, peerReplicationManager, entityReplicationManager
         );
     }
 }

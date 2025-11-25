@@ -42,23 +42,29 @@ public class InfrastructureFactory {
         ProtocolParser parser = new ProtocolParser('|', '\\');
         CommandHandler handler = new CommandHandler(parser);
 
-    LoginCommandAdapter loginAdapter = new LoginCommandAdapter(serviceFactory.createLoginService());
-    loginAdapter.setCommandHandler(handler);
-    handler.registerCommand(loginAdapter);
+        LoginCommandAdapter loginAdapter = new LoginCommandAdapter(serviceFactory.createLoginService());
+        loginAdapter.setCommandHandler(handler);
+        handler.registerCommand(loginAdapter);
 
-    GetUsersCommandAdapter getUsersAdapter = new GetUsersCommandAdapter(getOrCreateServerNetworkAdapter());
+        GetUsersCommandAdapter getUsersAdapter = new GetUsersCommandAdapter(getOrCreateServerNetworkAdapter());
         handler.registerCommand(getUsersAdapter);
 
         ChannelRepository channelRepository = new ChannelRepositoryImpl();
         ChannelInviteRepository inviteRepository = new ChannelInviteRepositoryImpl();
-        handler.registerCommand(new CreateChannelCommandAdapter(channelRepository));
+        
+        CreateChannelCommandAdapter createChannelAdapter = new CreateChannelCommandAdapter(channelRepository);
+        createChannelAdapter.setNetworkAdapter(getOrCreateServerNetworkAdapter());
+        handler.registerCommand(createChannelAdapter);
+        
         handler.registerCommand(new ListChannelsCommandAdapter(channelRepository));
         
         SendChannelMessageCommandAdapter sendChannelMsgAdapter = new SendChannelMessageCommandAdapter(channelRepository, handler);
         sendChannelMsgAdapter.setNetworkAdapter(getOrCreateServerNetworkAdapter());
         handler.registerCommand(sendChannelMsgAdapter);
         
-        handler.registerCommand(new SendChannelAudioCommandAdapter(channelRepository, handler));
+        SendChannelAudioCommandAdapter sendChannelAudioAdapter = new SendChannelAudioCommandAdapter(channelRepository, handler);
+        sendChannelAudioAdapter.setNetworkAdapter(getOrCreateServerNetworkAdapter());
+        handler.registerCommand(sendChannelAudioAdapter);
         
         InviteToChannelCommandAdapter inviteAdapter = new InviteToChannelCommandAdapter(channelRepository, inviteRepository, handler);
         inviteAdapter.setNetworkAdapter(getOrCreateServerNetworkAdapter());

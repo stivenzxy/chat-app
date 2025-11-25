@@ -9,21 +9,30 @@ import com.serverApplication.useCases.LoginService;
 import com.serverDomain.repositories.UserRepository;
 import com.serverDomain.services.PasswordHasher;
 import com.serverInfrastructure.persistence.repository.UserManagementRepository;
+import com.serverInfrastructure.adapters.peer.replication.UserReplicationNotifierProxy;
 import com.serverInfrastructure.services.BcryptPasswordHasher;
 import com.serverApplication.useCases.GetAllUsersService;
 
 public class DefaultServiceFactory implements ServiceFactory {
     private final UserRepository userRepository;
     private final PasswordHasher passwordHasher;
+    private final UserReplicationNotifierProxy replicationNotifierProxy;
 
     public DefaultServiceFactory() {
         this.userRepository = new UserManagementRepository();
         this.passwordHasher = new BcryptPasswordHasher();
+        this.replicationNotifierProxy = new UserReplicationNotifierProxy();
+    }
+    
+    public UserReplicationNotifierProxy getReplicationNotifierProxy() {
+        return replicationNotifierProxy;
     }
 
     @Override
     public CreateUserService createUserService() {
-        return new CreateNewUserService(userRepository, new CreateUserMapper(passwordHasher));
+        CreateNewUserService service = new CreateNewUserService(userRepository, new CreateUserMapper(passwordHasher));
+        service.setReplicationNotifier(replicationNotifierProxy);
+        return service;
     }
 
     @Override

@@ -40,6 +40,7 @@ public class PeerUserSyncManager {
     private String localServerId;
     private Consumer<String> peerBroadcastCallback;
     private Consumer<String> clientBroadcastCallback;
+    private Consumer<Void> uiUpdateCallback;
     
     public PeerUserSyncManager() {
         this.protocolParser = new ProtocolParser('|', '\\');
@@ -65,6 +66,10 @@ public class PeerUserSyncManager {
 
     public void setClientBroadcastCallback(Consumer<String> callback) {
         this.clientBroadcastCallback = callback;
+    }
+
+    public void setUiUpdateCallback(Consumer<Void> callback) {
+        this.uiUpdateCallback = callback;
     }
 
     public void handleUserSyncMessage(String peerId, String message) {
@@ -189,6 +194,11 @@ public class PeerUserSyncManager {
             }
             
             logger.info("Sincronización de BD completada con peer {}", peerId);
+
+            if (uiUpdateCallback != null) {
+                uiUpdateCallback.accept(null);
+                logger.info("UI notificada de actualización de usuarios tras sincronización de BD");
+            }
             
         } catch (Exception e) {
              logger.error("Error procesando sincronización completa de BD: {}", e.getMessage(), e);

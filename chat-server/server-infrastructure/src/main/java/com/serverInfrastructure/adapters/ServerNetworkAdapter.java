@@ -2,8 +2,10 @@ package com.serverInfrastructure.adapters;
 
 import com.serverApplication.dto.ConnectedPeerInfo;
 import com.serverApplication.ports.PeerConnectionObserver;
+import com.serverApplication.ports.UserReplicationNotifier;
 import com.serverApplication.ports.peer.ClientMessageBroadcaster;
 import com.serverApplication.ports.peer.PeerNetworkControl;
+import com.serverDomain.entities.User;
 import com.serverInfrastructure.adapters.peer.PeerTcpServerAdapter;
 import com.serverInfrastructure.factories.PeerTcpServerAdapterFactory;
 import com.serverInfrastructure.observers.ActiveUserManager;
@@ -15,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class ServerNetworkAdapter implements PeerNetworkControl {
+public class ServerNetworkAdapter implements PeerNetworkControl, UserReplicationNotifier {
     private static final Logger logger = LoggerFactory.getLogger(ServerNetworkAdapter.class);
     private final PeerTcpServerAdapter peerAdapter;
     
@@ -153,5 +155,31 @@ public class ServerNetworkAdapter implements PeerNetworkControl {
 
     public boolean isUserConnected(String username) {
         return peerAdapter.isUserConnected(username);
+    }
+
+    @Override
+    public void notifyNewUserRegistered(User user) {
+        logger.info("Notificando nuevo usuario registrado a peers: {}", user.getUsername().value());
+        peerAdapter.broadcastNewUser(user);
+    }
+
+    public void broadcastChannel(com.serverDomain.entities.Channel channel) {
+        peerAdapter.broadcastChannel(channel);
+    }
+
+    public void broadcastChannelMember(int channelId, String userId) {
+        peerAdapter.broadcastChannelMember(channelId, userId);
+    }
+
+    public void broadcastChannelMessage(com.serverApplication.dto.sync.MessageSyncDTO message) {
+        peerAdapter.broadcastChannelMessage(message);
+    }
+
+    public void broadcastChannelInvite(com.serverDomain.entities.ChannelInvite invite) {
+        peerAdapter.broadcastChannelInvite(invite);
+    }
+
+    public void broadcastTranscription(com.serverApplication.dto.sync.AudioTranscriptionSyncDTO transcription) {
+        peerAdapter.broadcastTranscription(transcription);
     }
 }
