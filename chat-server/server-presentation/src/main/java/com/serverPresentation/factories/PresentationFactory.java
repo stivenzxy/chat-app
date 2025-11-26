@@ -5,6 +5,7 @@ import com.serverApplication.ports.ServerControl;
 import com.serverApplication.ports.peer.PeerNetworkControl;
 import com.serverInfrastructure.factories.InfrastructureFactory;
 import com.serverPresentation.controllers.UserController;
+import com.serverPresentation.http.HttpRestServer;
 import com.serverPresentation.views.MainServerView;
 import com.serverPresentation.views.components.ConnectionPanel;
 import com.serverPresentation.views.components.ServerNetworkPanel;
@@ -31,10 +32,6 @@ public class PresentationFactory {
         this.serverNetworkControl = serverNetworkControl; 
     }
     
-    /**
-     * Sets the network control after initialization.
-     * Used when network control needs to be configured with dependencies from this factory.
-     */
     public void setServerNetworkControl(PeerNetworkControl serverNetworkControl) {
         this.serverNetworkControl = serverNetworkControl;
     }
@@ -66,6 +63,14 @@ public class PresentationFactory {
 
     public MainServerView createMainServerView() {
         return new MainServerView(this);
+    }
+    
+    public HttpRestServer createHttpRestServer(int port) {
+        return new HttpRestServer(serviceFactory, port);
+    }
+    
+    public HttpRestServer createHttpRestServer() {
+        return new HttpRestServer(serviceFactory);
     }
     
     public ServerControl getServerControl() {

@@ -1,20 +1,40 @@
 <configuration>
+    <!-- Console Appender -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <!-- AÑADIR ESTE APPENDER PARA ARCHIVO -->
-    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-        <file>server.log</file> <!-- El archivo se creará en la raíz del proyecto -->
+    <!-- Rolling File Appender - Automatically rotates when size limit is reached -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>server.log</file>
+        
+        <!-- Rolling policy: rotate when file reaches 10MB or daily -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- Daily rollover with max file size -->
+            <fileNamePattern>logs/server-%d{yyyy-MM-dd}-%i.log</fileNamePattern>
+            
+            <!-- Each file should be at most 10MB -->
+            <maxFileSize>10MB</maxFileSize>
+            
+            <!-- Keep 30 days worth of history, but cap total size at 500MB -->
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+        
         <encoder>
-            <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
+    <!-- Root logger configuration -->
     <root level="info">
         <appender-ref ref="STDOUT" />
-        <appender-ref ref="FILE" /> <!-- AÑADIR ESTA REFERENCIA -->
+        <appender-ref ref="FILE" />
     </root>
+    
+    <!-- Optional: Set specific package levels -->
+    <!-- <logger name="com.serverInfrastructure.logging" level="DEBUG" /> -->
+    <!-- <logger name="com.serverPresentation.http" level="DEBUG" /> -->
 </configuration>

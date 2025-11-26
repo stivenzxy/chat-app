@@ -8,38 +8,36 @@ import com.serverInfrastructure.factories.DefaultServiceFactory;
 import com.serverInfrastructure.factories.InfrastructureFactory;
 import com.serverPresentation.controllers.UserController;
 import com.serverPresentation.factories.PresentationFactory;
+import com.serverPresentation.http.HttpRestServer;
 import com.serverPresentation.views.MainServerView;
 
 import javax.swing.*;
 
 public class ServerApplication {
     public static void main(String[] args) {
-        ServiceFactory serviceFactory = new DefaultServiceFactory();
+        DefaultServiceFactory serviceFactory = new DefaultServiceFactory();
         InfrastructureFactory infraFactory = new InfrastructureFactory(serviceFactory);
         TcpServerAdapter serverControl = new TcpServerAdapter(infraFactory);
 
-        // Create presentation factory first to get UserController
         PresentationFactory presentationFactory = new PresentationFactory(
             serviceFactory, 
             infraFactory, 
             serverControl,
-            null  // Will set network control after connecting callback
+            null
         );
-        
-        // Connect UserController's observable to replication system
+
         UserController userController = presentationFactory.createUserController();
         infraFactory.setUserReplicationCallback(v -> userController.getUserListUpdateCallback().run());
-        
-        // Now create ServerNetworkAdapter with callback configured
+
         ServerNetworkAdapter singlePeerNetworkControl = infraFactory.createServerNetworkAdapter();
-        
-        // Wire up the replication notifier proxy to the actual implementation
-        if (serviceFactory instanceof DefaultServiceFactory) {
-            ((DefaultServiceFactory) serviceFactory).getReplicationNotifierProxy().setDelegate(singlePeerNetworkControl);
-        }
+
+        serviceFactory.getReplicationNotifierProxy().setDelegate(singlePeerNetworkControl);
 
         serverControl.setPeerNetworkControl(singlePeerNetworkControl);
         presentationFactory.setServerNetworkControl(singlePeerNetworkControl);
+
+        HttpRestServer httpServer = presentationFactory.createHttpRestServer(8085);
+        httpServer.start();
 
         SwingUtilities.invokeLater(() -> {
             MainServerView view = presentationFactory.createMainServerView();
