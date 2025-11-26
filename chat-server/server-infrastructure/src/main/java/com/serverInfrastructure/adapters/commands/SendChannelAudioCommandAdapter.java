@@ -21,7 +21,7 @@ import com.serverApplication.dto.sync.AudioTranscriptionSyncDTO;
 
 public class SendChannelAudioCommandAdapter implements ProtocolCommandAdapter {
     private static final Logger logger = LoggerFactory.getLogger(SendChannelAudioCommandAdapter.class);
-    
+
     private final ChannelRepository channelRepository;
     private final CommandHandler handler;
     private final MessageDAO messageDAO;
@@ -33,39 +33,43 @@ public class SendChannelAudioCommandAdapter implements ProtocolCommandAdapter {
         this.handler = handler;
         this.messageDAO = new MessageDAO();
     }
-    
+
     public void setNetworkAdapter(ServerNetworkAdapter networkAdapter) {
         this.networkAdapter = networkAdapter;
     }
 
     @Override
-    public String getCommandName() { return "SEND_CHANNEL_AUDIO"; }
+    public String getCommandName() {
+        return "SEND_CHANNEL_AUDIO";
+    }
 
     @Override
     public String execute(List<String> parts, ProtocolParser parser, ClientConnection connectionContext) {
         // SEND_CHANNEL_AUDIO|channelId|audioBase64
-        if (parts.size() < 3) return parser.encode("ERROR", "Argumentos insuficientes");
-        
-        com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
+        if (parts.size() < 3)
+            return parser.encode("ERROR", "Argumentos insuficientes");
+
+        com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager
+                .getInstance();
         String senderUserId = aum.getUserIdFromConnection(connectionContext.getId());
-        
+
         if (senderUserId == null) {
             return parser.encode("ERROR", "Usuario no autenticado");
         }
-        
-        Integer channelId = Integer.valueOf(parts.get(1));
+
+        String channelId = parts.get(1);
         String audioBase64 = parts.get(2);
 
         String senderUsername = aum.getAllUserSessions().entrySet().stream()
-            .filter(entry -> entry.getValue().stream()
-                .anyMatch(u -> {
-                    String realUserId = aum.getUserIdFromConnection(u.getId());
-                    return realUserId != null && realUserId.equals(senderUserId);
-                }))
-            .map(java.util.Map.Entry::getKey)
-            .findFirst()
-            .orElse(null);
-            
+                .filter(entry -> entry.getValue().stream()
+                        .anyMatch(u -> {
+                            String realUserId = aum.getUserIdFromConnection(u.getId());
+                            return realUserId != null && realUserId.equals(senderUserId);
+                        }))
+                .map(java.util.Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
+
         if (senderUsername == null) {
             return parser.encode("ERROR", "Usuario no encontrado");
         }
@@ -75,40 +79,38 @@ public class SendChannelAudioCommandAdapter implements ProtocolCommandAdapter {
         }
 
         byte[] audioData = java.util.Base64.getDecoder().decode(audioBase64);
-        
-        int messageId = messageDAO.saveChannelAudioMessage(senderUserId, channelId, audioData);
-        
+
+        String messageId = messageDAO.saveChannelAudioMessage(senderUserId, channelId, audioData);
+
         // Replicar mensaje de audio a todos los peers
-        if (messageId > 0 && networkAdapter != null) {
+        if (messageId != null && networkAdapter != null) {
             MessageSyncDTO syncDTO = new MessageSyncDTO(
-                messageId,
-                senderUserId,
-                null,
-                channelId,
-                null, // Content is null for audio
-                "AUDIO",
-                audioData,
-                LocalDateTime.now()
-            );
+                    messageId,
+                    senderUserId,
+                    null,
+                    channelId,
+                    null, // Content is null for audio
+                    "AUDIO",
+                    audioData,
+                    LocalDateTime.now());
             networkAdapter.broadcastChannelMessage(syncDTO);
         }
-        
-        final int finalMessageId = messageId;
+
+        final String finalMessageId = messageId;
         final byte[] finalAudioData = audioData;
-        if (finalMessageId > 0 && finalAudioData != null) {
+        if (finalMessageId != null && finalAudioData != null) {
             new Thread(() -> {
                 try {
                     String transcribedText = audioTranscriptionService.transcribeAudio(finalAudioData);
-                    
+
                     if (transcribedText != null && !transcribedText.trim().isEmpty()) {
                         messageDAO.saveTranscription(finalMessageId, "WAV", transcribedText);
-                        
+
                         if (networkAdapter != null) {
                             AudioTranscriptionSyncDTO transDTO = new AudioTranscriptionSyncDTO(
-                                finalMessageId,
-                                "WAV",
-                                transcribedText
-                            );
+                                    finalMessageId,
+                                    "WAV",
+                                    transcribedText);
                             networkAdapter.broadcastTranscription(transDTO);
                         }
                     }
@@ -118,16 +120,14 @@ public class SendChannelAudioCommandAdapter implements ProtocolCommandAdapter {
         }
 
         List<String> memberUsernames = channelRepository.findMemberUsernames(channelId);
-        
-        String forward = parser.encode("RECEIVE_CHANNEL_AUDIO", String.valueOf(channelId), senderUsername, audioBase64);
-        
+
+        String forward = parser.encode("RECEIVE_CHANNEL_AUDIO", channelId, senderUsername, audioBase64);
+
         // Enviar a todos los miembros del canal
         for (String username : memberUsernames) {
             handler.getServer().sendMessageToUser(username, forward, senderUsername + " [AUDIO]");
         }
-        
+
         return parser.encode("OK", "Audio enviado");
     }
 }
-
-

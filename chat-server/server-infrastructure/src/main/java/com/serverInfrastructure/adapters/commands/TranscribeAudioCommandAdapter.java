@@ -33,34 +33,35 @@ public class TranscribeAudioCommandAdapter implements ProtocolCommandAdapter {
 
         String senderUserId = connectionContext.getId();
         String audioBase64 = parts.get(1);
-        
-        com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
+
+        com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager
+                .getInstance();
         String senderUsername = aum.getActiveUsers().entrySet().stream()
-            .filter(entry -> entry.getValue().getId().equals(senderUserId))
-            .map(entry -> entry.getKey())
-            .findFirst()
-            .orElse(null);
-            
+                .filter(entry -> entry.getValue().getId().equals(senderUserId))
+                .map(entry -> entry.getKey())
+                .findFirst()
+                .orElse(null);
+
         if (senderUsername == null) {
             return parser.encode("ERROR", "Usuario no válido");
         }
 
         try {
             byte[] audioData = Base64.getDecoder().decode(audioBase64);
-            
-            int messageId = messageDAO.findAudioMessageByContent(senderUserId, audioData);
-            
-            if (messageId > 0) {
+
+            String messageId = messageDAO.findAudioMessageByContent(senderUserId, audioData);
+
+            if (messageId != null) {
                 String existingTranscription = messageDAO.getTranscription(messageId);
                 if (existingTranscription != null && !existingTranscription.trim().isEmpty()) {
                     return parser.encode("TRANSCRIPTION_RESULT", existingTranscription);
                 }
             }
-            
+
             String transcribedText = audioTranscriptionService.transcribeAudio(audioData);
 
             if (transcribedText != null && !transcribedText.trim().isEmpty()) {
-                if (messageId > 0) {
+                if (messageId != null) {
                     messageDAO.saveTranscription(messageId, "WAV", transcribedText);
                 }
 

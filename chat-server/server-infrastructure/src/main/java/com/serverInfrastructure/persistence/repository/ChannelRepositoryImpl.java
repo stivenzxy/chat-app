@@ -16,7 +16,7 @@ public class ChannelRepositoryImpl implements ChannelRepository {
     }
 
     @Override
-    public Optional<Channel> findById(Integer id) {
+    public Optional<Channel> findById(String id) {
         return channelDAO.findById(id);
     }
 
@@ -26,22 +26,22 @@ public class ChannelRepositoryImpl implements ChannelRepository {
     }
 
     @Override
-    public void addMember(Integer channelId, String userId) {
+    public void addMember(String channelId, String userId) {
         channelDAO.addMember(channelId, userId);
     }
 
     @Override
-    public boolean isMember(Integer channelId, String userId) {
+    public boolean isMember(String channelId, String userId) {
         return channelDAO.isMember(channelId, userId);
     }
 
     @Override
-    public List<String> findMemberUserIds(Integer channelId) {
+    public List<String> findMemberUserIds(String channelId) {
         return channelDAO.findMemberUserIds(channelId);
     }
 
     @Override
-    public List<String> findMemberUsernames(Integer channelId) {
+    public List<String> findMemberUsernames(String channelId) {
         return channelDAO.findMemberUsernames(channelId);
     }
 

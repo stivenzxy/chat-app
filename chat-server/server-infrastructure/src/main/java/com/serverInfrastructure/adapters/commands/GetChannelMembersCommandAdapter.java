@@ -28,15 +28,15 @@ public class GetChannelMembersCommandAdapter implements ProtocolCommandAdapter {
                 return parser.encode("ERROR", "Formato: GET_CHANNEL_MEMBERS|channelId");
             }
 
-            int channelId = Integer.parseInt(parts.get(1));
+            String channelId = parts.get(1);
             String requesterId = ActiveUserManager.getInstance().getUserIdFromConnection(connectionContext.getId());
-            
+
             if (requesterId == null) {
                 return parser.encode("ERROR", "Usuario no autenticado");
             }
 
             boolean isMember = channelRepository.isMember(channelId, requesterId);
-            
+
             if (!isMember) {
                 return parser.encode("ERROR", "No eres miembro de este canal");
             }
@@ -46,8 +46,6 @@ public class GetChannelMembersCommandAdapter implements ProtocolCommandAdapter {
             String membersPayload = String.join(",", memberUsernames);
             return parser.encode("OK", membersPayload);
 
-        } catch (NumberFormatException e) {
-            return parser.encode("ERROR", "ID de canal inválido");
         } catch (Exception e) {
             return parser.encode("ERROR", "Error obteniendo miembros: " + e.getMessage());
         }

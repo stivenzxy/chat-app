@@ -18,7 +18,8 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
     private final CommandHandler handler;
     private ServerNetworkAdapter networkAdapter;
 
-    public InviteToChannelCommandAdapter(ChannelRepository channelRepository, ChannelInviteRepository inviteRepository, CommandHandler handler) {
+    public InviteToChannelCommandAdapter(ChannelRepository channelRepository, ChannelInviteRepository inviteRepository,
+            CommandHandler handler) {
         this.channelRepository = channelRepository;
         this.inviteRepository = inviteRepository;
         this.handler = handler;
@@ -29,30 +30,33 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
     }
 
     @Override
-    public String getCommandName() { return "INVITE_TO_CHANNEL"; }
+    public String getCommandName() {
+        return "INVITE_TO_CHANNEL";
+    }
 
     @Override
     public String execute(List<String> parts, ProtocolParser parser, ClientConnection connectionContext) {
         // INVITE_TO_CHANNEL|channelId|invitedUsername
-        if (parts.size() < 3) return parser.encode("ERROR", "Argumentos insuficientes");
-        
+        if (parts.size() < 3)
+            return parser.encode("ERROR", "Argumentos insuficientes");
+
         var aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
         String inviterUserId = aum.getUserIdFromConnection(connectionContext.getId());
-        
+
         if (inviterUserId == null) {
             return parser.encode("ERROR", "Usuario no autenticado");
         }
-        Integer channelId = Integer.valueOf(parts.get(1));
+        String channelId = parts.get(1);
         String invitedUsername = parts.get(2);
 
         String inviterUsername = aum.getAllUserSessions().entrySet().stream()
-            .filter(entry -> entry.getValue().stream()
-                .anyMatch(u -> aum.getUserIdFromConnection(u.getId()) != null && 
-                              aum.getUserIdFromConnection(u.getId()).equals(inviterUserId)))
-            .map(java.util.Map.Entry::getKey)
-            .findFirst()
-            .orElse(null);
-            
+                .filter(entry -> entry.getValue().stream()
+                        .anyMatch(u -> aum.getUserIdFromConnection(u.getId()) != null &&
+                                aum.getUserIdFromConnection(u.getId()).equals(inviterUserId)))
+                .map(java.util.Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
+
         if (inviterUsername == null) {
             return parser.encode("ERROR", "Usuario que invita no está en línea");
         }
@@ -66,7 +70,7 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
             var invitedUserSessions = aum.getUserSessions(invitedUsername);
             isUserConnected = invitedUserSessions != null && !invitedUserSessions.isEmpty();
         }
-        
+
         if (!isUserConnected) {
             return parser.encode("ERROR", "Usuario invitado no está en línea");
         }
@@ -99,7 +103,7 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
         ChannelInvite invite = new ChannelInvite(null, channelId, inviterUserId, invitedUserId,
                 ChannelInvite.Status.PENDING, LocalDateTime.now());
         ChannelInvite saved = inviteRepository.save(invite);
-        
+
         // Replicar invitación a todos los peers
         if (networkAdapter != null) {
             networkAdapter.broadcastChannelInvite(saved);
@@ -110,8 +114,8 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
         String visibility = channelOpt.map(c -> c.getVisibility().name()).orElse("PUBLIC");
 
         String forward = parser.encode("INVITE_RECEIVED",
-                String.valueOf(saved.getId()),
-                String.valueOf(channelId),
+                saved.getId(),
+                channelId,
                 channelName,
                 visibility,
                 inviterUsername);
@@ -121,23 +125,22 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
             handler.getServer().sendMessageToUser(invitedUsername, forward, inviterUsername);
         } else if (networkAdapter != null) {
             // Usuario remoto: enrutar a través de P2P
-            // Formato: P2P_CHANNEL_INVITE|inviteId|channelId|channelName|visibility|inviterUsername|invitedUsername
+            // Formato:
+            // P2P_CHANNEL_INVITE|inviteId|channelId|channelName|visibility|inviterUsername|invitedUsername
             String routeMessage = parser.encode("P2P_CHANNEL_INVITE",
-                    String.valueOf(saved.getId()),
-                    String.valueOf(channelId),
+                    saved.getId(),
+                    channelId,
                     channelName,
                     visibility,
                     inviterUsername,
                     invitedUsername);
-            
+
             boolean routed = networkAdapter.routeChannelInviteToPeer(invitedUsername, routeMessage);
             if (!routed) {
                 return parser.encode("ERROR", "No se pudo enviar invitación al usuario remoto");
             }
         }
 
-        return parser.encode("OK", String.valueOf(saved.getId()));
+        return parser.encode("OK", saved.getId());
     }
 }
-
-

@@ -172,7 +172,7 @@ public class ServerNetworkAdapter implements PeerNetworkControl, UserReplication
         peerAdapter.broadcastChannel(channel);
     }
 
-    public void broadcastChannelMember(int channelId, String userId) {
+    public void broadcastChannelMember(String channelId, String userId) {
         peerAdapter.broadcastChannelMember(channelId, userId);
     }
 

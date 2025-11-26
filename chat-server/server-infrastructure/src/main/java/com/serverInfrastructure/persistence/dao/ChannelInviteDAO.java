@@ -9,39 +9,39 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class ChannelInviteDAO {
     private static final Logger logger = LoggerFactory.getLogger(ChannelInviteDAO.class);
     private final ConnectionManager connectionManager = ConnectionManager.getInstance();
 
     public ChannelInvite insert(ChannelInvite invite) {
-        String sql = "INSERT INTO channel_invites (channel_id, inviter_user_id, invited_user_id, status, created_at) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO channel_invites (invite_id, channel_id, inviter_user_id, invited_user_id, status, created_at) VALUES (?, ?, ?, ?, ?, ?)";
+        String inviteId = UUID.randomUUID().toString();
+
         try (Connection conn = connectionManager.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            stmt.setInt(1, invite.getChannelId());
-            stmt.setString(2, invite.getInviterUserId());
-            stmt.setString(3, invite.getInvitedUserId());
-            stmt.setString(4, invite.getStatus().name());
-            stmt.setTimestamp(5, Timestamp.valueOf(invite.getCreatedAt()));
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, inviteId);
+            stmt.setString(2, invite.getChannelId());
+            stmt.setString(3, invite.getInviterUserId());
+            stmt.setString(4, invite.getInvitedUserId());
+            stmt.setString(5, invite.getStatus().name());
+            stmt.setTimestamp(6, Timestamp.valueOf(invite.getCreatedAt()));
             stmt.executeUpdate();
-            try (ResultSet rs = stmt.getGeneratedKeys()) {
-                if (rs.next()) {
-                    int id = rs.getInt(1);
-                    return new ChannelInvite(id, invite.getChannelId(), invite.getInviterUserId(),
-                            invite.getInvitedUserId(), invite.getStatus(), invite.getCreatedAt());
-                }
-            }
+
+            return new ChannelInvite(inviteId, invite.getChannelId(), invite.getInviterUserId(),
+                    invite.getInvitedUserId(), invite.getStatus(), invite.getCreatedAt());
         } catch (SQLException e) {
             logger.error("Error al insertar invitación: {}", e.getMessage());
         }
         return invite;
     }
 
-    public void updateStatus(Integer inviteId, ChannelInvite.Status status) {
+    public void updateStatus(String inviteId, ChannelInvite.Status status) {
         String sql = "UPDATE channel_invites SET status = ? WHERE invite_id = ?";
         try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, status.name());
-            stmt.setInt(2, inviteId);
+            stmt.setString(2, inviteId);
             stmt.executeUpdate();
         } catch (SQLException e) {
             logger.error("Error al actualizar estado de invitación: {}", e.getMessage());
@@ -68,8 +68,8 @@ public class ChannelInviteDAO {
     }
 
     private ChannelInvite mapRow(ResultSet rs) throws SQLException {
-        int id = rs.getInt("invite_id");
-        int channelId = rs.getInt("channel_id");
+        String id = rs.getString("invite_id");
+        String channelId = rs.getString("channel_id");
         String inviterUserId = rs.getString("inviter_user_id");
         String invitedUserId = rs.getString("invited_user_id");
         ChannelInvite.Status status = ChannelInvite.Status.valueOf(rs.getString("status"));
@@ -78,8 +78,8 @@ public class ChannelInviteDAO {
     }
 
     private ChannelInvite mapRowWithNames(ResultSet rs) throws SQLException {
-        int id = rs.getInt("invite_id");
-        int channelId = rs.getInt("channel_id");
+        String id = rs.getString("invite_id");
+        String channelId = rs.getString("channel_id");
         String inviterUserId = rs.getString("inviter_user_id");
         String invitedUserId = rs.getString("invited_user_id");
         String inviterUsername = rs.getString("inviter_username");
@@ -98,8 +98,8 @@ public class ChannelInviteDAO {
                 ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 invites.add(new ChannelInvite(
-                        rs.getInt("invite_id"),
-                        rs.getInt("channel_id"),
+                        rs.getString("invite_id"),
+                        rs.getString("channel_id"),
                         rs.getString("inviter_user_id"),
                         rs.getString("invited_user_id"),
                         ChannelInvite.Status.valueOf(rs.getString("status")),
@@ -115,8 +115,8 @@ public class ChannelInviteDAO {
         String sql = "INSERT INTO channel_invites (invite_id, channel_id, inviter_user_id, invited_user_id, status, created_at) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = connectionManager.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, invite.getId());
-            stmt.setInt(2, invite.getChannelId());
+            stmt.setString(1, invite.getId());
+            stmt.setString(2, invite.getChannelId());
             stmt.setString(3, invite.getInviterUserId());
             stmt.setString(4, invite.getInvitedUserId());
             stmt.setString(5, invite.getStatus().name());
