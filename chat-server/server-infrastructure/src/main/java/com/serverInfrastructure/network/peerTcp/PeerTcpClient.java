@@ -205,6 +205,11 @@ public class PeerTcpClient {
             if (onPrivateMessageReceived != null) {
                 onPrivateMessageReceived.accept(peerId, message);
             }
+        } else if (message.startsWith("P2P_DB_SYNC")) {
+            logger.info("(CLIENT) Sincronización completa de BD recibida desde {}", peerId);
+            if (onUserSyncReceived != null) {
+                onUserSyncReceived.accept(message);
+            }
         } else if (message.startsWith("USER_JOINED")) {
             logger.info("Usuario se unió en peer {}", peerId);
             

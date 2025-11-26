@@ -154,6 +154,14 @@ public class PeerServerCallbackConfigurator {
             } catch (Exception e) {
                 logger.error("Error enviando peers a peer entrante {}: {}", peerId, e.getMessage());
             }
+
+            // Request full database sync FROM incoming peer (bidirectional)
+            try {
+                logger.info("Solicitando sincronización completa de BD desde peer entrante {}", peerId);
+                fullSyncManager.requestFullSync(peerId);
+            } catch (Exception e) {
+                logger.error("Error solicitando full sync a peer entrante {}: {}", peerId, e.getMessage());
+            }
         });
     }
 }

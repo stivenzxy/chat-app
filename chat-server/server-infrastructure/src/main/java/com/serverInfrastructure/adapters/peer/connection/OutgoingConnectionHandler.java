@@ -9,6 +9,7 @@ import com.serverInfrastructure.adapters.peer.managers.PeerUserSyncManager;
 import com.serverInfrastructure.adapters.peer.discovery.PeerDiscoveryHandler;
 import com.serverInfrastructure.adapters.peer.managers.PeerPeerReplicationManager;
 import com.serverInfrastructure.adapters.peer.managers.PeerUserReplicationManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerFullSyncManager;
 import com.serverInfrastructure.adapters.peer.utils.PeerIdParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,7 @@ public class OutgoingConnectionHandler {
     private final PeerUserReplicationManager userReplicationManager;
     private final PeerPeerReplicationManager peerReplicationManager;
     private final PeerEntityReplicationManager entityReplicationManager;
+    private final PeerFullSyncManager fullSyncManager;
 
     private int localServerPort = -1;
 
@@ -38,7 +40,8 @@ public class OutgoingConnectionHandler {
             PeerMessageRoutingManager messageRoutingManager,
             PeerUserReplicationManager userReplicationManager,
             PeerPeerReplicationManager peerReplicationManager,
-            PeerEntityReplicationManager entityReplicationManager) {
+            PeerEntityReplicationManager entityReplicationManager,
+            PeerFullSyncManager fullSyncManager) {
 
         this.validator = validator;
         this.connectionManager = connectionManager;
@@ -49,6 +52,7 @@ public class OutgoingConnectionHandler {
         this.userReplicationManager = userReplicationManager;
         this.peerReplicationManager = peerReplicationManager;
         this.entityReplicationManager = entityReplicationManager;
+        this.fullSyncManager = fullSyncManager;
     }
 
     public void setLocalServerPort(int port) {
@@ -72,8 +76,8 @@ public class OutgoingConnectionHandler {
                 if (peerInfo != null) {
                     observerNotifier.notifyPeerDisconnected(peerInfo.withStatus("Conexión Rechazada"));
                 }
-                observerNotifier.notifyPeerConnectionError(peerId, 
-                    "Conexión rechazada - intento de conectar P2P al puerto de clientes");
+                observerNotifier.notifyPeerConnectionError(peerId,
+                        "Conexión rechazada - intento de conectar P2P al puerto de clientes");
             },
             // onUserSyncReceived
             message -> {
@@ -101,6 +105,15 @@ public class OutgoingConnectionHandler {
                     messageRoutingManager.handleChannelInviteRouted(sourcePeerId, message);
                 } else if (message.startsWith("P2P_CHANNEL_MESSAGE")) {
                     messageRoutingManager.handleChannelMessageRouted(sourcePeerId, message);
+                } else if (message.startsWith("P2P_FULL_SYNC_REQUEST")) {
+                    logger.info("Solicitud de full sync recibida de peer {}", sourcePeerId);
+                    fullSyncManager.handleFullSyncRequest(sourcePeerId);
+                } else if (message.startsWith("P2P_FULL_SYNC_RESPONSE")) {
+                    logger.info("Respuesta de full sync recibida de peer {}", sourcePeerId);
+                    fullSyncManager.handleFullSyncResponse(sourcePeerId, message);
+                } else if (message.startsWith("P2P_USER_STATUS_UPDATE")) {
+                    logger.info("Actualización de estado de usuario recibida de peer {}", sourcePeerId);
+                    fullSyncManager.handleUserStatusUpdate(sourcePeerId, message);
                 }
             },
             // onConnectionSuccess
@@ -110,16 +123,19 @@ public class OutgoingConnectionHandler {
                     observerNotifier.notifyPeerConnected(peerInfo);
                 }
                 userSyncManager.sendFullUserSyncToPeer(confirmedPeerId,
-                    msg -> connectionManager.sendMessageToPeer(confirmedPeerId, msg));
-                    
+                        msg -> connectionManager.sendMessageToPeer(confirmedPeerId, msg));
+
                 // Send user replication after connection
                 logger.info("Enviando usuarios para replicación al peer {}", confirmedPeerId);
                 userReplicationManager.sendUsersToPeer(confirmedPeerId);
-                
+
                 // Send known peers for transitive discovery
                 logger.info("Enviando peers conocidos para descubrimiento transitivo a {}", confirmedPeerId);
                 peerReplicationManager.sendPeersToPeer(confirmedPeerId);
-            }
-        );
+
+                // Request full database sync from peer
+                logger.info("Solicitando sincronización completa de BD desde peer {}", confirmedPeerId);
+                fullSyncManager.requestFullSync(confirmedPeerId);
+            });
     }
 }

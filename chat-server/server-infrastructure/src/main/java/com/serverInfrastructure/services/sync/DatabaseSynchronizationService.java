@@ -151,7 +151,7 @@ public class DatabaseSynchronizationService {
                 // Deberíamos capturar excepción de clave duplicada
                 channelInviteRepository.insertReplicated(invite);
             } catch (Exception e) {
-                // Ignorar error de duplicado
+                logger.debug("Error/duplicado importando invitación {}: {}", dto.inviteId(), e.getMessage());
             }
         }
 
@@ -162,7 +162,7 @@ public class DatabaseSynchronizationService {
                 messageDAO.insertReplicated(dto);
                 messagesCount++;
             } catch (Exception e) {
-                // Ignorar duplicados
+                logger.debug("Error/duplicado importando mensaje {}: {}", dto.messageId(), e.getMessage());
             }
         }
 
@@ -171,7 +171,7 @@ public class DatabaseSynchronizationService {
             try {
                 messageDAO.insertTranscriptionReplicated(dto);
             } catch (Exception e) {
-                // Ignorar duplicados
+                logger.debug("Error/duplicado importando transcripción {}: {}", dto.messageId(), e.getMessage());
             }
         }
 
