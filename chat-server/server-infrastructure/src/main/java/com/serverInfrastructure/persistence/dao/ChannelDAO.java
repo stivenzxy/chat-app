@@ -27,7 +27,8 @@ public class ChannelDAO {
             try (ResultSet rs = stmt.getGeneratedKeys()) {
                 if (rs.next()) {
                     int id = rs.getInt(1);
-                    return new Channel(id, channel.getName(), channel.getOwnerId(), channel.getVisibility(), channel.getCreatedAt());
+                    return new Channel(id, channel.getName(), channel.getOwnerId(), channel.getVisibility(),
+                            channel.getCreatedAt());
                 }
             }
         } catch (SQLException e) {
@@ -41,7 +42,8 @@ public class ChannelDAO {
         try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) return Optional.of(mapRow(rs));
+                if (rs.next())
+                    return Optional.of(mapRow(rs));
             }
         } catch (SQLException e) {
             logger.error("Error al buscar canal: {}", e.getMessage());
@@ -55,7 +57,8 @@ public class ChannelDAO {
         try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, userId);
             try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) list.add(mapRow(rs));
+                while (rs.next())
+                    list.add(mapRow(rs));
             }
         } catch (SQLException e) {
             logger.error("Error al listar canales del usuario: {}", e.getMessage());
@@ -94,7 +97,8 @@ public class ChannelDAO {
         try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, channelId);
             try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) users.add(rs.getString("user_id"));
+                while (rs.next())
+                    users.add(rs.getString("user_id"));
             }
         } catch (SQLException e) {
             logger.error("Error al listar miembros del canal: {}", e.getMessage());
@@ -108,9 +112,12 @@ public class ChannelDAO {
         try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, channelId);
             try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) usernames.add(rs.getString("username"));
+                while (rs.next())
+                    usernames.add(rs.getString("username"));
             }
-        } catch (SQLException e) { logger.error("Error listando usernames del canal: {}", e.getMessage()); }
+        } catch (SQLException e) {
+            logger.error("Error listando usernames del canal: {}", e.getMessage());
+        }
         return usernames;
     }
 
@@ -118,8 +125,8 @@ public class ChannelDAO {
         String sql = "SELECT * FROM channels ORDER BY name";
         List<Channel> list = new ArrayList<>();
         try (Connection conn = connectionManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 list.add(mapRow(rs));
             }
@@ -137,10 +144,11 @@ public class ChannelDAO {
         LocalDateTime createdAt = rs.getTimestamp("created_at").toLocalDateTime();
         return new Channel(id, name, ownerId, visibility, createdAt);
     }
+
     public void insertReplicated(Channel channel) {
         String sql = "INSERT INTO channels (channel_id, name, owner_id, visibility, created_at) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = connectionManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, channel.getId());
             stmt.setString(2, channel.getName());
             stmt.setString(3, channel.getOwnerId());
@@ -152,17 +160,16 @@ public class ChannelDAO {
         }
     }
 
-    public List<com.serverApplication.dto.sync.ChannelMemberSyncDTO> findAllMembers() {
+    public List<com.serverDomain.valueObjects.ChannelMember> findAllMembers() {
         String sql = "SELECT channel_id, user_id FROM channel_members";
-        List<com.serverApplication.dto.sync.ChannelMemberSyncDTO> members = new ArrayList<>();
+        List<com.serverDomain.valueObjects.ChannelMember> members = new ArrayList<>();
         try (Connection conn = connectionManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
-                members.add(new com.serverApplication.dto.sync.ChannelMemberSyncDTO(
-                    rs.getInt("channel_id"),
-                    rs.getString("user_id")
-                ));
+                members.add(new com.serverDomain.valueObjects.ChannelMember(
+                        rs.getInt("channel_id"),
+                        rs.getString("user_id")));
             }
         } catch (SQLException e) {
             logger.error("Error al listar todos los miembros de canales: {}", e.getMessage());
@@ -170,5 +177,3 @@ public class ChannelDAO {
         return members;
     }
 }
-
-

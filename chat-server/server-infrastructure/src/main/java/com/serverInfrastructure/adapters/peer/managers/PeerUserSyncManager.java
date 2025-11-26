@@ -30,7 +30,7 @@ public class PeerUserSyncManager {
     private final Map<String, List<String>> remoteServerUsers = new ConcurrentHashMap<>();
     private final RemoteUserPhotoStore photoStore;
     private final LocalUserRepository userRepository;
-    
+
     private final UserDAO userDAO;
     private final ChannelDAO channelDAO;
     private final ChannelInviteDAO channelInviteDAO;
@@ -41,12 +41,12 @@ public class PeerUserSyncManager {
     private Consumer<String> peerBroadcastCallback;
     private Consumer<String> clientBroadcastCallback;
     private Consumer<Void> uiUpdateCallback;
-    
+
     public PeerUserSyncManager() {
         this.protocolParser = new ProtocolParser('|', '\\');
         this.photoStore = new RemoteUserPhotoStore();
         this.userRepository = new LocalUserRepository();
-        
+
         this.userDAO = new UserDAO();
         this.channelDAO = new ChannelDAO();
         this.channelInviteDAO = new ChannelInviteDAO();
@@ -109,50 +109,54 @@ public class PeerUserSyncManager {
         try {
             String json = message.substring("P2P_DB_SYNC|".length());
             FullDatabaseSyncDTO syncData = objectMapper.readValue(json, FullDatabaseSyncDTO.class);
-            
+
             logger.info("Recibida sincronización completa de BD de peer {}. Procesando...", peerId);
-            
+
             // Sync Users
             if (syncData.users() != null) {
                 for (UserSyncDTO userDTO : syncData.users()) {
                     try {
-                        if (userDAO.findByUsername(new com.serverDomain.valueObjects.Username(userDTO.username())).isEmpty()) {
+                        if (userDAO.findByUsername(new com.serverDomain.valueObjects.Username(userDTO.username()))
+                                .isEmpty()) {
                             com.serverDomain.entities.User user = new com.serverDomain.entities.User(
-                                userDTO.userId(),
-                                new com.serverDomain.valueObjects.Username(userDTO.username()),
-                                new com.serverDomain.valueObjects.Email(userDTO.email()),
-                                userDTO.passwordHash(),
-                                userDTO.photoData(),
-                                userDTO.ipAddress(),
-                                userDTO.createdAt()
-                            );
+                                    userDTO.userId(),
+                                    new com.serverDomain.valueObjects.Username(userDTO.username()),
+                                    new com.serverDomain.valueObjects.Email(userDTO.email()),
+                                    userDTO.passwordHash(),
+                                    userDTO.photoData(),
+                                    userDTO.ipAddress(),
+                                    userDTO.createdAt());
                             user.setReplicated(true);
-                            user.setOriginServerId(userDTO.originServerId() != null ? userDTO.originServerId() : peerId);
+                            user.setOriginServerId(
+                                    userDTO.originServerId() != null ? userDTO.originServerId() : peerId);
                             user.setLastSyncAt(java.sql.Timestamp.valueOf(java.time.LocalDateTime.now()));
                             userDAO.insertReplicated(user);
                         }
-                    } catch (Exception e) { logger.error("Error syncing user {}: {}", userDTO.username(), e.getMessage()); }
+                    } catch (Exception e) {
+                        logger.error("Error syncing user {}: {}", userDTO.username(), e.getMessage());
+                    }
                 }
             }
-            
+
             // Sync Channels
             if (syncData.channels() != null) {
                 for (ChannelSyncDTO channelDTO : syncData.channels()) {
                     try {
                         if (channelDAO.findById(channelDTO.channelId()).isEmpty()) {
                             com.serverDomain.entities.Channel channel = new com.serverDomain.entities.Channel(
-                                channelDTO.channelId(),
-                                channelDTO.name(),
-                                channelDTO.ownerId(),
-                                com.serverDomain.entities.Channel.Visibility.valueOf(channelDTO.visibility()),
-                                channelDTO.createdAt()
-                            );
+                                    channelDTO.channelId(),
+                                    channelDTO.name(),
+                                    channelDTO.ownerId(),
+                                    com.serverDomain.entities.Channel.Visibility.valueOf(channelDTO.visibility()),
+                                    channelDTO.createdAt());
                             channelDAO.insertReplicated(channel);
                         }
-                    } catch (Exception e) { logger.error("Error syncing channel {}: {}", channelDTO.channelId(), e.getMessage()); }
+                    } catch (Exception e) {
+                        logger.error("Error syncing channel {}: {}", channelDTO.channelId(), e.getMessage());
+                    }
                 }
             }
-            
+
             // Sync Channel Members
             if (syncData.channelMembers() != null) {
                 for (ChannelMemberSyncDTO memberDTO : syncData.channelMembers()) {
@@ -160,48 +164,59 @@ public class PeerUserSyncManager {
                         if (!channelDAO.isMember(memberDTO.channelId(), memberDTO.userId())) {
                             channelDAO.addMember(memberDTO.channelId(), memberDTO.userId());
                         }
-                    } catch (Exception e) { logger.error("Error syncing channel member: {}", e.getMessage()); }
+                    } catch (Exception e) {
+                        logger.error("Error syncing channel member: {}", e.getMessage());
+                    }
                 }
             }
-            
+
             // Sync Channel Invites
             if (syncData.channelInvites() != null) {
                 for (ChannelInviteSyncDTO inviteDTO : syncData.channelInvites()) {
                     try {
-                        channelInviteDAO.insertReplicated(inviteDTO);
-                    } catch (Exception e) { 
+                        com.serverDomain.entities.ChannelInvite invite = new com.serverDomain.entities.ChannelInvite(
+                                inviteDTO.inviteId(),
+                                inviteDTO.channelId(),
+                                inviteDTO.inviterUserId(),
+                                inviteDTO.invitedUserId(),
+                                com.serverDomain.entities.ChannelInvite.Status.valueOf(inviteDTO.status()),
+                                inviteDTO.createdAt());
+                        channelInviteDAO.insertReplicated(invite);
+                    } catch (Exception e) {
                         // Likely duplicate, ignore
                     }
                 }
             }
-            
+
             // Messages
             if (syncData.messages() != null) {
                 for (MessageSyncDTO messageDTO : syncData.messages()) {
                     try {
                         messageDAO.insertReplicated(messageDTO);
-                    } catch (Exception e) { }
+                    } catch (Exception e) {
+                    }
                 }
             }
-            
+
             // Transcriptions
             if (syncData.transcriptions() != null) {
                 for (AudioTranscriptionSyncDTO transDTO : syncData.transcriptions()) {
                     try {
                         messageDAO.insertTranscriptionReplicated(transDTO);
-                    } catch (Exception e) { }
+                    } catch (Exception e) {
+                    }
                 }
             }
-            
+
             logger.info("Sincronización de BD completada con peer {}", peerId);
 
             if (uiUpdateCallback != null) {
                 uiUpdateCallback.accept(null);
                 logger.info("UI notificada de actualización de usuarios tras sincronización de BD");
             }
-            
+
         } catch (Exception e) {
-             logger.error("Error procesando sincronización completa de BD: {}", e.getMessage(), e);
+            logger.error("Error procesando sincronización completa de BD: {}", e.getMessage(), e);
         }
     }
 
@@ -229,7 +244,8 @@ public class PeerUserSyncManager {
         }
     }
 
-    private void notifyClientsAboutRemoteUsers(String peerId, List<String> users, String serverPrefix, String action, List<String> previousUsers) {
+    private void notifyClientsAboutRemoteUsers(String peerId, List<String> users, String serverPrefix, String action,
+            List<String> previousUsers) {
         try {
             if ("SYNC_ALL".equals(action)) {
                 logger.info("Sincronización completa: {} usuarios remotos de {}", users.size(), serverPrefix);
@@ -248,7 +264,8 @@ public class PeerUserSyncManager {
                         photoStore.removePhoto(username);
                     } else {
                         String photoBase64 = photoStore.getPhoto(username);
-                        String msg = protocolParser.encode("USER_CONNECTED", uniqueId, serverPrefix + username, photoBase64);
+                        String msg = protocolParser.encode("USER_CONNECTED", uniqueId, serverPrefix + username,
+                                photoBase64);
                         clientBroadcastCallback.accept(msg);
                     }
                 }
@@ -290,10 +307,11 @@ public class PeerUserSyncManager {
     public void sendFullUserSyncToPeer(String peerId, Consumer<String> sendCallback) {
         // This method was for user sync only. We might want to keep it or upgrade it.
         // But for now, let's keep it as is or redirect to full DB sync if needed.
-        // However, this is called by PeerUserReplicationManager which handles batch user replication.
+        // However, this is called by PeerUserReplicationManager which handles batch
+        // user replication.
         // The requirement is about "discovering a new server".
         // So generateInitialSyncMessage is the key.
-        
+
         Map<String, String> localUsersWithPhotos = userRepository.getLocalUsersWithPhotos();
         List<String> localUsers = new ArrayList<>(localUsersWithPhotos.keySet());
         String serverId = getServerIdOrDefault();
@@ -315,32 +333,38 @@ public class PeerUserSyncManager {
                     serverId = "localhost:" + peerPort;
                 }
             }
-            
+
             // Collect all data
             List<UserSyncDTO> users = userDAO.selectAll().stream().map(u -> new UserSyncDTO(
-                u.getId(), u.getUsername().value(), u.getEmail().value(), u.getPasswordHash(),
-                u.getPhotoData(), u.getIpAddress(), u.isReplicated(), u.getOriginServerId(),
-                u.getLastSyncAt() != null ? u.getLastSyncAt().toLocalDateTime() : null,
-                u.getCreatedAt()
-            )).collect(Collectors.toList());
-            
+                    u.getId(), u.getUsername().value(), u.getEmail().value(), u.getPasswordHash(),
+                    u.getPhotoData(), u.getIpAddress(), u.isReplicated(), u.getOriginServerId(),
+                    u.getLastSyncAt() != null ? u.getLastSyncAt().toLocalDateTime() : null,
+                    u.getCreatedAt())).collect(Collectors.toList());
+
             List<ChannelSyncDTO> channels = channelDAO.findAll().stream().map(c -> new ChannelSyncDTO(
-                c.getId(), c.getName(), c.getOwnerId(), c.getVisibility().name(), c.getCreatedAt()
-            )).collect(Collectors.toList());
-            
-            List<ChannelMemberSyncDTO> members = channelDAO.findAllMembers();
-            
-            List<ChannelInviteSyncDTO> invites = channelInviteDAO.findAll();
-            
+                    c.getId(), c.getName(), c.getOwnerId(), c.getVisibility().name(), c.getCreatedAt()))
+                    .collect(Collectors.toList());
+
+            List<ChannelMemberSyncDTO> members = channelDAO.findAllMembers().stream()
+                    .map(m -> new ChannelMemberSyncDTO(m.channelId(), m.userId()))
+                    .collect(Collectors.toList());
+
+            List<ChannelInviteSyncDTO> invites = channelInviteDAO.findAll().stream()
+                    .map(i -> new ChannelInviteSyncDTO(
+                            i.getId(), i.getChannelId(), i.getInviterUserId(), i.getInvitedUserId(),
+                            i.getStatus().name(), i.getCreatedAt()))
+                    .collect(Collectors.toList());
+
             List<MessageSyncDTO> messages = messageDAO.findAll();
-            
+
             List<AudioTranscriptionSyncDTO> transcriptions = messageDAO.findAllTranscriptions();
-            
-            FullDatabaseSyncDTO syncData = new FullDatabaseSyncDTO(users, channels, members, invites, messages, transcriptions);
-            
+
+            FullDatabaseSyncDTO syncData = new FullDatabaseSyncDTO(users, channels, members, invites, messages,
+                    transcriptions);
+
             String json = objectMapper.writeValueAsString(syncData);
             return "P2P_DB_SYNC|" + json;
-            
+
         } catch (Exception e) {
             logger.error("Error generando mensaje de sincronización inicial: {}", e.getMessage());
             return "";
@@ -359,7 +383,8 @@ public class PeerUserSyncManager {
         List<String> disconnectedUsers = remoteServerUsers.get(peerId);
 
         if (disconnectedUsers == null || disconnectedUsers.isEmpty()) {
-            logger.info("Peer {} se desconectó, pero no tenía usuarios remotos registrados o ya fueron limpiados.", peerId);
+            logger.info("Peer {} se desconectó, pero no tenía usuarios remotos registrados o ya fueron limpiados.",
+                    peerId);
             clearPeerUsers(peerId);
             return;
         }
@@ -367,10 +392,12 @@ public class PeerUserSyncManager {
         List<String> usersToNotify = new ArrayList<>(disconnectedUsers);
         clearPeerUsers(peerId);
 
-        logger.info("Peer {} se desconectó. Se notificará la desconexión de {} usuario(s) remoto(s).", peerId, usersToNotify.size());
+        logger.info("Peer {} se desconectó. Se notificará la desconexión de {} usuario(s) remoto(s).", peerId,
+                usersToNotify.size());
 
         if (clientBroadcastCallback == null) {
-            logger.warn("No se puede notificar a los clientes sobre la desconexión de usuarios remotos: el callback es nulo.");
+            logger.warn(
+                    "No se puede notificar a los clientes sobre la desconexión de usuarios remotos: el callback es nulo.");
             return;
         }
 
@@ -382,7 +409,7 @@ public class PeerUserSyncManager {
 
             clientBroadcastCallback.accept(message);
         }
-        
+
         logger.info("Notificaciones de desconexión para los usuarios de {} enviadas a los clientes locales.", peerId);
     }
 
@@ -390,7 +417,6 @@ public class PeerUserSyncManager {
         remoteServerUsers.remove(peerId);
         logger.info("Usuarios de peer {} eliminados del registro de sincronización.", peerId);
     }
-
 
     private String getServerIdOrDefault() {
         if (localServerId != null) {
@@ -409,6 +435,7 @@ public class PeerUserSyncManager {
             StringBuilder sb = new StringBuilder();
             remoteServerUsers.forEach((k, v) -> sb.append(k).append("=").append(v.size()).append(" "));
             logger.info("Estado usuarios remotos: {}", sb.toString().trim());
-        } catch (Exception ignore) {}
+        } catch (Exception ignore) {
+        }
     }
 }

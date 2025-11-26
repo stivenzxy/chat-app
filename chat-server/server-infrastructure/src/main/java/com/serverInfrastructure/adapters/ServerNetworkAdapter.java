@@ -20,18 +20,19 @@ import java.util.function.Consumer;
 public class ServerNetworkAdapter implements PeerNetworkControl, UserReplicationNotifier {
     private static final Logger logger = LoggerFactory.getLogger(ServerNetworkAdapter.class);
     private final PeerTcpServerAdapter peerAdapter;
-    
+
     public ServerNetworkAdapter() {
         this(null);
     }
-    
+
     public ServerNetworkAdapter(Consumer<Void> userReplicationCallback) {
         this.peerAdapter = PeerTcpServerAdapterFactory.create(userReplicationCallback);
 
         PeerUserSyncObserver syncObserver = new PeerUserSyncObserver(this.peerAdapter);
         ActiveUserManager.getInstance().addObserver(syncObserver);
-        
-        logger.info("ServerNetworkAdapter inicializado - Gestión P2P exclusiva con sincronización automática de usuarios");
+
+        logger.info(
+                "ServerNetworkAdapter inicializado - Gestión P2P exclusiva con sincronización automática de usuarios");
     }
 
     @Override
@@ -39,81 +40,81 @@ public class ServerNetworkAdapter implements PeerNetworkControl, UserReplication
         logger.info("Iniciando servidor P2P (puerto desde configuración)");
         return peerAdapter.startPeerServer();
     }
-    
+
     @Override
     public void stopPeerServer() {
         logger.info("Deteniendo servidor P2P");
         peerAdapter.stopPeerServer();
     }
-    
+
     @Override
     public boolean connectToPeer(String ip, int port) {
         logger.info("Conectando a peer {}:{}", ip, port);
         return peerAdapter.connectToPeer(ip, port);
     }
-    
+
     @Override
     public boolean disconnectFromPeer(String peerId) {
         logger.info("Desconectando peer {}", peerId);
         return peerAdapter.disconnectFromPeer(peerId);
     }
-    
+
     @Override
     public int disconnectFromPeers(List<String> peerIds) {
         logger.info("Desconectando multiples {} peers", peerIds.size());
         return peerAdapter.disconnectFromPeers(peerIds);
     }
-    
+
     @Override
     public List<ConnectedPeerInfo> getConnectedPeers() {
         return peerAdapter.getConnectedPeers();
     }
-    
+
     @Override
     public boolean isPeerServerRunning() {
         return peerAdapter.isPeerServerRunning();
     }
-    
+
     @Override
     public int getPeerServerPort() {
         return peerAdapter.getPeerServerPort();
     }
-    
+
     @Override
     public int getCurrentPeerConnections() {
         return peerAdapter.getCurrentPeerConnections();
     }
-    
+
     @Override
     public boolean isConnectedToPeer(String peerId) {
         return peerAdapter.isConnectedToPeer(peerId);
     }
-    
+
     @Override
     public boolean sendMessageToPeer(String peerId, String message) {
         return peerAdapter.sendMessageToPeer(peerId, message);
     }
-    
+
     @Override
     public int broadcastToPeers(String message) {
         return peerAdapter.broadcastToPeers(message);
     }
-    
+
     @Override
     public void addPeerConnectionObserver(PeerConnectionObserver observer) {
         peerAdapter.addPeerConnectionObserver(observer);
     }
-    
+
     @Override
     public void removePeerConnectionObserver(PeerConnectionObserver observer) {
         peerAdapter.removePeerConnectionObserver(observer);
     }
-    
+
     @Override
     public void notifyUserChangeToPeers(String username, String action) {
         peerAdapter.notifyUserChangeToPeers(username, action);
     }
-    
+
     @Override
     public Map<String, List<String>> getAllUsersAcrossPeers() {
         return peerAdapter.getAllUsersAcrossPeers();
@@ -161,6 +162,10 @@ public class ServerNetworkAdapter implements PeerNetworkControl, UserReplication
     public void notifyNewUserRegistered(User user) {
         logger.info("Notificando nuevo usuario registrado a peers: {}", user.getUsername().value());
         peerAdapter.broadcastNewUser(user);
+    }
+
+    public void broadcastUserStatus(String username, boolean isOnline) {
+        peerAdapter.broadcastUserStatus(username, isOnline);
     }
 
     public void broadcastChannel(com.serverDomain.entities.Channel channel) {

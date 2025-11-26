@@ -19,9 +19,9 @@ import java.util.function.Supplier;
 import java.util.function.Consumer;
 
 public class PeerTcpServer {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(PeerTcpServer.class);
-    
+
     private ServerSocket peerServerSocket;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private Thread acceptorThread;
@@ -32,15 +32,11 @@ public class PeerTcpServer {
     private final Map<String, PrintWriter> incomingPeerWriters = new ConcurrentHashMap<>();
 
     private BiConsumer<String, String> onUserSyncReceived;
-
     private Supplier<String> onGetLocalUserSync;
-
     private BiConsumer<String, String> onPrivateMessageReceived;
-    private java.util.function.Consumer<com.serverApplication.dto.ConnectedPeerInfo> onPeerConnected;
+    private Consumer<com.serverApplication.dto.ConnectedPeerInfo> onPeerConnected;
     private Consumer<String> onIncomingPeerDisconnected;
     private Consumer<String> onIncomingPeerConnected;
-
-
 
     public PeerTcpServer() {
         AppProperties props = new AppProperties("server-configuration");
@@ -60,12 +56,16 @@ public class PeerTcpServer {
         this.onPrivateMessageReceived = callback;
     }
 
-    public void setOnPeerConnected(java.util.function.Consumer<com.serverApplication.dto.ConnectedPeerInfo> callback) {
+    public void setOnPeerConnected(Consumer<com.serverApplication.dto.ConnectedPeerInfo> callback) {
         this.onPeerConnected = callback;
     }
-    
+
     public void setOnIncomingPeerConnected(Consumer<String> callback) {
         this.onIncomingPeerConnected = callback;
+    }
+
+    public void setOnIncomingPeerDisconnected(Consumer<String> callback) {
+        this.onIncomingPeerDisconnected = callback;
     }
 
     public boolean sendMessageToIncomingPeer(String peerId, String message) {
@@ -86,44 +86,91 @@ public class PeerTcpServer {
         return new ArrayList<>(incomingPeerWriters.keySet());
     }
 
-
     public void startPeerServer() {
         if (isRunning.get()) {
             logger.warn("El Servidor P2P ya se encuentra en ejecución en el puerto: {}", this.peerPort);
             return;
         }
-        
+
         try {
             peerServerSocket = new ServerSocket(peerPort);
             isRunning.set(true);
-            
+
             logger.info("PeerTcpServer iniciado en puerto {} - Esperando conexiones de otros servidores", peerPort);
 
             acceptorThread = new Thread(this::acceptPeerConnections, "PeerServer-Acceptor");
             acceptorThread.start();
-            
+
         } catch (IOException e) {
             logger.error("Error al iniciar PeerTcpServer en puerto {}: {}", peerPort, e.getMessage());
             isRunning.set(false);
         }
     }
-    
+
+    public void stopPeerServer() {
+        if (!isRunning.get()) {
+            return;
+        }
+        isRunning.set(false);
+        try {
+            if (peerServerSocket != null && !peerServerSocket.isClosed()) {
+                peerServerSocket.close();
+            }
+            if (acceptorThread != null) {
+                acceptorThread.interrupt();
+            }
+
+            // Close all incoming connections
+            for (String peerId : incomingPeerSockets.keySet()) {
+                disconnectIncomingPeer(peerId);
+            }
+            incomingPeerSockets.clear();
+            incomingPeerThreads.clear();
+            incomingPeerWriters.clear();
+
+            logger.info("PeerTcpServer detenido");
+        } catch (Exception e) {
+            logger.error("Error deteniendo PeerTcpServer: {}", e.getMessage());
+        }
+    }
+
+    public boolean isRunning() {
+        return isRunning.get();
+    }
+
     public int getPeerServerPort() {
         return peerPort;
     }
-    
+
+    public void disconnectIncomingPeer(String peerId) {
+        Socket socket = incomingPeerSockets.remove(peerId);
+        if (socket != null) {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                logger.warn("Error cerrando socket de peer entrante {}: {}", peerId, e.getMessage());
+            }
+        }
+        incomingPeerThreads.remove(peerId);
+        incomingPeerWriters.remove(peerId);
+
+        if (onIncomingPeerDisconnected != null) {
+            onIncomingPeerDisconnected.accept(peerId);
+        }
+    }
+
     private void acceptPeerConnections() {
         logger.info("Esperando conexiones entrantes...");
-        
+
         while (isRunning.get()) {
             try {
                 Socket incomingPeerSocket = peerServerSocket.accept();
-                
+
                 String peerIp = incomingPeerSocket.getInetAddress().getHostAddress();
                 int peerPort = incomingPeerSocket.getPort();
-                
+
                 logger.info("Nueva conexión P2P entrante desde {}:{}", peerIp, peerPort);
-                
+
                 handleIncomingPeer(incomingPeerSocket);
             } catch (SocketException e) {
                 if (isRunning.get()) {
@@ -137,16 +184,12 @@ public class PeerTcpServer {
                 logger.error("Error inesperado en PeerTcpServer: {}", e.getMessage(), e);
             }
         }
-        
+
         logger.info("PeerTcpServer detuvo el loop de aceptación");
     }
 
     public void handleIncomingPeer(java.net.Socket peerSocket) {
         simulateIncomingPeerHandling(peerSocket);
-    }
-
-     public void setOnIncomingPeerDisconnected(Consumer<String> callback) {
-        this.onIncomingPeerDisconnected = callback;
     }
 
     private void simulateIncomingPeerHandling(Socket peerSocket) {
@@ -155,7 +198,7 @@ public class PeerTcpServer {
             PrintWriter output = null;
             String peerId = null;
             boolean hasRespondedToSync = false;
-            
+
             try {
                 String tempId = peerSocket.getInetAddress().getHostAddress() + ":" + peerSocket.getPort();
                 logger.info("Evaluando conexión entrante: {}", tempId);
@@ -165,16 +208,18 @@ public class PeerTcpServer {
 
                 peerSocket.setSoTimeout(5000);
                 String handshakeMessage = input.readLine();
-                
+
                 if (handshakeMessage == null) {
                     logger.warn("Conexión cerrada antes del handshake: {}", peerId);
                     return;
                 }
 
                 if (!handshakeMessage.startsWith("P2P_SERVER_HANDSHAKE|")) {
-                    logger.warn("Rechazando conexión no-P2P desde {}: {}", tempId, handshakeMessage.substring(0, Math.min(50, handshakeMessage.length())));
+                    logger.warn("Rechazando conexión no-P2P desde {}: {}", tempId,
+                            handshakeMessage.substring(0, Math.min(50, handshakeMessage.length())));
 
-                    output.println("P2P_CONNECTION_REJECTED|reason=NOT_P2P_SERVER|message=Este puerto es para conexiones P2P entre servidores");
+                    output.println(
+                            "P2P_CONNECTION_REJECTED|reason=NOT_P2P_SERVER|message=Este puerto es para conexiones P2P entre servidores");
                     peerSocket.close();
                     return;
                 }
@@ -183,15 +228,17 @@ public class PeerTcpServer {
                 if (peerId == null) {
                     peerId = tempId;
                 }
-                
+
                 logger.info("Handshake P2P válido recibido de {}", peerId);
 
                 incomingPeerSockets.put(peerId, peerSocket);
                 incomingPeerThreads.put(peerId, Thread.currentThread());
                 logger.info("Conexión P2P entrante almacenada: {}", peerId);
 
-                // Acknowledge and advertise the server's configured P2P listening port (this.peerPort)
-                output.println("P2P_SERVER_HANDSHAKE_ACK|myId=" + getLocalIp() + ":" + this.peerPort + "|status=ACCEPTED");
+                // Acknowledge and advertise the server's configured P2P listening port
+                // (this.peerPort)
+                output.println(
+                        "P2P_SERVER_HANDSHAKE_ACK|myId=" + getLocalIp() + ":" + this.peerPort + "|status=ACCEPTED");
 
                 incomingPeerWriters.put(peerId, output);
 
@@ -207,7 +254,8 @@ public class PeerTcpServer {
                     }
                 }
 
-                // Registrar peer entrante como conocido SOLO si el puerto coincide con PEER_SERVER_PORT
+                // Registrar peer entrante como conocido SOLO si el puerto coincide con
+                // PEER_SERVER_PORT
                 try {
                     PeerRegistry registry = PeerRegistry.getInstance();
                     if (registry != null) {
@@ -234,17 +282,22 @@ public class PeerTcpServer {
                 try {
                     if (onPeerConnected != null) {
                         // create a ConnectedPeerInfo parsing the peerId (format ip:port)
-                        String[] parts = peerId.split(":" );
+                        String[] parts = peerId.split(":");
                         String ip = parts.length > 0 ? parts[0] : peerSocket.getInetAddress().getHostAddress();
                         int port = 0;
-                        try { port = parts.length > 1 ? Integer.parseInt(parts[1]) : peerSocket.getPort(); } catch (Exception ignore) { port = peerSocket.getPort(); }
-                        com.serverApplication.dto.ConnectedPeerInfo info = com.serverApplication.dto.ConnectedPeerInfo.create(ip, port, "Conectado");
+                        try {
+                            port = parts.length > 1 ? Integer.parseInt(parts[1]) : peerSocket.getPort();
+                        } catch (Exception ignore) {
+                            port = peerSocket.getPort();
+                        }
+                        com.serverApplication.dto.ConnectedPeerInfo info = com.serverApplication.dto.ConnectedPeerInfo
+                                .create(ip, port, "Conectado");
                         onPeerConnected.accept(info);
                     }
                 } catch (Exception e) {
                     logger.warn("Error notificando peer entrante a capas superiores: {}", e.getMessage());
                 }
-                
+
                 // Trigger replication for incoming peer connection
                 try {
                     if (onIncomingPeerConnected != null) {
@@ -252,7 +305,8 @@ public class PeerTcpServer {
                         logger.debug("Callback de replicación ejecutado para peer entrante {}", peerId);
                     }
                 } catch (Exception e) {
-                    logger.warn("Error ejecutando callback de replicación para peer entrante {}: {}", peerId, e.getMessage());
+                    logger.warn("Error ejecutando callback de replicación para peer entrante {}: {}", peerId,
+                            e.getMessage());
                 }
 
                 peerSocket.setSoTimeout(0);
@@ -263,13 +317,13 @@ public class PeerTcpServer {
                         logger.info("Peer {} solicita desconexión", peerId);
                         break;
                     }
-                    
+
                     if (message.startsWith("P2P_USER_SYNC")) {
                         logger.debug("Sincronización de usuarios de peer {}", peerId);
                         if (onUserSyncReceived != null) {
                             onUserSyncReceived.accept(peerId, message);
                         }
-                        
+
                         if (!hasRespondedToSync && message.contains("action=SYNC_ALL")) {
                             hasRespondedToSync = true;
                             if (onGetLocalUserSync != null) {
@@ -277,10 +331,13 @@ public class PeerTcpServer {
                                     String localUserSyncMessage = onGetLocalUserSync.get();
                                     if (localUserSyncMessage != null && !localUserSyncMessage.trim().isEmpty()) {
                                         output.println(localUserSyncMessage);
-                                        logger.info("Respondiendo con sincronización completa a peer {} tras recibir SYNC_ALL", peerId);
+                                        logger.info(
+                                                "Respondiendo con sincronización completa a peer {} tras recibir SYNC_ALL",
+                                                peerId);
                                     }
                                 } catch (Exception e) {
-                                    logger.error("Error enviando respuesta de sincronización a {}: {}", peerId, e.getMessage());
+                                    logger.error("Error enviando respuesta de sincronización a {}: {}", peerId,
+                                            e.getMessage());
                                 }
                             }
                         }
@@ -325,10 +382,10 @@ public class PeerTcpServer {
                             onPrivateMessageReceived.accept(peerId, message);
                         }
                     }
-                    
+
                     logger.debug("Mensaje de peer {}: {}", peerId, message);
                 }
-                
+
             } catch (Exception e) {
                 logger.error("Error manejando peer entrante: {}", e.getMessage());
             } finally {
@@ -336,17 +393,53 @@ public class PeerTcpServer {
                     incomingPeerSockets.remove(peerId);
                     incomingPeerThreads.remove(peerId);
                     incomingPeerWriters.remove(peerId);
-                    
+
                     // ¡Notificar que este peer entrante se ha desconectado!
                     if (onIncomingPeerDisconnected != null) {
                         onIncomingPeerDisconnected.accept(peerId);
                     }
-                    
+
                     logger.info("Conexión P2P entrante removida y notificada: {}", peerId);
                 }
-                
+
                 try {
-                    if (input != null) input.close();
-                    if (output != null) output.close();
-                    if (!peerSocket.isClosed()) peerSocket.close();
+                    if (input != null)
+                        input.close();
+                    if (output != null)
+                        output.close();
+                    if (!peerSocket.isClosed())
+                        peerSocket.close();
                     logger.info("Conexión P2P entrante cerrada");
+                } catch (Exception e) {
+                    logger.error("Error cerrando recursos de peer entrante: {}", e.getMessage());
+                }
+            }
+        });
+        peerHandler.start();
+    }
+
+    private String extractPeerIdFromHandshake(String message) {
+        // P2P_SERVER_HANDSHAKE|id=IP:PORT
+        try {
+            String[] parts = message.split("\\|");
+            if (parts.length > 1) {
+                for (int i = 1; i < parts.length; i++) {
+                    if (parts[i].startsWith("id=")) {
+                        return parts[i].substring(3);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Error parseando handshake: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    private String getLocalIp() {
+        try {
+            return java.net.InetAddress.getLocalHost().getHostAddress();
+        } catch (Exception e) {
+            return "127.0.0.1";
+        }
+    }
+}

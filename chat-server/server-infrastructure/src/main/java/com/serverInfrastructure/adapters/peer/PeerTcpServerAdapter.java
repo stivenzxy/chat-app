@@ -11,6 +11,7 @@ import com.serverInfrastructure.adapters.peer.managers.PeerEntityReplicationMana
 import com.serverInfrastructure.adapters.peer.managers.PeerMessageRoutingManager;
 import com.serverInfrastructure.adapters.peer.managers.PeerObserverNotifier;
 import com.serverInfrastructure.adapters.peer.managers.PeerUserSyncManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerFullSyncManager;
 import com.serverInfrastructure.adapters.peer.callback.PeerServerCallbackConfigurator;
 import com.serverInfrastructure.adapters.peer.connection.IncomingConnectionHandler;
 import com.serverInfrastructure.adapters.peer.connection.OutgoingConnectionHandler;
@@ -29,7 +30,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 public class PeerTcpServerAdapter implements PeerNetworkControl {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(PeerTcpServerAdapter.class);
 
     private String localServerId;
@@ -37,7 +38,6 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
     private final ServerLifecycleManager lifecycleManager;
     private final LocalServerIdentityProvider identityProvider;
 
-    private final IncomingConnectionHandler incomingHandler;
     private final OutgoingConnectionHandler outgoingHandler;
 
     private final PeerDiscoveryHandler discoveryHandler;
@@ -52,18 +52,19 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
     private final PeerUserReplicationManager userReplicationManager;
     private final PeerPeerReplicationManager peerReplicationManager;
     private final PeerEntityReplicationManager entityReplicationManager;
+    private final PeerFullSyncManager fullSyncManager;
 
     public PeerTcpServerAdapter(ServerLifecycleManager lifecycleManager, LocalServerIdentityProvider identityProvider,
-                                IncomingConnectionHandler incomingHandler, OutgoingConnectionHandler outgoingHandler,
-                                PeerDiscoveryHandler discoveryHandler, PeerAutoReconnectService autoReconnectService,
-                                PeerServerCallbackConfigurator callbackConfigurator, PeerConnectionManager connectionManager,
-                                PeerUserSyncManager userSyncManager, PeerMessageRoutingManager messageRoutingManager,
-                                PeerObserverNotifier observerNotifier, PeerUserReplicationManager userReplicationManager,
-                                PeerPeerReplicationManager peerReplicationManager, PeerEntityReplicationManager entityReplicationManager) {
-        
+            IncomingConnectionHandler incomingHandler, OutgoingConnectionHandler outgoingHandler,
+            PeerDiscoveryHandler discoveryHandler, PeerAutoReconnectService autoReconnectService,
+            PeerServerCallbackConfigurator callbackConfigurator, PeerConnectionManager connectionManager,
+            PeerUserSyncManager userSyncManager, PeerMessageRoutingManager messageRoutingManager,
+            PeerObserverNotifier observerNotifier, PeerUserReplicationManager userReplicationManager,
+            PeerPeerReplicationManager peerReplicationManager, PeerEntityReplicationManager entityReplicationManager,
+            PeerFullSyncManager fullSyncManager) {
+
         this.lifecycleManager = lifecycleManager;
         this.identityProvider = identityProvider;
-        this.incomingHandler = incomingHandler;
         this.outgoingHandler = outgoingHandler;
         this.discoveryHandler = discoveryHandler;
         this.autoReconnectService = autoReconnectService;
@@ -75,6 +76,7 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
         this.userReplicationManager = userReplicationManager;
         this.peerReplicationManager = peerReplicationManager;
         this.entityReplicationManager = entityReplicationManager;
+        this.fullSyncManager = fullSyncManager;
 
         configureManagerDependencies();
     }
@@ -89,7 +91,8 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
         messageRoutingManager.setRemoteUsersProvider(userSyncManager::getAllUsersAcrossPeers);
 
         messageRoutingManager.setPeerMessageSender((peerId, message) -> {
-            logger.debug("Intentando enviar mensaje P2P a {}: {}", peerId, message.substring(0, Math.min(50, message.length())));
+            logger.debug("Intentando enviar mensaje P2P a {}: {}", peerId,
+                    message.substring(0, Math.min(50, message.length())));
             boolean sentViaOutgoing = connectionManager.sendMessageToPeer(peerId, message);
             if (!sentViaOutgoing) {
                 logger.debug("No se pudo enviar via conexión saliente, intentando via conexión entrante");
@@ -107,8 +110,9 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
                 logger.debug("Mensaje enviado exitosamente via conexión saliente a {}", peerId);
             }
         });
-        
-        // Configure user replication manager - usar misma lógica que messageRoutingManager
+
+        // Configure user replication manager - usar misma lógica que
+        // messageRoutingManager
         userReplicationManager.setPeerMessageSender((peerId, message) -> {
             logger.debug("Enviando replicación de usuarios a {}", peerId);
             boolean sentViaOutgoing = connectionManager.sendMessageToPeer(peerId, message);
@@ -126,15 +130,39 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
                 logger.debug("Replicación de usuarios enviada exitosamente a {}", peerId);
             }
         });
-        
-        // Configure peer replication manager  
+
+        // Configure peer replication manager
         peerReplicationManager.setPeerMessageSender(connectionManager::sendMessageToPeer);
         peerReplicationManager.setAutoConnectCallback(this::connectToPeerById);
-        
+
         // Configure entity replication manager
         entityReplicationManager.setBroadcaster(connectionManager::broadcastToPeers);
+
+        // Configure full sync manager
+        fullSyncManager.setPeerMessageSender(connectionManager::sendMessageToPeer);
+
+        // Trigger full sync on peer connection
+        observerNotifier.addObserver(new PeerConnectionObserver() {
+            @Override
+            public void onPeerConnected(ConnectedPeerInfo peerInfo) {
+                logger.info("Peer conectado: {}. Iniciando sincronización completa...", peerInfo.peerId());
+                fullSyncManager.requestFullSync(peerInfo.peerId());
+            }
+
+            @Override
+            public void onPeerDisconnected(ConnectedPeerInfo peerInfo) {
+            }
+
+            @Override
+            public void onPeerStatusChanged(ConnectedPeerInfo peerInfo) {
+            }
+
+            @Override
+            public void onPeerConnectionError(String peerId, String errorMessage) {
+            }
+        });
     }
-    
+
     /**
      * Helper method to connect to a peer using only its peerId.
      * Extracts IP and port from peerId and delegates to connectToPeer(ip, port).
@@ -143,7 +171,7 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
         try {
             String ip = PeerIdParser.extractIp(peerId);
             int port = PeerIdParser.extractPort(peerId);
-            
+
             if (ip != null && port != -1) {
                 logger.debug("Auto-conectando a peer descubierto transitivamente: {}:{}", ip, port);
                 connectToPeer(ip, port);
@@ -155,72 +183,70 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
         }
     }
 
-
     @Override
     public boolean startPeerServer() {
         if (lifecycleManager.isRunning()) {
             logger.warn("Servidor P2P ya está ejecutándose en puerto {}", lifecycleManager.getServerPort());
             return true;
         }
-        
+
         // Start the server
         if (!lifecycleManager.startServer()) {
             return false;
         }
-        
+
         int peerPort = lifecycleManager.getServerPort();
-        
+
         // Configure callbacks
         callbackConfigurator.configureServerCallbacks(lifecycleManager.getServer(), peerPort);
-        
+
         // Establish local server identity
         this.localServerId = identityProvider.resolveLocalServerId(peerPort);
         userSyncManager.setLocalServerId(this.localServerId);
         userReplicationManager.setLocalServerId(this.localServerId);
         peerReplicationManager.setLocalServerId(this.localServerId);
-        
+
         // Set local port in handlers for self-connection prevention
         outgoingHandler.setLocalServerPort(peerPort);
         discoveryHandler.setLocalServerPort(peerPort);
-        
+
         // Configure server in connection manager
         connectionManager.setPeerServer(lifecycleManager.getServer());
-        
+
         logger.info("Servidor P2P iniciado exitosamente en puerto {}", peerPort);
-        
+
         // Attempt reconnection to known peers
         autoReconnectService.reconnectToKnownPeers(
-            this.localServerId, 
-            connectionManager::isConnectedToPeer
-        );
-        
+                this.localServerId,
+                connectionManager::isConnectedToPeer);
+
         return true;
     }
-    
+
     @Override
     public int getPeerServerPort() {
         return lifecycleManager.getServerPort();
     }
-    
+
     @Override
     public void stopPeerServer() {
         logger.info("Deteniendo servidor P2P y todas las conexiones...");
-        
+
         connectionManager.disconnectAllPeers();
         lifecycleManager.stopServer();
-        
+
         logger.info("Servidor P2P detenido completamente");
     }
-    
+
     @Override
     public boolean connectToPeer(String ip, int port) {
         return outgoingHandler.connectToPeer(ip, port);
     }
-    
+
     @Override
     public boolean disconnectFromPeer(String peerId) {
         boolean success = connectionManager.disconnectFromPeer(peerId);
-        
+
         ConnectedPeerInfo peerInfo = connectionManager.getPeerInfo(peerId);
         if (peerInfo != null) {
             observerNotifier.notifyPeerDisconnected(peerInfo.withStatus("Desconectado"));
@@ -237,30 +263,30 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
             }
         }
         userSyncManager.clearPeerUsers(peerId);
-        
+
         return success;
     }
-    
+
     @Override
     public int disconnectFromPeers(List<String> peerIds) {
         return connectionManager.disconnectFromPeers(peerIds);
     }
-    
+
     @Override
     public List<ConnectedPeerInfo> getConnectedPeers() {
         return connectionManager.getConnectedPeers();
     }
-    
+
     @Override
     public boolean isPeerServerRunning() {
         return lifecycleManager.isRunning();
     }
-    
+
     @Override
     public int getCurrentPeerConnections() {
         return connectionManager.getCurrentPeerConnections();
     }
-    
+
     @Override
     public boolean isConnectedToPeer(String peerId) {
         return connectionManager.isConnectedToPeer(peerId);
@@ -270,7 +296,7 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
     public boolean sendMessageToPeer(String peerId, String message) {
         return connectionManager.sendMessageToPeer(peerId, message);
     }
-    
+
     @Override
     public int broadcastToPeers(String message) {
         return connectionManager.broadcastToPeers(message);
@@ -280,7 +306,7 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
     public void addPeerConnectionObserver(PeerConnectionObserver observer) {
         observerNotifier.addObserver(observer);
     }
-    
+
     @Override
     public void removePeerConnectionObserver(PeerConnectionObserver observer) {
         observerNotifier.removeObserver(observer);
@@ -291,7 +317,7 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
         boolean hasPeers = connectionManager.hasPeersConnected();
         userSyncManager.notifyUserChangeToPeers(username, action, hasPeers);
     }
-    
+
     @Override
     public Map<String, List<String>> getAllUsersAcrossPeers() {
         return userSyncManager.getAllUsersAcrossPeers();
@@ -334,8 +360,8 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
             String[] parts = username.split(" - ", 2);
             if (parts[0].startsWith("Servidor ")) {
                 actualUsername = parts[1];
-                logger.debug("Prefijo remoto detectado. Username original: '{}', username real: '{}'", 
-                           username, actualUsername);
+                logger.debug("Prefijo remoto detectado. Username original: '{}', username real: '{}'",
+                        username, actualUsername);
             }
         }
 
@@ -362,6 +388,10 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
 
         logger.info("Usuario '{}' no encontrado (ni local ni remoto)", actualUsername);
         return false;
+    }
+
+    public void broadcastUserStatus(String username, boolean isOnline) {
+        fullSyncManager.broadcastUserStatus(username, isOnline);
     }
 
     public void broadcastNewUser(User user) {

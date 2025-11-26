@@ -44,6 +44,7 @@ public class InfrastructureFactory {
 
         LoginCommandAdapter loginAdapter = new LoginCommandAdapter(serviceFactory.createLoginService());
         loginAdapter.setCommandHandler(handler);
+        loginAdapter.setNetworkAdapter(getOrCreateServerNetworkAdapter());
         handler.registerCommand(loginAdapter);
 
         GetUsersCommandAdapter getUsersAdapter = new GetUsersCommandAdapter(getOrCreateServerNetworkAdapter());
@@ -51,29 +52,33 @@ public class InfrastructureFactory {
 
         ChannelRepository channelRepository = new ChannelRepositoryImpl();
         ChannelInviteRepository inviteRepository = new ChannelInviteRepositoryImpl();
-        
+
         CreateChannelCommandAdapter createChannelAdapter = new CreateChannelCommandAdapter(channelRepository);
         createChannelAdapter.setNetworkAdapter(getOrCreateServerNetworkAdapter());
         handler.registerCommand(createChannelAdapter);
-        
+
         handler.registerCommand(new ListChannelsCommandAdapter(channelRepository));
-        
-        SendChannelMessageCommandAdapter sendChannelMsgAdapter = new SendChannelMessageCommandAdapter(channelRepository, handler);
+
+        SendChannelMessageCommandAdapter sendChannelMsgAdapter = new SendChannelMessageCommandAdapter(channelRepository,
+                handler);
         sendChannelMsgAdapter.setNetworkAdapter(getOrCreateServerNetworkAdapter());
         handler.registerCommand(sendChannelMsgAdapter);
-        
-        SendChannelAudioCommandAdapter sendChannelAudioAdapter = new SendChannelAudioCommandAdapter(channelRepository, handler);
+
+        SendChannelAudioCommandAdapter sendChannelAudioAdapter = new SendChannelAudioCommandAdapter(channelRepository,
+                handler);
         sendChannelAudioAdapter.setNetworkAdapter(getOrCreateServerNetworkAdapter());
         handler.registerCommand(sendChannelAudioAdapter);
-        
-        InviteToChannelCommandAdapter inviteAdapter = new InviteToChannelCommandAdapter(channelRepository, inviteRepository, handler);
+
+        InviteToChannelCommandAdapter inviteAdapter = new InviteToChannelCommandAdapter(channelRepository,
+                inviteRepository, handler);
         inviteAdapter.setNetworkAdapter(getOrCreateServerNetworkAdapter());
         handler.registerCommand(inviteAdapter);
-        
-        RespondInviteCommandAdapter respondInviteAdapter = new RespondInviteCommandAdapter(channelRepository, inviteRepository, handler);
+
+        RespondInviteCommandAdapter respondInviteAdapter = new RespondInviteCommandAdapter(channelRepository,
+                inviteRepository, handler);
         respondInviteAdapter.setNetworkAdapter(getOrCreateServerNetworkAdapter());
         handler.registerCommand(respondInviteAdapter);
-        
+
         handler.registerCommand(new ListPendingInvitesCommandAdapter(inviteRepository));
         handler.registerCommand(new GetChannelMembersCommandAdapter(channelRepository));
 
@@ -119,7 +124,7 @@ public class InfrastructureFactory {
         } catch (Exception e) {
             logger.warn("No se pudo configurar callback de enrutamiento P2P: {}", e.getMessage());
         }
-        
+
         handler.registerCommand(sendMessageAdapter);
 
         SendPrivateAudioCommandAdapter sendAudioAdapter = new SendPrivateAudioCommandAdapter(server);
@@ -128,13 +133,13 @@ public class InfrastructureFactory {
             ServerNetworkAdapter networkAdapter = getOrCreateServerNetworkAdapter();
 
             PeerMessageRouter router = networkAdapter::routePrivateAudioToPeer;
-            
+
             sendAudioAdapter.setPeerMessageRouter(router);
             System.out.println("[INFO] PeerMessageRouter configurado en SendPrivateAudioCommandAdapter");
         } catch (Exception e) {
             System.out.println("[WARN] No se pudo configurar PeerMessageRouter para audio: " + e.getMessage());
         }
-        
+
         handler.registerCommand(sendAudioAdapter);
 
         TranscribeAudioCommandAdapter transcribeAudioAdapter = new TranscribeAudioCommandAdapter(server);
@@ -144,7 +149,7 @@ public class InfrastructureFactory {
     }
 
     private Consumer<Void> userReplicationCallback;
-    
+
     private ServerNetworkAdapter getOrCreateServerNetworkAdapter() {
         if (serverNetworkAdapter == null) {
             serverNetworkAdapter = new ServerNetworkAdapter(userReplicationCallback);
@@ -155,7 +160,7 @@ public class InfrastructureFactory {
     public ServerNetworkAdapter createServerNetworkAdapter() {
         return getOrCreateServerNetworkAdapter();
     }
-    
+
     /**
      * Sets callback to be invoked when users are replicated from other peers.
      * Must be called before createServerNetworkAdapter().

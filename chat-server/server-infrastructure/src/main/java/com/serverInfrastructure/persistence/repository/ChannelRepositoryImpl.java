@@ -49,6 +49,14 @@ public class ChannelRepositoryImpl implements ChannelRepository {
     public List<Channel> findAll() {
         return channelDAO.findAll();
     }
+
+    @Override
+    public void insertReplicated(Channel channel) {
+        channelDAO.insertReplicated(channel);
+    }
+
+    @Override
+    public List<com.serverDomain.valueObjects.ChannelMember> findAllMembers() {
+        return channelDAO.findAllMembers();
+    }
 }
-
-

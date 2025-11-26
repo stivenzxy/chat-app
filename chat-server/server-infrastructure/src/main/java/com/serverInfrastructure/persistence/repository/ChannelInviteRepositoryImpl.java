@@ -23,6 +23,14 @@ public class ChannelInviteRepositoryImpl implements ChannelInviteRepository {
     public List<ChannelInvite> findPendingForUser(String userId) {
         return channelInviteDAO.findPendingForUser(userId);
     }
+
+    @Override
+    public List<ChannelInvite> findAll() {
+        return channelInviteDAO.findAll();
+    }
+
+    @Override
+    public void insertReplicated(ChannelInvite invite) {
+        channelInviteDAO.insertReplicated(invite);
+    }
 }
-
-

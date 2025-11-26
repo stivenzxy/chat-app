@@ -1,6 +1,7 @@
 package com.serverInfrastructure.adapters.peer.callback;
 
 import com.serverInfrastructure.adapters.peer.managers.PeerEntityReplicationManager;
+import com.serverInfrastructure.adapters.peer.managers.PeerFullSyncManager;
 import com.serverInfrastructure.adapters.peer.managers.PeerMessageRoutingManager;
 import com.serverInfrastructure.adapters.peer.managers.PeerUserSyncManager;
 import com.serverInfrastructure.adapters.peer.connection.IncomingConnectionHandler;
@@ -15,53 +16,56 @@ import org.slf4j.LoggerFactory;
  * Centralizes the wiring of server events to appropriate handlers.
  */
 public class PeerServerCallbackConfigurator {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(PeerServerCallbackConfigurator.class);
-    
+
     private final IncomingConnectionHandler incomingHandler;
     private final PeerUserSyncManager userSyncManager;
     private final PeerMessageRoutingManager messageRoutingManager;
     private final PeerUserReplicationManager userReplicationManager;
     private final PeerPeerReplicationManager peerReplicationManager;
     private final PeerEntityReplicationManager entityReplicationManager;
-    
+    private final PeerFullSyncManager fullSyncManager;
+
     public PeerServerCallbackConfigurator(
             IncomingConnectionHandler incomingHandler,
             PeerUserSyncManager userSyncManager,
             PeerMessageRoutingManager messageRoutingManager,
             PeerUserReplicationManager userReplicationManager,
             PeerPeerReplicationManager peerReplicationManager,
-            PeerEntityReplicationManager entityReplicationManager) {
-        
+            PeerEntityReplicationManager entityReplicationManager,
+            PeerFullSyncManager fullSyncManager) {
+
         this.incomingHandler = incomingHandler;
         this.userSyncManager = userSyncManager;
         this.messageRoutingManager = messageRoutingManager;
         this.userReplicationManager = userReplicationManager;
         this.peerReplicationManager = peerReplicationManager;
         this.entityReplicationManager = entityReplicationManager;
+        this.fullSyncManager = fullSyncManager;
     }
-    
+
     /**
      * Configures all callbacks for the given PeerTcpServer.
      * 
      * @param peerServer the server to configure
-     * @param peerPort the port on which the server is listening
+     * @param peerPort   the port on which the server is listening
      */
     public void configureServerCallbacks(PeerTcpServer peerServer, int peerPort) {
         if (peerServer == null) {
             logger.warn("PeerTcpServer es nulo, no se pueden configurar callbacks");
             return;
         }
-        
+
         configureUserSyncCallback(peerServer);
         configurePeerConnectionCallback(peerServer);
         configureLocalUserSyncCallback(peerServer, peerPort);
         configurePrivateMessageCallback(peerServer);
         configureIncomingPeerReplicationCallback(peerServer);
-        
+
         logger.info("Callbacks del servidor P2P configurados exitosamente");
     }
-    
+
     /**
      * Configures the user synchronization callback.
      * 
@@ -73,7 +77,7 @@ public class PeerServerCallbackConfigurator {
             userSyncManager.handleUserSyncMessage(peerId, message);
         });
     }
-    
+
     /**
      * Configures the peer connection callback for incoming connections.
      * 
@@ -82,19 +86,17 @@ public class PeerServerCallbackConfigurator {
     private void configurePeerConnectionCallback(PeerTcpServer peerServer) {
         peerServer.setOnPeerConnected(incomingHandler::registerIncomingPeer);
     }
-    
+
     /**
      * Configures the callback to provide local user sync data.
      * 
      * @param peerServer the server to configure
-     * @param peerPort the port for identity inclusion
+     * @param peerPort   the port for identity inclusion
      */
     private void configureLocalUserSyncCallback(PeerTcpServer peerServer, int peerPort) {
-        peerServer.setOnGetLocalUserSync(() -> 
-            userSyncManager.generateInitialSyncMessage(peerPort)
-        );
+        peerServer.setOnGetLocalUserSync(() -> userSyncManager.generateInitialSyncMessage(peerPort));
     }
-    
+
     /**
      * Configures the callback for routed private messages.
      * 
@@ -118,10 +120,16 @@ public class PeerServerCallbackConfigurator {
                 messageRoutingManager.handleChannelInviteRouted(peerId, message);
             } else if (message.startsWith("P2P_CHANNEL_MESSAGE")) {
                 messageRoutingManager.handleChannelMessageRouted(peerId, message);
+            } else if (message.startsWith("P2P_FULL_SYNC_REQUEST")) {
+                fullSyncManager.handleFullSyncRequest(peerId);
+            } else if (message.startsWith("P2P_FULL_SYNC_RESPONSE")) {
+                fullSyncManager.handleFullSyncResponse(peerId, message);
+            } else if (message.startsWith("P2P_USER_STATUS_UPDATE")) {
+                fullSyncManager.handleUserStatusUpdate(peerId, message);
             }
         });
     }
-    
+
     /**
      * Configures the callback to send replication data to incoming peers.
      * 
@@ -130,7 +138,7 @@ public class PeerServerCallbackConfigurator {
     private void configureIncomingPeerReplicationCallback(PeerTcpServer peerServer) {
         peerServer.setOnIncomingPeerConnected(peerId -> {
             logger.info("Enviando replicación a peer entrante {}", peerId);
-            
+
             // Send users replication
             try {
                 userReplicationManager.sendUsersToPeer(peerId);
@@ -138,8 +146,8 @@ public class PeerServerCallbackConfigurator {
             } catch (Exception e) {
                 logger.error("Error enviando usuarios a peer entrante {}: {}", peerId, e.getMessage());
             }
-            
-            // Send peers replication  
+
+            // Send peers replication
             try {
                 peerReplicationManager.sendPeersToPeer(peerId);
                 logger.debug("Peers enviados a peer entrante {}", peerId);

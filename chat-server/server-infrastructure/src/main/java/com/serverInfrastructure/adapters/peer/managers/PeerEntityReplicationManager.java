@@ -19,12 +19,12 @@ import java.util.function.BiConsumer;
 
 public class PeerEntityReplicationManager {
     private static final Logger logger = LoggerFactory.getLogger(PeerEntityReplicationManager.class);
-    
+
     private final ChannelDAO channelDAO;
     private final MessageDAO messageDAO;
     private final ChannelInviteDAO channelInviteDAO;
     private final ObjectMapper objectMapper;
-    
+
     private BiConsumer<String, String> peerMessageSender;
     private Runnable broadcastCallback; // Callback to broadcast to all peers
 
@@ -39,27 +39,26 @@ public class PeerEntityReplicationManager {
     public void setPeerMessageSender(BiConsumer<String, String> sender) {
         this.peerMessageSender = sender;
     }
-    
+
     public void setBroadcastCallback(Runnable callback) {
         // This might need to be a Consumer<String> to broadcast a specific message
     }
-    
+
     public void setBroadcaster(java.util.function.Consumer<String> broadcaster) {
         this.broadcaster = broadcaster;
         logger.info("Broadcaster configurado en PeerEntityReplicationManager");
     }
-    
+
     private java.util.function.Consumer<String> broadcaster;
 
     public void broadcastChannel(Channel channel) {
         try {
             ChannelSyncDTO dto = new ChannelSyncDTO(
-                channel.getId(),
-                channel.getName(),
-                channel.getOwnerId(),
-                channel.getVisibility().name(),
-                channel.getCreatedAt()
-            );
+                    channel.getId(),
+                    channel.getName(),
+                    channel.getOwnerId(),
+                    channel.getVisibility().name(),
+                    channel.getCreatedAt());
             String json = objectMapper.writeValueAsString(dto);
             String message = "P2P_REPLICATE_CHANNEL|" + json;
             logger.info("Intentando difundir canal: {}", message);
@@ -79,7 +78,8 @@ public class PeerEntityReplicationManager {
             ChannelMemberSyncDTO dto = new ChannelMemberSyncDTO(channelId, userId);
             String json = objectMapper.writeValueAsString(dto);
             String message = "P2P_REPLICATE_CHANNEL_MEMBER|" + json;
-            if (broadcaster != null) broadcaster.accept(message);
+            if (broadcaster != null)
+                broadcaster.accept(message);
         } catch (Exception e) {
             logger.error("Error broadcasting channel member: {}", e.getMessage());
         }
@@ -89,7 +89,8 @@ public class PeerEntityReplicationManager {
         try {
             String json = objectMapper.writeValueAsString(messageDTO);
             String message = "P2P_REPLICATE_MESSAGE|" + json;
-            if (broadcaster != null) broadcaster.accept(message);
+            if (broadcaster != null)
+                broadcaster.accept(message);
         } catch (Exception e) {
             logger.error("Error broadcasting message: {}", e.getMessage());
         }
@@ -98,16 +99,16 @@ public class PeerEntityReplicationManager {
     public void broadcastChannelInvite(ChannelInvite invite) {
         try {
             ChannelInviteSyncDTO dto = new ChannelInviteSyncDTO(
-                invite.getId(),
-                invite.getChannelId(),
-                invite.getInviterUserId(),
-                invite.getInvitedUserId(),
-                invite.getStatus().name(),
-                invite.getCreatedAt()
-            );
+                    invite.getId(),
+                    invite.getChannelId(),
+                    invite.getInviterUserId(),
+                    invite.getInvitedUserId(),
+                    invite.getStatus().name(),
+                    invite.getCreatedAt());
             String json = objectMapper.writeValueAsString(dto);
             String message = "P2P_REPLICATE_INVITE|" + json;
-            if (broadcaster != null) broadcaster.accept(message);
+            if (broadcaster != null)
+                broadcaster.accept(message);
         } catch (Exception e) {
             logger.error("Error broadcasting invite: {}", e.getMessage());
         }
@@ -117,7 +118,8 @@ public class PeerEntityReplicationManager {
         try {
             String json = objectMapper.writeValueAsString(dto);
             String message = "P2P_REPLICATE_TRANSCRIPTION|" + json;
-            if (broadcaster != null) broadcaster.accept(message);
+            if (broadcaster != null)
+                broadcaster.accept(message);
         } catch (Exception e) {
             logger.error("Error broadcasting transcription: {}", e.getMessage());
         }
@@ -128,27 +130,28 @@ public class PeerEntityReplicationManager {
             if (message.startsWith("P2P_REPLICATE_CHANNEL|")) {
                 String json = message.substring("P2P_REPLICATE_CHANNEL|".length());
                 ChannelSyncDTO dto = objectMapper.readValue(json, ChannelSyncDTO.class);
-                Channel channel = new Channel(dto.channelId(), dto.name(), dto.ownerId(), 
-                                            Channel.Visibility.valueOf(dto.visibility()), dto.createdAt());
-                
+                Channel channel = new Channel(dto.channelId(), dto.name(), dto.ownerId(),
+                        Channel.Visibility.valueOf(dto.visibility()), dto.createdAt());
+
                 if (channelDAO.findById(channel.getId()).isEmpty()) {
                     try {
                         channelDAO.insertReplicated(channel);
                         logger.info("Canal replicado recibido de {}: {}", peerId, channel.getName());
                     } catch (Exception e) {
-                        logger.error("Error insertando canal replicado (posible falta de usuario owner {}): {}", 
-                                   channel.getOwnerId(), e.getMessage());
+                        logger.error("Error insertando canal replicado (posible falta de usuario owner {}): {}",
+                                channel.getOwnerId(), e.getMessage());
                     }
                 } else {
                     logger.debug("Canal {} ya existe, ignorando replicación", channel.getId());
                 }
-                
+
             } else if (message.startsWith("P2P_REPLICATE_CHANNEL_MEMBER|")) {
                 String json = message.substring("P2P_REPLICATE_CHANNEL_MEMBER|".length());
                 ChannelMemberSyncDTO dto = objectMapper.readValue(json, ChannelMemberSyncDTO.class);
                 try {
                     channelDAO.addMember(dto.channelId(), dto.userId());
-                    logger.info("Miembro de canal replicado recibido de {}: {} -> {}", peerId, dto.userId(), dto.channelId());
+                    logger.info("Miembro de canal replicado recibido de {}: {} -> {}", peerId, dto.userId(),
+                            dto.channelId());
                 } catch (Exception e) {
                     logger.error("Error insertando miembro de canal replicado: {}", e.getMessage());
                 }
@@ -158,11 +161,18 @@ public class PeerEntityReplicationManager {
                 MessageSyncDTO dto = objectMapper.readValue(json, MessageSyncDTO.class);
                 messageDAO.insertReplicated(dto);
                 logger.info("Mensaje replicado recibido de {}", peerId);
-                
+
             } else if (message.startsWith("P2P_REPLICATE_INVITE|")) {
                 String json = message.substring("P2P_REPLICATE_INVITE|".length());
                 ChannelInviteSyncDTO dto = objectMapper.readValue(json, ChannelInviteSyncDTO.class);
-                channelInviteDAO.insertReplicated(dto);
+                com.serverDomain.entities.ChannelInvite invite = new com.serverDomain.entities.ChannelInvite(
+                        dto.inviteId(),
+                        dto.channelId(),
+                        dto.inviterUserId(),
+                        dto.invitedUserId(),
+                        com.serverDomain.entities.ChannelInvite.Status.valueOf(dto.status()),
+                        dto.createdAt());
+                channelInviteDAO.insertReplicated(invite);
                 logger.info("Invitación replicada recibida de {}", peerId);
             } else if (message.startsWith("P2P_REPLICATE_TRANSCRIPTION|")) {
                 String json = message.substring("P2P_REPLICATE_TRANSCRIPTION|".length());

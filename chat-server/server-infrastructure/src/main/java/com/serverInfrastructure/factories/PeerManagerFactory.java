@@ -33,14 +33,14 @@ public class PeerManagerFactory {
         logger.debug("Creando PeerObserverNotifier");
         return new PeerObserverNotifier();
     }
-    
+
     public static PeerUserReplicationManager createUserReplicationManager() {
         return createUserReplicationManager(null);
     }
-    
+
     public static PeerUserReplicationManager createUserReplicationManager(Consumer<Void> userReplicationCallback) {
-        logger.debug("Creando PeerUserReplicationManager" + 
-                    (userReplicationCallback != null ? " con callback de notificación" : ""));
+        logger.debug("Creando PeerUserReplicationManager" +
+                (userReplicationCallback != null ? " con callback de notificación" : ""));
         UserRepository userRepository = new UserManagementRepository();
         PeerUserReplicationManager manager = new PeerUserReplicationManager(userRepository);
         if (userReplicationCallback != null) {
@@ -48,7 +48,7 @@ public class PeerManagerFactory {
         }
         return manager;
     }
-    
+
     public static PeerPeerReplicationManager createPeerReplicationManager() {
         logger.debug("Creando PeerPeerReplicationManager");
         ConnectionManager connManager = ConnectionManager.getInstance();
@@ -59,5 +59,20 @@ public class PeerManagerFactory {
     public static PeerEntityReplicationManager createEntityReplicationManager() {
         logger.debug("Creando PeerEntityReplicationManager");
         return new PeerEntityReplicationManager();
+    }
+
+    public static PeerFullSyncManager createPeerFullSyncManager(Consumer<String> broadcaster) {
+        logger.debug("Creando PeerFullSyncManager");
+        com.serverInfrastructure.persistence.repository.UserManagementRepository userRepository = new com.serverInfrastructure.persistence.repository.UserManagementRepository();
+        com.serverInfrastructure.persistence.repository.ChannelRepositoryImpl channelRepository = new com.serverInfrastructure.persistence.repository.ChannelRepositoryImpl();
+        com.serverInfrastructure.persistence.repository.ChannelInviteRepositoryImpl inviteRepository = new com.serverInfrastructure.persistence.repository.ChannelInviteRepositoryImpl();
+
+        com.serverInfrastructure.services.sync.DatabaseSynchronizationService dbSyncService = new com.serverInfrastructure.services.sync.DatabaseSynchronizationService(
+                userRepository, channelRepository, inviteRepository);
+
+        com.serverInfrastructure.services.sync.PresenceReplicationService presenceService = new com.serverInfrastructure.services.sync.PresenceReplicationService(
+                broadcaster);
+
+        return new PeerFullSyncManager(dbSyncService, presenceService);
     }
 }
