@@ -22,12 +22,12 @@ public class PeerMessageRoutingManager {
     private RemoteUsersProvider remoteUsersProvider;
     private PeerMessageSender peerMessageSender;
     private ChannelInviteRepository inviteRepository;
-    
+
     public PeerMessageRoutingManager() {
         this.protocolParser = new ProtocolParser('|', '\\');
         this.userRepository = new LocalUserRepository();
     }
-    
+
     public void setInviteRepository(ChannelInviteRepository repository) {
         this.inviteRepository = repository;
         logger.info("ChannelInviteRepository configurado en PeerMessageRoutingManager");
@@ -66,7 +66,7 @@ public class PeerMessageRoutingManager {
         for (Map.Entry<String, List<String>> entry : remoteServerUsers.entrySet()) {
             String peerId = entry.getKey();
             List<String> users = entry.getValue();
-            
+
             if (users.contains(recipientUsername)) {
                 logger.info("Enrutando {} privado a usuario {} en peer {}", messageType, recipientUsername, peerId);
 
@@ -75,27 +75,26 @@ public class PeerMessageRoutingManager {
                 return true;
             }
         }
-        
+
         logger.warn("Usuario {} no encontrado en ningún peer remoto", recipientUsername);
         return false;
     }
-    
 
     public void handlePrivateMessageRouted(String sourcePeerId, String message) {
         try {
             List<String> parts = protocolParser.decode(message);
-            
+
             if (parts.size() < 4) {
                 logger.error("Formato inválido de mensaje P2P_ROUTE_PRIVATE: {}", message);
                 return;
             }
-            
+
             String senderUsername = parts.get(1);
             String recipientUsername = parts.get(2);
             String content = parts.get(3);
-            
+
             logger.info("Entregando mensaje de {} a usuario local {}", senderUsername, recipientUsername);
-            
+
             if (clientBroadcaster == null) {
                 logger.warn("No hay broadcaster configurado para entregar mensaje");
                 return;
@@ -105,7 +104,7 @@ public class PeerMessageRoutingManager {
             String deliverMessage = protocolParser.encode("RECEIVE_PRIVATE_MESSAGE", senderWithPrefix, content);
 
             deliverLocalMessage(recipientUsername, deliverMessage);
-            
+
         } catch (Exception e) {
             logger.error("Error procesando mensaje privado enrutado: {}", e.getMessage());
         }
@@ -114,18 +113,18 @@ public class PeerMessageRoutingManager {
     public void handlePrivateAudioRouted(String sourcePeerId, String message) {
         try {
             List<String> parts = protocolParser.decode(message);
-            
+
             if (parts.size() < 4) {
                 logger.error("Formato inválido de mensaje P2P_ROUTE_PRIVATE_AUDIO: {}", message);
                 return;
             }
-            
+
             String senderUsername = parts.get(1);
             String recipientUsername = parts.get(2);
             String audioBase64 = parts.get(3);
-            
+
             logger.info("Entregando audio de {} a usuario local {}", senderUsername, recipientUsername);
-            
+
             if (clientBroadcaster == null) {
                 logger.warn("No hay callback de broadcast configurado para entregar audio");
                 return;
@@ -143,7 +142,7 @@ public class PeerMessageRoutingManager {
     private void deliverLocalMessage(String recipientUsername, String deliverMessage) {
         try {
             List<User> userSessions = userRepository.getUserSessions(recipientUsername);
-            
+
             if (userSessions.isEmpty()) {
                 logger.warn("Usuario destinatario {} no está conectado localmente", recipientUsername);
                 return;
@@ -156,7 +155,7 @@ public class PeerMessageRoutingManager {
 
             clientBroadcaster.broadcast(recipientUsername, deliverMessage, null);
             logger.info("Mensaje/audio enrutado transmitido para entrega local a {}", recipientUsername);
-            
+
         } catch (Exception e) {
             logger.error("Error entregando mensaje enrutado: {}", e.getMessage());
         }
@@ -169,12 +168,12 @@ public class PeerMessageRoutingManager {
         }
 
         logger.debug("Mensaje P2P a enviar: {}", routeMessage);
-        
+
         Map<String, List<String>> remoteServerUsers = remoteUsersProvider.getRemoteUsers();
         for (Map.Entry<String, List<String>> entry : remoteServerUsers.entrySet()) {
             String peerId = entry.getKey();
             List<String> users = entry.getValue();
-            
+
             if (users.contains(recipientUsername)) {
                 logger.info("Enrutando invitación de canal a usuario {} en peer {}", recipientUsername, peerId);
                 logger.info("ENVIANDO P2P -> peerId: {}, mensaje: {}", peerId, routeMessage);
@@ -183,7 +182,7 @@ public class PeerMessageRoutingManager {
                 return true;
             }
         }
-        
+
         logger.warn("Usuario {} no encontrado en ningún peer remoto", recipientUsername);
         return false;
     }
@@ -191,29 +190,29 @@ public class PeerMessageRoutingManager {
     public void handleChannelInviteRouted(String sourcePeerId, String message) {
         try {
             List<String> parts = protocolParser.decode(message);
-            
+
             if (parts.size() < 7) {
                 logger.error("Formato inválido de mensaje P2P_CHANNEL_INVITE: {}", message);
                 return;
             }
-            
-            String channelIdStr = parts.get(1);
-            String channelName = parts.get(2);
-            String visibility = parts.get(3);
-            String inviterUsername = parts.get(4);
-            String inviterServerId = parts.get(5);  // ID remoto del invitador
+
+            String inviteId = parts.get(1);
+            String channelId = parts.get(2);
+            String channelName = parts.get(3);
+            String visibility = parts.get(4);
+            String inviterUsername = parts.get(5);
             String invitedUsername = parts.get(6);
-            
-            logger.info("Procesando invitación de canal {} de {} a usuario local {}", 
-                       channelName, inviterUsername, invitedUsername);
+
+            logger.info("Procesando invitación de canal {} de {} a usuario local {}",
+                    channelName, inviterUsername, invitedUsername);
 
             var invitedUserSessions = userRepository.getUserSessions(invitedUsername);
-            
+
             if (invitedUserSessions == null || invitedUserSessions.isEmpty()) {
                 logger.warn("Usuario invitado {} no encontrado localmente", invitedUsername);
                 return;
             }
-            
+
             String invitedUserId = userRepository.getUserIdFromConnection(invitedUserSessions.get(0).getId());
             if (invitedUserId == null) {
                 logger.error("No se pudo obtener userId para {}", invitedUsername);
@@ -221,23 +220,23 @@ public class PeerMessageRoutingManager {
             }
 
             logger.info("Invitación de canal remoto - NO se guarda en BD local, solo notificación al cliente");
-            
+
             if (clientBroadcaster != null) {
                 String inviterWithPrefix = ServerPrefixFormatter.formatUsername(sourcePeerId, inviterUsername);
 
-                String deliverMessage = protocolParser.encode("INVITE_RECEIVED", 
-                        String.valueOf(-Integer.parseInt(channelIdStr)),
-                        channelIdStr, 
-                        channelName, 
-                        visibility, 
+                String deliverMessage = protocolParser.encode("INVITE_RECEIVED",
+                        inviteId,
+                        channelId,
+                        channelName,
+                        visibility,
                         inviterWithPrefix);
-                
+
                 deliverLocalMessage(invitedUsername, deliverMessage);
                 logger.info("Notificación de invitación de canal remoto enviada a {}", invitedUsername);
             } else {
                 logger.warn("No hay broadcaster configurado para entregar invitación");
             }
-            
+
         } catch (Exception e) {
             logger.error("Error procesando invitación de canal enrutada: {}", e.getMessage(), e);
         }
@@ -253,14 +252,14 @@ public class PeerMessageRoutingManager {
         for (Map.Entry<String, List<String>> entry : remoteServerUsers.entrySet()) {
             String peerId = entry.getKey();
             List<String> users = entry.getValue();
-            
+
             if (users.contains(recipientUsername)) {
                 logger.info("Enrutando mensaje de canal a usuario {} en peer {}", recipientUsername, peerId);
                 peerMessageSender.sendToPeer(peerId, routeMessage);
                 return true;
             }
         }
-        
+
         logger.warn("Usuario {} no encontrado en ningún peer remoto para mensaje de canal", recipientUsername);
         return false;
     }
@@ -268,19 +267,19 @@ public class PeerMessageRoutingManager {
     public void handleChannelMessageRouted(String sourcePeerId, String message) {
         try {
             List<String> parts = protocolParser.decode(message);
-            
+
             if (parts.size() < 5) {
                 logger.error("Formato inválido de mensaje P2P_CHANNEL_MESSAGE: {}", message);
                 return;
             }
-            
+
             String channelId = parts.get(1);
             String senderUsername = parts.get(2);
             String content = parts.get(3);
             String recipientUsername = parts.get(4);
-            
+
             logger.info("Entregando mensaje de canal de {} a usuario local {}", senderUsername, recipientUsername);
-            
+
             if (clientBroadcaster == null) {
                 logger.warn("No hay broadcaster configurado para entregar mensaje de canal");
                 return;
@@ -291,19 +290,19 @@ public class PeerMessageRoutingManager {
                 List<String> memberJoinedParts = protocolParser.decode(content);
                 if (memberJoinedParts.size() >= 2) {
                     String newMemberUsername = memberJoinedParts.get(1);
-                    String deliverMessage = protocolParser.encode("CHANNEL_MEMBERS_UPDATED", 
+                    String deliverMessage = protocolParser.encode("CHANNEL_MEMBERS_UPDATED",
                             channelId, newMemberUsername);
                     deliverLocalMessage(recipientUsername, deliverMessage);
                 }
             } else {
                 String senderWithPrefix = ServerPrefixFormatter.formatUsername(sourcePeerId, senderUsername);
 
-                String deliverMessage = protocolParser.encode("RECEIVE_CHANNEL_MESSAGE", 
+                String deliverMessage = protocolParser.encode("RECEIVE_CHANNEL_MESSAGE",
                         channelId, senderWithPrefix, content);
 
                 deliverLocalMessage(recipientUsername, deliverMessage);
             }
-            
+
         } catch (Exception e) {
             logger.error("Error procesando mensaje de canal enrutado: {}", e.getMessage());
         }

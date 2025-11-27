@@ -402,7 +402,7 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
         entityReplicationManager.broadcastChannel(channel);
     }
 
-    public void broadcastChannelMember(int channelId, String userId) {
+    public void broadcastChannelMember(String channelId, String userId) {
         entityReplicationManager.broadcastChannelMember(channelId, userId);
     }
 

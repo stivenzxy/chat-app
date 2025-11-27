@@ -20,16 +20,19 @@ public class ListChannelsClientCommand implements ClientCommand<Void, List<Chann
     public List<ChannelDTO> execute(Void request) {
         try {
             List<String> parts = gateway.sendAndReceive("LIST_CHANNELS");
-            if (parts.isEmpty() || !"OK".equalsIgnoreCase(parts.getFirst())) return List.of();
-            if (parts.size() < 2) return List.of();
+            if (parts.isEmpty() || !"OK".equalsIgnoreCase(parts.getFirst()))
+                return List.of();
+            if (parts.size() < 2)
+                return List.of();
             String payload = parts.get(1);
-            if (payload == null || payload.isEmpty()) return List.of();
+            if (payload == null || payload.isEmpty())
+                return List.of();
             String[] items = payload.split(";");
             List<ChannelDTO> channels = new ArrayList<>();
             for (String item : items) {
                 String[] fields = item.split(",");
                 if (fields.length >= 3) {
-                    Integer id = Integer.valueOf(fields[0]);
+                    String id = fields[0];
                     String name = fields[1];
                     ChannelVisibility vis = ChannelVisibility.valueOf(fields[2]);
                     channels.add(new ChannelDTO(id, name, null, vis, LocalDateTime.now()));
@@ -41,5 +44,3 @@ public class ListChannelsClientCommand implements ClientCommand<Void, List<Chann
         }
     }
 }
-
-

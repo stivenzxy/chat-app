@@ -73,7 +73,7 @@ public class PeerEntityReplicationManager {
         }
     }
 
-    public void broadcastChannelMember(int channelId, String userId) {
+    public void broadcastChannelMember(String channelId, String userId) {
         try {
             ChannelMemberSyncDTO dto = new ChannelMemberSyncDTO(channelId, userId);
             String json = objectMapper.writeValueAsString(dto);

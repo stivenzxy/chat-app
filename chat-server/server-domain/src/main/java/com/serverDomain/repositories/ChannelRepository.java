@@ -9,17 +9,17 @@ import java.util.Optional;
 public interface ChannelRepository {
     Channel save(Channel channel);
 
-    Optional<Channel> findById(Integer id);
+    Optional<Channel> findById(String id);
 
     List<Channel> findAllForUser(String userId);
 
-    void addMember(Integer channelId, String userId);
+    void addMember(String channelId, String userId);
 
-    boolean isMember(Integer channelId, String userId);
+    boolean isMember(String channelId, String userId);
 
-    List<String> findMemberUserIds(Integer channelId);
+    List<String> findMemberUserIds(String channelId);
 
-    List<String> findMemberUsernames(Integer channelId);
+    List<String> findMemberUsernames(String channelId);
 
     List<Channel> findAll();
 

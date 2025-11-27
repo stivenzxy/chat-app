@@ -31,33 +31,37 @@ public class SendChannelMessageCommandAdapter implements ProtocolCommandAdapter 
     }
 
     @Override
-    public String getCommandName() { return "SEND_CHANNEL_MESSAGE"; }
+    public String getCommandName() {
+        return "SEND_CHANNEL_MESSAGE";
+    }
 
     @Override
     public String execute(List<String> parts, ProtocolParser parser, ClientConnection connectionContext) {
         // SEND_CHANNEL_MESSAGE|channelId|content
-        if (parts.size() < 3) return parser.encode("ERROR", "Argumentos insuficientes");
-        
-        com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
+        if (parts.size() < 3)
+            return parser.encode("ERROR", "Argumentos insuficientes");
+
+        com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager
+                .getInstance();
         String senderUserId = aum.getUserIdFromConnection(connectionContext.getId());
-        
+
         if (senderUserId == null) {
             return parser.encode("ERROR", "Usuario no autenticado");
         }
-        
-        Integer channelId = Integer.valueOf(parts.get(1));
+
+        String channelId = parts.get(1);
         String content = parts.get(2);
 
         String senderUsername = aum.getAllUserSessions().entrySet().stream()
-            .filter(entry -> entry.getValue().stream()
-                .anyMatch(u -> {
-                    String realUserId = aum.getUserIdFromConnection(u.getId());
-                    return realUserId != null && realUserId.equals(senderUserId);
-                }))
-            .map(java.util.Map.Entry::getKey)
-            .findFirst()
-            .orElse(null);
-            
+                .filter(entry -> entry.getValue().stream()
+                        .anyMatch(u -> {
+                            String realUserId = aum.getUserIdFromConnection(u.getId());
+                            return realUserId != null && realUserId.equals(senderUserId);
+                        }))
+                .map(java.util.Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
+
         if (senderUsername == null) {
             return parser.encode("ERROR", "Usuario no encontrado");
         }
@@ -66,54 +70,52 @@ public class SendChannelMessageCommandAdapter implements ProtocolCommandAdapter 
             return parser.encode("ERROR", "No eres miembro del canal");
         }
 
-        int messageId = -1;
+        String messageId = null;
         if (!content.startsWith("[TRANSCRIPCIÓN]")) {
             messageId = messageDAO.saveChannelTextMessage(senderUserId, channelId, content);
         }
-        
+
         // Replicar mensaje a todos los peers
-        if (messageId != -1 && networkAdapter != null) {
+        if (messageId != null && networkAdapter != null) {
             MessageSyncDTO syncDTO = new MessageSyncDTO(
-                messageId,
-                senderUserId,
-                null,
-                channelId,
-                content,
-                "TEXT",
-                null,
-                LocalDateTime.now()
-            );
+                    messageId,
+                    senderUserId,
+                    null,
+                    channelId,
+                    content,
+                    "TEXT",
+                    null,
+                    LocalDateTime.now());
             networkAdapter.broadcastChannelMessage(syncDTO);
         }
 
         List<String> memberUsernames = channelRepository.findMemberUsernames(channelId);
-        
-        String forward = parser.encode("RECEIVE_CHANNEL_MESSAGE", String.valueOf(channelId), senderUsername, content);
+
+        String forward = parser.encode("RECEIVE_CHANNEL_MESSAGE", channelId, senderUsername, content);
 
         // Enviar a todos los miembros del canal
         for (String username : memberUsernames) {
             // Verificar si el usuario es local o remoto
             var userSessions = aum.getUserSessions(username);
             boolean isLocalUser = userSessions != null && !userSessions.isEmpty();
-            
+
             if (isLocalUser) {
                 // Usuario local: enviar directamente
                 handler.getServer().sendMessageToUser(username, forward, senderUsername);
             } else if (networkAdapter != null && networkAdapter.isUserConnected(username)) {
                 // Usuario remoto: verificar si está en algún peer y enrutar
-                // Formato: P2P_CHANNEL_MESSAGE|channelId|senderUsername|content|recipientUsername
+                // Formato:
+                // P2P_CHANNEL_MESSAGE|channelId|senderUsername|content|recipientUsername
                 String routeMessage = parser.encode("P2P_CHANNEL_MESSAGE",
-                        String.valueOf(channelId),
+                        channelId,
                         senderUsername,
                         content,
                         username);
-                
+
                 networkAdapter.routeChannelMessageToPeer(username, routeMessage);
             }
         }
-        
+
         return parser.encode("OK", "Mensaje enviado");
     }
 }
-
-

@@ -8,9 +8,10 @@ import java.util.List;
 
 public class SendChannelAudioClientCommand implements ClientCommand<SendChannelAudioClientCommand.Request, Boolean> {
     public static class Request {
-        public final int channelId;
+        public final String channelId;
         public final byte[] audio;
-        public Request(int channelId, byte[] audio) {
+
+        public Request(String channelId, byte[] audio) {
             this.channelId = channelId;
             this.audio = audio;
         }
@@ -18,19 +19,20 @@ public class SendChannelAudioClientCommand implements ClientCommand<SendChannelA
 
     private final ServerGatewayPort gateway;
 
-    public SendChannelAudioClientCommand(ServerGatewayPort gateway) { this.gateway = gateway; }
+    public SendChannelAudioClientCommand(ServerGatewayPort gateway) {
+        this.gateway = gateway;
+    }
 
     @Override
     public Boolean execute(Request request) {
-        if (request.audio == null || request.audio.length == 0) return false;
+        if (request.audio == null || request.audio.length == 0)
+            return false;
         try {
             String b64 = Base64.getEncoder().encodeToString(request.audio);
-            List<String> parts = gateway.sendAndReceive("SEND_CHANNEL_AUDIO", String.valueOf(request.channelId), b64);
+            List<String> parts = gateway.sendAndReceive("SEND_CHANNEL_AUDIO", request.channelId, b64);
             return !parts.isEmpty() && "OK".equalsIgnoreCase(parts.getFirst());
         } catch (Exception e) {
             return false;
         }
     }
 }
-
-

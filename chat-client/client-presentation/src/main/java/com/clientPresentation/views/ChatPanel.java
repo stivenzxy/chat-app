@@ -49,10 +49,12 @@ public class ChatPanel extends JPanel {
     private void showInvitesPanel() {
         if (invitesContainer == null) {
             invitesContainer = new JPanel(new BorderLayout());
-            invitesPanel = new InvitesPanel(commandFactory, () -> {
+            invitesPanel = new InvitesPanel(commandFactory, channelId -> {
                 if (channelsPanel != null) {
                     channelsPanel.refreshChannels();
                     channelsPanel.refreshChannelMembers();
+                    // Open the channel tab after refreshing
+                    SwingUtilities.invokeLater(() -> channelsPanel.openChannelById(channelId));
                 }
             });
             invitesContainer.add(invitesPanel, BorderLayout.CENTER);

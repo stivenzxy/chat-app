@@ -15,7 +15,7 @@ public class ChannelInviteRepositoryImpl implements ChannelInviteRepository {
     }
 
     @Override
-    public void updateStatus(Integer inviteId, ChannelInvite.Status status) {
+    public void updateStatus(String inviteId, ChannelInvite.Status status) {
         channelInviteDAO.updateStatus(inviteId, status);
     }
 

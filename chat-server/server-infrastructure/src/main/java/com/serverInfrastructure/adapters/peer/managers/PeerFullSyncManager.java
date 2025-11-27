@@ -9,13 +9,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.function.BiConsumer;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PeerFullSyncManager {
     private static final Logger logger = LoggerFactory.getLogger(PeerFullSyncManager.class);
+    private static final long SYNC_REQUEST_COOLDOWN_MS = 5000; // 5 seconds cooldown
 
     private final DatabaseSynchronizationService dbSyncService;
     private final PresenceReplicationService presenceService;
     private final ObjectMapper objectMapper;
+    private final Map<String, Long> lastSyncRequestTime = new ConcurrentHashMap<>();
 
     private BiConsumer<String, String> peerMessageSender;
 
@@ -32,8 +36,19 @@ public class PeerFullSyncManager {
     }
 
     public void requestFullSync(String peerId) {
+        // Check if we recently requested sync from this peer
+        Long lastRequestTime = lastSyncRequestTime.get(peerId);
+        long currentTime = System.currentTimeMillis();
+
+        if (lastRequestTime != null && (currentTime - lastRequestTime) < SYNC_REQUEST_COOLDOWN_MS) {
+            logger.debug("Ignorando solicitud de full sync a {} - cooldown activo ({}ms restantes)",
+                    peerId, SYNC_REQUEST_COOLDOWN_MS - (currentTime - lastRequestTime));
+            return;
+        }
+
         if (peerMessageSender != null) {
             peerMessageSender.accept(peerId, "P2P_FULL_SYNC_REQUEST");
+            lastSyncRequestTime.put(peerId, currentTime);
             logger.info("Solicitada sincronización completa a peer {}", peerId);
         }
     }

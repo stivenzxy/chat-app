@@ -6,11 +6,12 @@ import com.clientApplication.ports.ServerGatewayPort;
 
 import java.util.List;
 
-public class CreateChannelClientCommand implements ClientCommand<CreateChannelClientCommand.Request, Integer> {
+public class CreateChannelClientCommand implements ClientCommand<CreateChannelClientCommand.Request, String> {
 
     public static class Request {
         public final String name;
         public final ChannelVisibility visibility;
+
         public Request(String name, ChannelVisibility visibility) {
             this.name = name;
             this.visibility = visibility;
@@ -24,15 +25,14 @@ public class CreateChannelClientCommand implements ClientCommand<CreateChannelCl
     }
 
     @Override
-    public Integer execute(Request request) {
+    public String execute(Request request) {
         try {
             List<String> parts = gateway.sendAndReceive(
                     "CREATE_CHANNEL",
                     request.name,
-                    request.visibility.name()
-            );
+                    request.visibility.name());
             if (!parts.isEmpty() && "OK".equalsIgnoreCase(parts.getFirst()) && parts.size() > 1) {
-                return Integer.valueOf(parts.get(1));
+                return parts.get(1);
             }
             return null;
         } catch (Exception e) {
@@ -40,5 +40,3 @@ public class CreateChannelClientCommand implements ClientCommand<CreateChannelCl
         }
     }
 }
-
-

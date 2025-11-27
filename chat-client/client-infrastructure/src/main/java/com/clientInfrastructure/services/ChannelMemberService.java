@@ -8,15 +8,15 @@ import java.util.List;
  */
 public class ChannelMemberService {
     private final GetChannelMembersClientCommand getMembersCommand;
-    
+
     public ChannelMemberService(GetChannelMembersClientCommand getMembersCommand) {
         this.getMembersCommand = getMembersCommand;
     }
-    
+
     /**
      * Retrieves channel members from the server.
      */
-    public List<String> getChannelMembers(int channelId) {
+    public List<String> getChannelMembers(String channelId) {
         return getMembersCommand.execute(channelId);
     }
 }

@@ -7,9 +7,10 @@ import java.util.List;
 
 public class InviteToChannelClientCommand implements ClientCommand<InviteToChannelClientCommand.Request, String> {
     public static class Request {
-        public final int channelId;
+        public final String channelId;
         public final String invitedUserId;
-        public Request(int channelId, String invitedUserId) {
+
+        public Request(String channelId, String invitedUserId) {
             this.channelId = channelId;
             this.invitedUserId = invitedUserId;
         }
@@ -17,12 +18,14 @@ public class InviteToChannelClientCommand implements ClientCommand<InviteToChann
 
     private final ServerGatewayPort gateway;
 
-    public InviteToChannelClientCommand(ServerGatewayPort gateway) { this.gateway = gateway; }
+    public InviteToChannelClientCommand(ServerGatewayPort gateway) {
+        this.gateway = gateway;
+    }
 
     @Override
     public String execute(Request request) {
         try {
-            List<String> parts = gateway.sendAndReceive("INVITE_TO_CHANNEL", String.valueOf(request.channelId), request.invitedUserId);
+            List<String> parts = gateway.sendAndReceive("INVITE_TO_CHANNEL", request.channelId, request.invitedUserId);
             if (parts.isEmpty()) {
                 return "Error de comunicación con el servidor.";
             }

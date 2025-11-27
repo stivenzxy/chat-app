@@ -18,6 +18,7 @@ import com.clientApplication.commands.RespondInviteClientCommand;
 import com.clientApplication.commands.ListPendingInvitesClientCommand;
 import com.clientApplication.commands.TranscribeAudioClientCommand;
 import com.clientApplication.commands.GetChannelMembersClientCommand;
+import com.clientApplication.commands.GetChannelHistoryClientCommand;
 import com.clientApplication.ports.ServerGatewayPort;
 
 public class CommandFactory {
@@ -44,13 +45,43 @@ public class CommandFactory {
         return new SendPrivateAudioClientCommand(gateway);
     }
 
-    public CreateChannelClientCommand createCreateChannelCommand() { return new CreateChannelClientCommand(gateway); }
-    public ListChannelsClientCommand createListChannelsCommand() { return new ListChannelsClientCommand(gateway); }
-    public SendChannelMessageClientCommand createSendChannelMessageCommand() { return new SendChannelMessageClientCommand(gateway); }
-    public SendChannelAudioClientCommand createSendChannelAudioCommand() { return new SendChannelAudioClientCommand(gateway); }
-    public InviteToChannelClientCommand createInviteToChannelCommand() { return new InviteToChannelClientCommand(gateway); }
-    public RespondInviteClientCommand createRespondInviteCommand() { return new RespondInviteClientCommand(gateway); }
-    public ListPendingInvitesClientCommand createListPendingInvitesCommand() { return new ListPendingInvitesClientCommand(gateway); }
-    public GetChannelMembersClientCommand createGetChannelMembersCommand() { return new GetChannelMembersClientCommand(gateway); }
-    public TranscribeAudioClientCommand createTranscribeAudioCommand() { return new TranscribeAudioClientCommand(gateway); }
+    public CreateChannelClientCommand createCreateChannelCommand() {
+        return new CreateChannelClientCommand(gateway);
+    }
+
+    public ListChannelsClientCommand createListChannelsCommand() {
+        return new ListChannelsClientCommand(gateway);
+    }
+
+    public SendChannelMessageClientCommand createSendChannelMessageCommand() {
+        return new SendChannelMessageClientCommand(gateway);
+    }
+
+    public SendChannelAudioClientCommand createSendChannelAudioCommand() {
+        return new SendChannelAudioClientCommand(gateway);
+    }
+
+    public InviteToChannelClientCommand createInviteToChannelCommand() {
+        return new InviteToChannelClientCommand(gateway);
+    }
+
+    public RespondInviteClientCommand createRespondInviteCommand() {
+        return new RespondInviteClientCommand(gateway);
+    }
+
+    public ListPendingInvitesClientCommand createListPendingInvitesCommand() {
+        return new ListPendingInvitesClientCommand(gateway);
+    }
+
+    public GetChannelMembersClientCommand createGetChannelMembersCommand() {
+        return new GetChannelMembersClientCommand(gateway);
+    }
+
+    public GetChannelHistoryClientCommand createGetChannelHistoryCommand() {
+        return new GetChannelHistoryClientCommand(gateway);
+    }
+
+    public TranscribeAudioClientCommand createTranscribeAudioCommand() {
+        return new TranscribeAudioClientCommand(gateway);
+    }
 }

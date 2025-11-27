@@ -21,56 +21,59 @@ import java.util.function.Consumer;
 
 public class PeerTcpServerAdapterFactory {
 
-    public static PeerTcpServerAdapter create() {
-        return create(null);
-    }
-
-    public static PeerTcpServerAdapter create(Consumer<Void> userReplicationCallback) {
-        PeerConnectionValidator validator = new PeerConnectionValidator();
-        LocalServerIdentityProvider identityProvider = new LocalServerIdentityProvider();
-        ServerLifecycleManager lifecycleManager = new ServerLifecycleManager();
-
-        PeerConnectionManager connectionManager = PeerManagerFactory.createConnectionManager();
-        PeerUserSyncManager userSyncManager = PeerManagerFactory.createUserSyncManager();
-        if (userReplicationCallback != null) {
-            userSyncManager.setUiUpdateCallback(userReplicationCallback);
+        public static PeerTcpServerAdapter create() {
+                return create(null);
         }
-        PeerMessageRoutingManager messageRoutingManager = PeerManagerFactory.createMessageRoutingManager();
-        PeerObserverNotifier observerNotifier = PeerManagerFactory.createObserverNotifier();
-        PeerUserReplicationManager userReplicationManager = PeerManagerFactory
-                .createUserReplicationManager(userReplicationCallback);
-        PeerPeerReplicationManager peerReplicationManager = PeerManagerFactory.createPeerReplicationManager();
-        PeerEntityReplicationManager entityReplicationManager = PeerManagerFactory.createEntityReplicationManager();
 
-        // Create FullSyncManager with broadcaster from connectionManager
-        com.serverInfrastructure.adapters.peer.managers.PeerFullSyncManager fullSyncManager = PeerManagerFactory
-                .createPeerFullSyncManager(connectionManager::broadcastToPeers);
+        public static PeerTcpServerAdapter create(Consumer<Void> userReplicationCallback) {
+                PeerConnectionValidator validator = new PeerConnectionValidator();
+                LocalServerIdentityProvider identityProvider = new LocalServerIdentityProvider();
+                ServerLifecycleManager lifecycleManager = new ServerLifecycleManager();
 
-        IncomingConnectionHandler incomingHandler = new IncomingConnectionHandler(
-                validator, connectionManager, observerNotifier);
+                PeerConnectionManager connectionManager = PeerManagerFactory.createConnectionManager();
+                PeerUserSyncManager userSyncManager = PeerManagerFactory.createUserSyncManager();
+                if (userReplicationCallback != null) {
+                        userSyncManager.setUiUpdateCallback(userReplicationCallback);
+                }
+                PeerMessageRoutingManager messageRoutingManager = PeerManagerFactory.createMessageRoutingManager();
+                PeerObserverNotifier observerNotifier = PeerManagerFactory.createObserverNotifier();
+                PeerUserReplicationManager userReplicationManager = PeerManagerFactory
+                                .createUserReplicationManager(userReplicationCallback);
+                PeerPeerReplicationManager peerReplicationManager = PeerManagerFactory.createPeerReplicationManager();
+                PeerEntityReplicationManager entityReplicationManager = PeerManagerFactory
+                                .createEntityReplicationManager();
 
-        PeerDiscoveryHandler discoveryHandler = new PeerDiscoveryHandler(validator);
-        PeerAutoReconnectService autoReconnectService = new PeerAutoReconnectService();
+                // Create FullSyncManager with broadcaster from connectionManager
+                com.serverInfrastructure.adapters.peer.managers.PeerFullSyncManager fullSyncManager = PeerManagerFactory
+                                .createPeerFullSyncManager(connectionManager::broadcastToPeers);
 
-        OutgoingConnectionHandler outgoingHandler = new OutgoingConnectionHandler(
-                validator, connectionManager, userSyncManager, observerNotifier,
-                discoveryHandler, messageRoutingManager, userReplicationManager, peerReplicationManager,
-                entityReplicationManager);
+                IncomingConnectionHandler incomingHandler = new IncomingConnectionHandler(
+                                validator, connectionManager, observerNotifier);
 
-        PeerServerCallbackConfigurator callbackConfigurator = new PeerServerCallbackConfigurator(
-                incomingHandler, userSyncManager, messageRoutingManager, userReplicationManager, peerReplicationManager,
-                entityReplicationManager, fullSyncManager);
+                PeerDiscoveryHandler discoveryHandler = new PeerDiscoveryHandler(validator);
+                PeerAutoReconnectService autoReconnectService = new PeerAutoReconnectService();
 
-        discoveryHandler.setConnectionCallback(outgoingHandler::connectToPeer);
-        autoReconnectService.setConnectionCallback(outgoingHandler::connectToPeer);
+                OutgoingConnectionHandler outgoingHandler = new OutgoingConnectionHandler(
+                        validator, connectionManager, userSyncManager, observerNotifier,
+                        discoveryHandler, messageRoutingManager, userReplicationManager, peerReplicationManager,
+                        entityReplicationManager, fullSyncManager);
 
-        connectionManager.setObserverNotifier(observerNotifier);
-        connectionManager.setUserSyncManager(userSyncManager);
+                PeerServerCallbackConfigurator callbackConfigurator = new PeerServerCallbackConfigurator(
+                        incomingHandler, userSyncManager, messageRoutingManager, userReplicationManager,
+                        peerReplicationManager,
+                        entityReplicationManager, fullSyncManager);
 
-        return new PeerTcpServerAdapter(
-                lifecycleManager, identityProvider, incomingHandler, outgoingHandler,
-                discoveryHandler, autoReconnectService, callbackConfigurator,
-                connectionManager, userSyncManager, messageRoutingManager, observerNotifier,
-                userReplicationManager, peerReplicationManager, entityReplicationManager, fullSyncManager);
-    }
+                discoveryHandler.setConnectionCallback(outgoingHandler::connectToPeer);
+                autoReconnectService.setConnectionCallback(outgoingHandler::connectToPeer);
+
+                connectionManager.setObserverNotifier(observerNotifier);
+                connectionManager.setUserSyncManager(userSyncManager);
+
+                return new PeerTcpServerAdapter(
+                        lifecycleManager, identityProvider, incomingHandler, outgoingHandler,
+                        discoveryHandler, autoReconnectService, callbackConfigurator,
+                        connectionManager, userSyncManager, messageRoutingManager, observerNotifier,
+                        userReplicationManager, peerReplicationManager, entityReplicationManager,
+                        fullSyncManager);
+        }
 }

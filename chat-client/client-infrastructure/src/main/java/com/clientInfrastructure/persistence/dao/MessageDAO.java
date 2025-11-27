@@ -16,10 +16,11 @@ public class MessageDAO {
 
     public void saveMessage(MessageDTO message) {
         if (messageExists(message)) {
-            logger.debug("Mensaje duplicado detectado, no se guardará: {} -> {}", message.getSenderId(), message.getRecipientId());
+            logger.debug("Mensaje duplicado detectado, no se guardará: {} -> {}", message.getSenderId(),
+                    message.getRecipientId());
             return;
         }
-        
+
         String sql = "INSERT INTO messages (sender_id, recipient_id, content, message_type, audio_content, sent_at) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, message.getSenderId());
@@ -33,35 +34,35 @@ public class MessageDAO {
             logger.error("Error al guardar el mensaje: {}", e.getMessage());
         }
     }
-    
+
     private boolean messageExists(MessageDTO message) {
         String sql;
         if (message.getMessageType() == MessageType.TEXT) {
             sql = "SELECT COUNT(*) FROM messages WHERE sender_id = ? AND recipient_id = ? AND message_type = ? " +
-                  "AND content = ? AND ABS(DATEDIFF('SECOND', sent_at, ?)) <= 2";
+                    "AND content = ? AND ABS(DATEDIFF('SECOND', sent_at, ?)) <= 2";
         } else {
             sql = "SELECT COUNT(*) FROM messages WHERE sender_id = ? AND recipient_id = ? AND message_type = ? " +
-                  "AND length(audio_content) = ? AND ABS(DATEDIFF('SECOND', sent_at, ?)) <= 2";
+                    "AND length(audio_content) = ? AND ABS(DATEDIFF('SECOND', sent_at, ?)) <= 2";
         }
-        
+
         try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, message.getSenderId());
             stmt.setString(2, message.getRecipientId());
             stmt.setString(3, message.getMessageType().name());
-            
+
             if (message.getMessageType() == MessageType.TEXT) {
                 stmt.setString(4, message.getTextContent());
             } else {
                 stmt.setInt(4, message.getAudioContent() != null ? message.getAudioContent().length : 0);
             }
             stmt.setTimestamp(5, Timestamp.valueOf(message.getTimestamp()));
-            
+
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 int count = rs.getInt(1);
                 if (count > 0) {
-                    logger.debug("Mensaje duplicado encontrado: {} -> {} (count: {})", 
-                               message.getSenderId(), message.getRecipientId(), count);
+                    logger.debug("Mensaje duplicado encontrado: {} -> {} (count: {})",
+                            message.getSenderId(), message.getRecipientId(), count);
                 }
                 return count > 0;
             }
@@ -76,7 +77,7 @@ public class MessageDAO {
         String sql = "SELECT * FROM messages WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?) ORDER BY sent_at ASC";
 
         try (Connection conn = connectionManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, user1);
             stmt.setString(2, user2);
@@ -85,7 +86,6 @@ public class MessageDAO {
 
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                // --- INICIO DE LA LÓGICA FALTANTE ---
                 String senderId = rs.getString("sender_id");
                 String recipientId = rs.getString("recipient_id");
                 String textContent = rs.getString("content");
@@ -100,60 +100,59 @@ public class MessageDAO {
                     message = new MessageDTO(senderId, recipientId, audioContent);
                 }
                 history.add(message);
-                // --- FIN DE LA LÓGICA FALTANTE ---
             }
         } catch (SQLException e) {
-            logger.error("Error al cargar el historial de chat: {}", e.getMessage());
+            logger.error("Error al obtener historial de chat: {}", e.getMessage());
         }
         return history;
     }
 
-    // Guardar mensaje de canal (usa recipient_channel_id)
-    public void saveChannelTextMessage(String senderId, int channelId, String content, LocalDateTime timestamp) {
-        String sql = "INSERT INTO messages (sender_id, recipient_channel_id, content, message_type, sent_at) VALUES (?, ?, ?, ?, ?)";
+    public void saveChannelTextMessage(String senderId, String channelId, String content, LocalDateTime timestamp) {
+        String sql = "INSERT INTO channel_messages (channel_id, sender_user_id, content, message_type, sent_at) VALUES (?, ?, ?, 'TEXT', ?)";
         try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, senderId);
-            stmt.setInt(2, channelId);
+            stmt.setString(1, channelId);
+            stmt.setString(2, senderId);
             stmt.setString(3, content);
-            stmt.setString(4, MessageType.TEXT.name());
-            stmt.setTimestamp(5, Timestamp.valueOf(timestamp));
+            stmt.setTimestamp(4, Timestamp.valueOf(timestamp));
             stmt.executeUpdate();
-        } catch (SQLException e) { 
-            logger.error("Error al guardar mensaje de canal: {}", e.getMessage());
+        } catch (SQLException e) {
+            logger.error("Error guardando mensaje de canal: {}", e.getMessage());
         }
     }
 
-    public void saveChannelAudioMessage(String senderId, int channelId, byte[] audio, LocalDateTime timestamp) {
-        String sql = "INSERT INTO messages (sender_id, recipient_channel_id, message_type, audio_content, sent_at) VALUES (?, ?, ?, ?, ?)";
+    public void saveChannelAudioMessage(String senderId, String channelId, byte[] audioData, LocalDateTime timestamp) {
+        String sql = "INSERT INTO channel_messages (channel_id, sender_user_id, audio_content, message_type, sent_at) VALUES (?, ?, ?, 'AUDIO', ?)";
         try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, senderId);
-            stmt.setInt(2, channelId);
-            stmt.setString(3, MessageType.AUDIO.name());
-            stmt.setBytes(4, audio);
-            stmt.setTimestamp(5, Timestamp.valueOf(timestamp));
+            stmt.setString(1, channelId);
+            stmt.setString(2, senderId);
+            stmt.setBytes(3, audioData);
+            stmt.setTimestamp(4, Timestamp.valueOf(timestamp));
             stmt.executeUpdate();
-        } catch (SQLException e) { logger.error("Error al guardar audio de canal: {}", e.getMessage()); }
+        } catch (SQLException e) {
+            logger.error("Error guardando audio de canal: {}", e.getMessage());
+        }
     }
 
-    public List<MessageDTO> getChannelHistory(int channelId) {
+    public List<MessageDTO> getChannelHistory(String channelId) {
         List<MessageDTO> history = new ArrayList<>();
-        String sql = "SELECT * FROM messages WHERE recipient_channel_id = ? ORDER BY sent_at ASC";
+        String sql = "SELECT * FROM channel_messages WHERE channel_id = ? ORDER BY sent_at ASC";
         try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, channelId);
+            stmt.setString(1, channelId);
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                String senderId = rs.getString("sender_id");
-                String textContent = rs.getString("content");
-                byte[] audioContent = rs.getBytes("audio_content");
-                MessageType messageType = MessageType.valueOf(rs.getString("message_type"));
-                if (messageType == MessageType.TEXT) {
-                    history.add(new MessageDTO(senderId, String.valueOf(channelId), textContent));
+                String sender = rs.getString("sender_user_id");
+                String type = rs.getString("message_type");
+                LocalDateTime time = rs.getTimestamp("sent_at").toLocalDateTime();
+                if ("TEXT".equals(type)) {
+                    String content = rs.getString("content");
+                    history.add(new MessageDTO(sender, channelId, content));
                 } else {
-                    history.add(new MessageDTO(senderId, String.valueOf(channelId), audioContent));
+                    byte[] audio = rs.getBytes("audio_content");
+                    history.add(new MessageDTO(sender, channelId, audio));
                 }
             }
-        } catch (SQLException e) { 
-            logger.error("Error al cargar historial de canal: {}", e.getMessage());
+        } catch (SQLException e) {
+            logger.error("Error obteniendo historial de canal: {}", e.getMessage());
         }
         return history;
     }

@@ -8,6 +8,7 @@ import com.serverApplication.useCases.GetRegisteredUsersService;
 import com.serverApplication.useCases.GetServerLogsService;
 import com.serverApplication.useCases.interfaces.CreateUserService;
 import com.serverApplication.useCases.LoginService;
+import com.serverApplication.ports.UserReplicationNotifier;
 import com.serverDomain.repositories.UserRepository;
 import com.serverDomain.services.PasswordHasher;
 import com.serverInfrastructure.adapters.LogFileReaderAdapter;
@@ -28,7 +29,7 @@ public class DefaultServiceFactory implements ServiceFactory {
         this.replicationNotifierProxy = new UserReplicationNotifierProxy();
         this.logReader = new LogFileReaderAdapter(); // Uses default "server.log"
     }
-    
+
     public UserReplicationNotifierProxy getReplicationNotifierProxy() {
         return replicationNotifierProxy;
     }

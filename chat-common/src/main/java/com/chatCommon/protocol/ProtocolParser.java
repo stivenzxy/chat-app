@@ -43,6 +43,9 @@ public class ProtocolParser {
     }
 
     private String escape(String part) {
+        if (part == null) {
+            return "";
+        }
         StringBuilder escaped = new StringBuilder();
         for (char c : part.toCharArray()) {
             if (c == delimiter || c == escapeChar) {
