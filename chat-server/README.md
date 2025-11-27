@@ -26,14 +26,24 @@ El servidor expone los siguientes endpoints HTTP REST:
 * **GET /api/users** - Lista de usuarios registrados
 * **GET /api/logs** - Logs del servidor (con filtrado opcional)
 * **GET /api/health** - Health check endpoint
+* **POST /api/register-in-gateway** - Re-registro manual en el API Gateway
 
 **Acceso:**
 - Directo: `http://localhost:8080/api/*`
-- A través de Traefik: `http://localhost/api/*`
+- A través de Traefik: `http://localhost/server-X/api/*` (X = número asignado por gateway)
+- Load balancing: `http://localhost/chat/api/*` (round-robin entre servidores)
 
-📖 **Documentación completa**: [REST_API_DOCUMENTATION.md](./REST_API_DOCUMENTATION.md)  
-🎨 **Guía de integración Angular**: [ANGULAR_INTEGRATION_GUIDE.md](./ANGULAR_INTEGRATION_GUIDE.md)  
-🛠️ **Comandos útiles**: [QUICK_COMMANDS.md](./QUICK_COMMANDS.md)
+### 🆕 Auto-registro en API Gateway
+
+El servidor se registra automáticamente en el API Gateway al iniciar:
+- ✅ Detecta su IP y puerto automáticamente
+- ✅ Se registra en `http://localhost:5000/register-server`
+- ✅ Recibe un ID único (`server-1`, `server-2`, etc.)
+- ✅ Traefik actualiza rutas dinámicamente sin reiniciar
+
+📖 **Documentación del Gateway**: `../../../apigateway/README.md`  
+📚 **Guía completa**: `../../../GUIA_INICIO_RAPIDO.md`  
+🏗️ **Arquitectura**: `../../../ARQUITECTURA.md`
 
 ---
 
@@ -119,6 +129,9 @@ El servidor expone los siguientes endpoints HTTP REST:
 
 ### REST API (Nuevo)
 - ✅ Endpoints HTTP REST
+- ✅ Auto-registro en API Gateway
+- ✅ Load balancing con Traefik
+- ✅ Detección automática de IP/puerto
 - ✅ Integración con Traefik
 - ✅ Compatible con Angular
 - ✅ CORS habilitado
@@ -164,11 +177,12 @@ mvn clean package
 
 | Service | Port | Description |
 |---------|------|-------------|
-| HTTP REST API | 8080 | REST endpoints for Angular |
-| TCP Chat Server | Configured | Socket-based chat protocol |
+| HTTP REST API | 8080 | REST endpoints (auto-configurable) |
+| TCP Chat Server | Variable | Socket-based chat protocol |
 | MySQL Database | 3307 | Data persistence |
-| Traefik (Gateway) | 80 | API Gateway (optional) |
-| Traefik Dashboard | 8080 | Monitoring dashboard |
+| API Gateway | 5000 | Service registry (Docker) |
+| Traefik (Proxy) | 80 | Dynamic routing & load balancing |
+| Traefik Dashboard | 8080 | Monitoring & route visualization |
 
 ---
 
