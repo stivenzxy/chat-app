@@ -36,7 +36,9 @@ public class ServerApplication {
         serverControl.setPeerNetworkControl(singlePeerNetworkControl);
         presentationFactory.setServerNetworkControl(singlePeerNetworkControl);
 
-        HttpRestServer httpServer = presentationFactory.createHttpRestServer(8085);
+        // Start HTTP REST API server (configurable port via HTTP_PORT env var, default 8085)
+        int httpPort = Integer.parseInt(System.getenv().getOrDefault("HTTP_PORT", "8085"));
+        HttpRestServer httpServer = presentationFactory.createHttpRestServer(httpPort);
         httpServer.start();
 
         SwingUtilities.invokeLater(() -> {

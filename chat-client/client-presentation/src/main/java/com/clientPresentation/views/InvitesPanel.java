@@ -9,20 +9,21 @@ import com.clientApplication.factories.CommandFactory;
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class InvitesPanel extends JPanel {
     private final ListPendingInvitesClientCommand listCmd;
     private final RespondInviteClientCommand respondCmd;
     private final DefaultListModel<ChannelInviteDTO> model = new DefaultListModel<>();
     private final JList<ChannelInviteDTO> list = new JList<>(model);
-    private Runnable onAccepted;
+    private Consumer<String> onAccepted;
 
-    public InvitesPanel(CommandFactory factory, Runnable onAccepted) {
+    public InvitesPanel(CommandFactory factory, Consumer<String> onAccepted) {
         this.listCmd = factory.createListPendingInvitesCommand();
         this.respondCmd = factory.createRespondInviteCommand();
         this.onAccepted = onAccepted;
 
-        setLayout(new BorderLayout(10,10));
+        setLayout(new BorderLayout(10, 10));
         setOpaque(false);
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -38,13 +39,12 @@ public class InvitesPanel extends JPanel {
         JButton accept = new JButton("Aceptar");
         JButton reject = new JButton("Rechazar");
 
-        UiBuilder.styleButton(accept, new Color(46, 204, 113));  // Verde
-        UiBuilder.styleButton(reject, new Color(231, 76, 60));   // Rojo
+        UiBuilder.styleButton(accept, new Color(46, 204, 113)); // Verde
+        UiBuilder.styleButton(reject, new Color(231, 76, 60)); // Rojo
 
         actions.add(accept);
         actions.add(reject);
         add(actions, BorderLayout.SOUTH);
-
 
         accept.addActionListener(e -> respondSelected("ACCEPTED"));
         reject.addActionListener(e -> respondSelected("REJECTED"));
@@ -54,38 +54,47 @@ public class InvitesPanel extends JPanel {
 
     public void refresh() {
         new SwingWorker<List<ChannelInviteDTO>, Void>() {
-            @Override protected List<ChannelInviteDTO> doInBackground() {
+            @Override
+            protected List<ChannelInviteDTO> doInBackground() {
                 return listCmd.execute(null);
             }
-            @Override protected void done() {
+
+            @Override
+            protected void done() {
                 try {
                     model.clear();
-                    for (var i : get()) model.addElement(i);
-                } catch (Exception ignored) {}
+                    for (var i : get())
+                        model.addElement(i);
+                } catch (Exception ignored) {
+                }
             }
         }.execute();
     }
 
     private void respondSelected(String status) {
         ChannelInviteDTO inv = list.getSelectedValue();
-        if (inv == null) return;
-        
+        if (inv == null)
+            return;
+
         new SwingWorker<Boolean, Void>() {
-            @Override protected Boolean doInBackground() { 
+            @Override
+            protected Boolean doInBackground() {
                 return respondCmd.execute(new RespondInviteClientCommand.Request(
-                        inv.getInviteId(), status, inv.getChannelId()
-                ));
+                        inv.getInviteId(), status, inv.getChannelId()));
             }
-            @Override protected void done() { 
-                try { 
-                    boolean ok = get(); 
-                    if (ok) { 
-                        refresh(); 
+
+            @Override
+            protected void done() {
+                try {
+                    boolean ok = get();
+                    if (ok) {
+                        refresh();
                         if ("ACCEPTED".equals(status) && onAccepted != null) {
-                            onAccepted.run();
+                            onAccepted.accept(inv.getChannelId());
                         }
-                    } 
-                } catch (Exception ignored) {}
+                    }
+                } catch (Exception ignored) {
+                }
             }
         }.execute();
     }
@@ -119,7 +128,7 @@ public class InvitesPanel extends JPanel {
             removeAll();
             add(lblIcon, BorderLayout.WEST);
 
-            JPanel textPanel = new JPanel(new GridLayout(2,1,0,2));
+            JPanel textPanel = new JPanel(new GridLayout(2, 1, 0, 2));
             textPanel.setOpaque(false);
             textPanel.add(lblMessage);
             textPanel.add(lblChannel);
@@ -135,5 +144,3 @@ public class InvitesPanel extends JPanel {
         }
     }
 }
-
-

@@ -81,6 +81,7 @@ public class InfrastructureFactory {
 
         handler.registerCommand(new ListPendingInvitesCommandAdapter(inviteRepository));
         handler.registerCommand(new GetChannelMembersCommandAdapter(channelRepository));
+        handler.registerCommand(new com.serverInfrastructure.adapters.commands.GetChannelHistoryCommandAdapter(channelRepository));
 
         TranscribeAudioCommandAdapter transcribeAudioAdapter = new TranscribeAudioCommandAdapter(null);
         handler.registerCommand(transcribeAudioAdapter);

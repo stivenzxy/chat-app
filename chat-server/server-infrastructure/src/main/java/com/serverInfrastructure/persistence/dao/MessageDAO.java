@@ -293,6 +293,33 @@ public class MessageDAO {
         return messages;
     }
 
+    public java.util.List<com.serverApplication.dto.sync.MessageSyncDTO> getChannelMessages(String channelId) {
+        String sql = "SELECT * FROM messages WHERE recipient_channel_id = ? ORDER BY created_at ASC";
+        java.util.List<com.serverApplication.dto.sync.MessageSyncDTO> messages = new java.util.ArrayList<>();
+        try (Connection conn = connectionManager.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, channelId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    messages.add(new com.serverApplication.dto.sync.MessageSyncDTO(
+                            rs.getString("message_id"),
+                            rs.getString("author_id"),
+                            rs.getString("recipient_user_id"),
+                            rs.getString("recipient_channel_id"),
+                            rs.getString("content"),
+                            rs.getString("message_type"),
+                            rs.getBytes("audio_content"),
+                            rs.getTimestamp("created_at").toLocalDateTime()));
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Error al obtener mensajes del canal {}: {}", channelId, e.getMessage());
+        }
+        return messages;
+    }
+
     public java.util.List<com.serverApplication.dto.sync.AudioTranscriptionSyncDTO> findAllTranscriptions() {
         String sql = "SELECT * FROM audio_transcriptions";
         java.util.List<com.serverApplication.dto.sync.AudioTranscriptionSyncDTO> transcriptions = new java.util.ArrayList<>();

@@ -141,6 +141,31 @@ public class ChannelsPanel extends JPanel implements ChannelMessageListener, Cha
         }
     }
 
+    public void openChannelById(String channelId) {
+        // Refresh channels first to get latest data
+        new SwingWorker<List<ChannelDTO>, Void>() {
+            @Override
+            protected List<ChannelDTO> doInBackground() {
+                return listChannelsCommand.execute(null);
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    List<ChannelDTO> channels = get();
+                    for (ChannelDTO channel : channels) {
+                        if (channel.getId().equals(channelId)) {
+                            SwingUtilities.invokeLater(() -> openChannelTab(channel));
+                            return;
+                        }
+                    }
+                } catch (Exception e) {
+                    // Channel not found or error loading
+                }
+            }
+        }.execute();
+    }
+
     private void openChannelTab(ChannelDTO channel) {
         String tabTitle = "#" + channel.getName();
         if (channelTabsById.containsKey(channel.getId())) {
@@ -150,6 +175,7 @@ public class ChannelsPanel extends JPanel implements ChannelMessageListener, Cha
         }
         ChannelChatPanel panel = new ChannelChatPanel(selfUsername, channel, sendChannelMessageCommand,
                 sendChannelAudioCommand, commandFactory.createGetChannelMembersCommand(),
+                commandFactory.createGetChannelHistoryCommand(),
                 commandFactory.createTranscribeAudioCommand());
         channelTabsById.put(channel.getId(), panel);
         mainChatTabs.addTab(tabTitle, panel);
