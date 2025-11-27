@@ -18,14 +18,17 @@ public class ChannelInviteDAO {
     public void upsertInvite(ChannelInviteDTO invite) {
         String sql = "MERGE INTO channel_invites (invite_id, channel_id, inviter_user_id, invited_user_id, status, created_at) KEY(invite_id) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, invite.getInviteId());
-            stmt.setInt(2, invite.getChannelId());
+            stmt.setString(1, invite.getInviteId());
+            stmt.setString(2, invite.getChannelId());
             stmt.setString(3, invite.getInviterUserId());
             stmt.setString(4, invite.getInvitedUserId());
             stmt.setString(5, invite.getStatus().name());
-            stmt.setTimestamp(6, Timestamp.valueOf(invite.getCreatedAt() != null ? invite.getCreatedAt() : LocalDateTime.now()));
+            stmt.setTimestamp(6,
+                    Timestamp.valueOf(invite.getCreatedAt() != null ? invite.getCreatedAt() : LocalDateTime.now()));
             stmt.executeUpdate();
-        } catch (SQLException e) { logger.error("Error upsert invitacion: {}", e.getMessage()); }
+        } catch (SQLException e) {
+            logger.error("Error upsert invitacion: {}", e.getMessage());
+        }
     }
 
     public List<ChannelInviteDTO> listPendingForUser(String userId) {
@@ -35,17 +38,17 @@ public class ChannelInviteDAO {
             stmt.setString(1, userId);
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                int id = rs.getInt("invite_id");
-                int channelId = rs.getInt("channel_id");
+                String id = rs.getString("invite_id");
+                String channelId = rs.getString("channel_id");
                 String inviter = rs.getString("inviter_user_id");
                 String invited = rs.getString("invited_user_id");
                 InviteStatus status = InviteStatus.valueOf(rs.getString("status"));
                 LocalDateTime created = rs.getTimestamp("created_at").toLocalDateTime();
                 list.add(new ChannelInviteDTO(id, channelId, inviter, null, invited, null, status, created));
             }
-        } catch (SQLException e) { logger.error("Error listando invitaciones: {}", e.getMessage()); }
+        } catch (SQLException e) {
+            logger.error("Error listando invitaciones: {}", e.getMessage());
+        }
         return list;
     }
 }
-
-

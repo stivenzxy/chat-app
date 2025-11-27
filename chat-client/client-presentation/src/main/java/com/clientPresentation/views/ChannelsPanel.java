@@ -37,10 +37,11 @@ public class ChannelsPanel extends JPanel implements ChannelMessageListener, Cha
 
     private final ChannelListPanel channelListPanel;
     private final JTabbedPane mainChatTabs;
-    private final java.util.Map<Integer, ChannelChatPanel> channelTabsById = new java.util.HashMap<>();
+    private final java.util.Map<String, ChannelChatPanel> channelTabsById = new java.util.HashMap<>();
     private InviteMembersPanel invitePanel;
 
-    public ChannelsPanel(String selfUsername, CommandFactory commandFactory, MessageHandler messageHandler, JTabbedPane mainChatTabs) {
+    public ChannelsPanel(String selfUsername, CommandFactory commandFactory, MessageHandler messageHandler,
+            JTabbedPane mainChatTabs) {
         this.selfUsername = selfUsername;
         this.commandFactory = commandFactory;
         this.messageHandler = messageHandler;
@@ -59,29 +60,28 @@ public class ChannelsPanel extends JPanel implements ChannelMessageListener, Cha
     }
 
     private void initComponents() {
-        setLayout(new BorderLayout(5,5));
-        
+        setLayout(new BorderLayout(5, 5));
+
         // Panel izquierdo con lista de canales y formularios
-        JPanel leftPanel = new JPanel(new BorderLayout(5,5));
+        JPanel leftPanel = new JPanel(new BorderLayout(5, 5));
         leftPanel.add(channelListPanel, BorderLayout.CENTER);
-        
-        JPanel bottomForms = new JPanel(); 
+
+        JPanel bottomForms = new JPanel();
         bottomForms.setLayout(new BoxLayout(bottomForms, BoxLayout.Y_AXIS));
-        
+
         // Panel de invitaciones
         invitePanel = new InviteMembersPanel(selfUsername, inviteToChannelClientCommand, getUsersCommand);
         invitePanel.setVisible(false);
         bottomForms.add(invitePanel);
-        
+
         bottomForms.add(Box.createVerticalStrut(8));
-        
+
         // Panel de creación de canales
         CreateChannelPanel createPanel = new CreateChannelPanel(
-            commandFactory.createCreateChannelCommand(), 
-            this::loadChannels
-        );
+                commandFactory.createCreateChannelCommand(),
+                this::loadChannels);
         bottomForms.add(createPanel);
-        
+
         leftPanel.add(bottomForms, BorderLayout.SOUTH);
         leftPanel.setPreferredSize(new Dimension(240, 0));
         add(leftPanel, BorderLayout.CENTER);
@@ -95,7 +95,7 @@ public class ChannelsPanel extends JPanel implements ChannelMessageListener, Cha
                 if (selectedChannel != null) {
                     invitePanel.refreshUsers();
                 }
-                invitePanel.revalidate(); 
+                invitePanel.revalidate();
                 invitePanel.repaint();
             }
             if (selectedChannel != null) {
@@ -104,7 +104,6 @@ public class ChannelsPanel extends JPanel implements ChannelMessageListener, Cha
         });
     }
 
-
     private void registerListeners() {
         messageHandler.registerChannelMessageListener(this);
         messageHandler.registerChannelAudioListener(this);
@@ -112,10 +111,13 @@ public class ChannelsPanel extends JPanel implements ChannelMessageListener, Cha
 
     private void loadChannels() {
         new SwingWorker<List<ChannelDTO>, Void>() {
-            @Override protected List<ChannelDTO> doInBackground() { 
-                return listChannelsCommand.execute(null); 
+            @Override
+            protected List<ChannelDTO> doInBackground() {
+                return listChannelsCommand.execute(null);
             }
-            @Override protected void done() {
+
+            @Override
+            protected void done() {
                 try {
                     List<ChannelDTO> channels = get();
                     channelListPanel.clearChannels();
@@ -129,10 +131,10 @@ public class ChannelsPanel extends JPanel implements ChannelMessageListener, Cha
         }.execute();
     }
 
-    public void refreshChannels() { 
-        loadChannels(); 
+    public void refreshChannels() {
+        loadChannels();
     }
-    
+
     public void refreshChannelMembers() {
         for (ChannelChatPanel panel : channelTabsById.values()) {
             panel.refreshMembers();
@@ -146,7 +148,9 @@ public class ChannelsPanel extends JPanel implements ChannelMessageListener, Cha
             mainChatTabs.setSelectedComponent(panel);
             return;
         }
-        ChannelChatPanel panel = new ChannelChatPanel(selfUsername, channel, sendChannelMessageCommand, sendChannelAudioCommand, commandFactory.createGetChannelMembersCommand(), commandFactory.createTranscribeAudioCommand());
+        ChannelChatPanel panel = new ChannelChatPanel(selfUsername, channel, sendChannelMessageCommand,
+                sendChannelAudioCommand, commandFactory.createGetChannelMembersCommand(),
+                commandFactory.createTranscribeAudioCommand());
         channelTabsById.put(channel.getId(), panel);
         mainChatTabs.addTab(tabTitle, panel);
         mainChatTabs.setSelectedComponent(panel);
@@ -162,20 +166,24 @@ public class ChannelsPanel extends JPanel implements ChannelMessageListener, Cha
                 }
             });
         } else {
-            SwingUtilities.invokeLater(() -> dispatchToChannelTab(event.getChannelId(), event.getSender(), event.getContent(), null));
+            SwingUtilities.invokeLater(() -> dispatchToChannelTab(String.valueOf(event.getChannelId()),
+                    event.getSender(), event.getContent(), null));
         }
     }
 
     @Override
     public void onChannelAudio(ChannelAudioEvent event) {
-        SwingUtilities.invokeLater(() -> dispatchToChannelTab(event.getChannelId(), event.getSender(), null, event.getAudioBase64()));
+        SwingUtilities.invokeLater(() -> dispatchToChannelTab(String.valueOf(event.getChannelId()), event.getSender(),
+                null, event.getAudioBase64()));
     }
 
-    private void dispatchToChannelTab(int channelId, String sender, String text, String audioBase64) {
+    private void dispatchToChannelTab(String channelId, String sender, String text, String audioBase64) {
         ChannelChatPanel panel = channelTabsById.get(channelId);
         if (panel != null) {
-            if (text != null) panel.receiveText(sender, text);
-            if (audioBase64 != null) panel.receiveAudio(sender, audioBase64);
+            if (text != null)
+                panel.receiveText(sender, text);
+            if (audioBase64 != null)
+                panel.receiveAudio(sender, audioBase64);
         }
     }
 }

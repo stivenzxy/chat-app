@@ -24,3 +24,6 @@ models/
 *.log
 *.txt
 *.db
+*mv.db
+*trace.db
+*lock.db

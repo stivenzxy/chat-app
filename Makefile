@@ -1,7 +1,7 @@
 # Chat App - Makefile
 # Comandos útiles para desarrollo
 
-.PHONY: help docker-up docker-down build build-server build-client clean \
+.PHONY: help docker-up docker-down docker-clean build build-server build-client clean \
         run-server1 run-server2 run-client1 run-client2 test-env install
 
 # Mostrar ayuda
@@ -11,6 +11,7 @@ help:
 	@echo "Docker:"
 	@echo "  make docker-up       - Iniciar contenedores (MySQL + VOSK)"
 	@echo "  make docker-down     - Detener contenedores"
+	@echo "  make docker-clean    - Detener contenedores y borrar volúmenes (DBs)"
 	@echo ""
 	@echo "Build:"
 	@echo "  make build           - Compilar todo el proyecto"
@@ -36,6 +37,10 @@ docker-up:
 docker-down:
 	@echo "Deteniendo contenedores Docker..."
 	cd docker && docker-compose -f docker-compose-test.yml down
+
+docker-clean:
+	@echo "Deteniendo contenedores y eliminando volúmenes..."
+	cd docker && docker-compose -f docker-compose-test.yml down -v
 
 # ==================== Build ====================
 
