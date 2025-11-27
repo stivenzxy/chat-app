@@ -19,6 +19,7 @@ import com.serverDomain.repositories.ChannelInviteRepository;
 import com.serverInfrastructure.persistence.repository.ChannelInviteRepositoryImpl;
 import com.serverInfrastructure.adapters.commands.SendChannelMessageCommandAdapter;
 import com.serverInfrastructure.adapters.commands.SendChannelAudioCommandAdapter;
+import com.serverInfrastructure.persistence.dao.UserDAO;
 
 import java.util.function.Consumer;
 import com.serverInfrastructure.adapters.commands.InviteToChannelCommandAdapter;
@@ -41,6 +42,7 @@ public class InfrastructureFactory {
     public CommandHandler createCommandHandler() {
         ProtocolParser parser = new ProtocolParser('|', '\\');
         CommandHandler handler = new CommandHandler(parser);
+        UserDAO userDAO = new UserDAO();
 
         LoginCommandAdapter loginAdapter = new LoginCommandAdapter(serviceFactory.createLoginService());
         loginAdapter.setCommandHandler(handler);
@@ -70,7 +72,7 @@ public class InfrastructureFactory {
         handler.registerCommand(sendChannelAudioAdapter);
 
         InviteToChannelCommandAdapter inviteAdapter = new InviteToChannelCommandAdapter(channelRepository,
-                inviteRepository, handler);
+                inviteRepository, handler, userDAO);
         inviteAdapter.setNetworkAdapter(getOrCreateServerNetworkAdapter());
         handler.registerCommand(inviteAdapter);
 
@@ -81,7 +83,8 @@ public class InfrastructureFactory {
 
         handler.registerCommand(new ListPendingInvitesCommandAdapter(inviteRepository));
         handler.registerCommand(new GetChannelMembersCommandAdapter(channelRepository));
-        handler.registerCommand(new com.serverInfrastructure.adapters.commands.GetChannelHistoryCommandAdapter(channelRepository));
+        handler.registerCommand(
+                new com.serverInfrastructure.adapters.commands.GetChannelHistoryCommandAdapter(channelRepository));
 
         TranscribeAudioCommandAdapter transcribeAudioAdapter = new TranscribeAudioCommandAdapter(null);
         handler.registerCommand(transcribeAudioAdapter);
