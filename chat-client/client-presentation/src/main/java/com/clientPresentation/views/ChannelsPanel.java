@@ -102,14 +102,21 @@ public class ChannelsPanel extends JPanel implements ChannelMessageListener, Cha
     }
 
     private void showInviteDialog() {
+        System.out.println("DEBUG: showInviteDialog() called");
         ChannelDTO selectedChannel = channelListPanel.getSelectedChannel();
-        if (selectedChannel == null)
+        if (selectedChannel == null) {
+            System.out.println("DEBUG: selectedChannel is null");
             return;
+        }
+        System.out.println("DEBUG: selectedChannel: " + selectedChannel.getName());
 
-        JDialog inviteDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
-                "Invitar a #" + selectedChannel.getName(), true);
+        Window windowAncestor = SwingUtilities.getWindowAncestor(this);
+        System.out.println("DEBUG: windowAncestor: " + windowAncestor);
+
+        JDialog inviteDialog = new JDialog((Frame) windowAncestor, "Invitar a #" + selectedChannel.getName(), true);
         inviteDialog.setLayout(new BorderLayout());
 
+        System.out.println("DEBUG: Creating InviteMembersPanel...");
         InviteMembersPanel dialogInvitePanel = new InviteMembersPanel(selfUsername, inviteToChannelClientCommand,
                 getUsersCommand);
         dialogInvitePanel.setSelectedChannel(selectedChannel);
@@ -119,7 +126,9 @@ public class ChannelsPanel extends JPanel implements ChannelMessageListener, Cha
         inviteDialog.pack();
         inviteDialog.setLocationRelativeTo(this);
         inviteDialog.setSize(new Dimension(350, 400));
+        System.out.println("DEBUG: Showing dialog...");
         inviteDialog.setVisible(true);
+        System.out.println("DEBUG: Dialog closed");
     }
 
     private void registerListeners() {

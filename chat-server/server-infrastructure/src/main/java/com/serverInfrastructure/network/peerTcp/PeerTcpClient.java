@@ -250,10 +250,10 @@ public class PeerTcpClient {
             return;
         }
         // Announce configured PEER_SERVER_PORT (the server's listening P2P port) instead of the ephemeral TCP local port
-        String handshakeMessage = String.format("P2P_SERVER_HANDSHAKE|version=1.0|type=PEER_SERVER|myId=%s:%d|protocol=CHAT_P2P|users=[]|channels=[]",
+        String handshakeMessage = String.format("P2P_SERVER_HANDSHAKE|version=1.0|type=PEER_SERVER|id=%s:%d|protocol=CHAT_P2P|users=[]|channels=[]",
             getLocalIp(), getConfiguredPeerServerPort());
 
-        logger.info("Enviando handshake P2P a peer {} (advertised myId={}:{})", peerId, getLocalIp(), getConfiguredPeerServerPort());
+        logger.info("Enviando handshake P2P a peer {} (advertised id={}:{})", peerId, getLocalIp(), getConfiguredPeerServerPort());
         sendMessage(handshakeMessage);
         // También enviar lista local de peers conocida
         try {

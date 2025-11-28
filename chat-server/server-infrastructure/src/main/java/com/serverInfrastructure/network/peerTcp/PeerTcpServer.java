@@ -419,13 +419,17 @@ public class PeerTcpServer {
     }
 
     private String extractPeerIdFromHandshake(String message) {
-        // P2P_SERVER_HANDSHAKE|id=IP:PORT
+        // P2P_SERVER_HANDSHAKE|id=IP:PORT o P2P_SERVER_HANDSHAKE|myId=IP:PORT
         try {
             String[] parts = message.split("\\|");
             if (parts.length > 1) {
                 for (int i = 1; i < parts.length; i++) {
+                    // Buscar tanto "id=" como "myId=" para compatibilidad
                     if (parts[i].startsWith("id=")) {
                         return parts[i].substring(3);
+                    }
+                    if (parts[i].startsWith("myId=")) {
+                        return parts[i].substring(5);
                     }
                 }
             }
