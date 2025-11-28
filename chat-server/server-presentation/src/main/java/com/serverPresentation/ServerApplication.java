@@ -1,5 +1,6 @@
 package com.serverPresentation;
 
+import com.chatCommon.utils.AppProperties;
 import com.serverApplication.factories.ServiceFactory;
 import com.serverApplication.ports.ServerControl;
 import com.serverInfrastructure.adapters.ServerNetworkAdapter;
@@ -36,9 +37,14 @@ public class ServerApplication {
         serverControl.setPeerNetworkControl(singlePeerNetworkControl);
         presentationFactory.setServerNetworkControl(singlePeerNetworkControl);
 
-        // Start HTTP REST API server (configurable port via HTTP_PORT env var, default 8085)
-        int httpPort = Integer.parseInt(System.getenv().getOrDefault("HTTP_PORT", "8085"));
+        // Leer el puerto HTTP desde el archivo de configuración
+        AppProperties props = new AppProperties("server-configuration");
+        int httpPort = props.getInt("HTTP_PORT");
         HttpRestServer httpServer = presentationFactory.createHttpRestServer(httpPort);
+        
+        // Configurar el TcpServerAdapter para métricas de conexiones TCP
+        httpServer.setTcpServerAdapter(serverControl);
+        
         httpServer.start();
 
         SwingUtilities.invokeLater(() -> {
