@@ -54,11 +54,15 @@ services:
       start_period: 30s
 
   vosk-server:
-    image: alphacep/kaldi-es:latest
+    build:
+      context: ./vosk
+      dockerfile: Dockerfile
     container_name: chat-app-vosk-server
     ports:
       - "2700:2700"
     restart: unless-stopped
+    volumes:
+      - ./vosk-model/model:/opt/vosk-model
     depends_on:
       mysql1:
         condition: service_healthy

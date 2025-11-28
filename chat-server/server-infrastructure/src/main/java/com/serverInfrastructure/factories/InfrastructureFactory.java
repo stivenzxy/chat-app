@@ -86,8 +86,8 @@ public class InfrastructureFactory {
         handler.registerCommand(
                 new com.serverInfrastructure.adapters.commands.GetChannelHistoryCommandAdapter(channelRepository));
 
-        TranscribeAudioCommandAdapter transcribeAudioAdapter = new TranscribeAudioCommandAdapter(null);
-        handler.registerCommand(transcribeAudioAdapter);
+        // Note: TranscribeAudioCommandAdapter is registered in createTcpServer() where
+        // server instance is available
 
         return handler;
     }
@@ -146,6 +146,8 @@ public class InfrastructureFactory {
 
         handler.registerCommand(sendAudioAdapter);
 
+        // TranscribeAudioCommandAdapter needs the server instance, so it's registered
+        // here
         TranscribeAudioCommandAdapter transcribeAudioAdapter = new TranscribeAudioCommandAdapter(server);
         handler.registerCommand(transcribeAudioAdapter);
 

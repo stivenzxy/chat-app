@@ -1,16 +1,16 @@
-version: '3.8'
-
 services:
   vosk-server:
-    image: alphacep/kaldi-es:latest
+    build:
+      context: ./vosk
+      dockerfile: Dockerfile
     container_name: chat-vosk-server
     ports:
       - "2700:2700"
     volumes:
-      - ../models/vosk-model-es-0.42:/opt/vosk-model/alphacep/kaldi-es
+      - ./vosk-model/model:/opt/vosk-model
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:2700"]
+      test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/2700' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
