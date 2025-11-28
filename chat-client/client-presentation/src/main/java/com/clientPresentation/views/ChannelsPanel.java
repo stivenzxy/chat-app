@@ -59,6 +59,8 @@ public class ChannelsPanel extends JPanel implements ChannelMessageListener, Cha
         loadChannels();
     }
 
+    private JButton inviteButton;
+
     private void initComponents() {
         setLayout(new BorderLayout(5, 5));
 
@@ -69,10 +71,12 @@ public class ChannelsPanel extends JPanel implements ChannelMessageListener, Cha
         JPanel bottomForms = new JPanel();
         bottomForms.setLayout(new BoxLayout(bottomForms, BoxLayout.Y_AXIS));
 
-        // Panel de invitaciones
-        invitePanel = new InviteMembersPanel(selfUsername, inviteToChannelClientCommand, getUsersCommand);
-        invitePanel.setVisible(false);
-        bottomForms.add(invitePanel);
+        // Botón para invitar miembros (abre modal)
+        inviteButton = new JButton("Invitar Miembros");
+        inviteButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        inviteButton.setEnabled(false); // Deshabilitado hasta que se seleccione un canal
+        inviteButton.addActionListener(e -> showInviteDialog());
+        bottomForms.add(inviteButton);
 
         bottomForms.add(Box.createVerticalStrut(8));
 
@@ -89,19 +93,33 @@ public class ChannelsPanel extends JPanel implements ChannelMessageListener, Cha
         // Configurar listener de selección de canales
         channelListPanel.addSelectionListener(e -> {
             ChannelDTO selectedChannel = channelListPanel.getSelectedChannel();
-            if (invitePanel != null) {
-                invitePanel.setVisible(selectedChannel != null);
-                invitePanel.setSelectedChannel(selectedChannel);
-                if (selectedChannel != null) {
-                    invitePanel.refreshUsers();
-                }
-                invitePanel.revalidate();
-                invitePanel.repaint();
-            }
+            inviteButton.setEnabled(selectedChannel != null);
+
             if (selectedChannel != null) {
                 openChannelTab(selectedChannel);
             }
         });
+    }
+
+    private void showInviteDialog() {
+        ChannelDTO selectedChannel = channelListPanel.getSelectedChannel();
+        if (selectedChannel == null)
+            return;
+
+        JDialog inviteDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
+                "Invitar a #" + selectedChannel.getName(), true);
+        inviteDialog.setLayout(new BorderLayout());
+
+        InviteMembersPanel dialogInvitePanel = new InviteMembersPanel(selfUsername, inviteToChannelClientCommand,
+                getUsersCommand);
+        dialogInvitePanel.setSelectedChannel(selectedChannel);
+        dialogInvitePanel.refreshUsers();
+
+        inviteDialog.add(dialogInvitePanel, BorderLayout.CENTER);
+        inviteDialog.pack();
+        inviteDialog.setLocationRelativeTo(this);
+        inviteDialog.setSize(new Dimension(350, 400));
+        inviteDialog.setVisible(true);
     }
 
     private void registerListeners() {
