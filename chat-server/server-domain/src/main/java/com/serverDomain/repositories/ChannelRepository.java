@@ -21,6 +21,8 @@ public interface ChannelRepository {
 
     List<String> findMemberUsernames(String channelId);
 
+    List<String> findMemberUsersWithNames(String channelId);
+
     List<Channel> findAll();
 
     void insertReplicated(Channel channel);

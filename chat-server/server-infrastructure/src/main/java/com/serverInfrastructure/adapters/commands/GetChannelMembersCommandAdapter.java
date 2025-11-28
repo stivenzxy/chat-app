@@ -41,9 +41,9 @@ public class GetChannelMembersCommandAdapter implements ProtocolCommandAdapter {
                 return parser.encode("ERROR", "No eres miembro de este canal");
             }
 
-            List<String> memberUsernames = channelRepository.findMemberUsernames(channelId);
+            List<String> memberPairs = channelRepository.findMemberUsersWithNames(channelId);
 
-            String membersPayload = String.join(",", memberUsernames);
+            String membersPayload = String.join(",", memberPairs);
             return parser.encode("OK", membersPayload);
 
         } catch (Exception e) {

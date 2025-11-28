@@ -46,6 +46,11 @@ public class ChannelRepositoryImpl implements ChannelRepository {
     }
 
     @Override
+    public List<String> findMemberUsersWithNames(String channelId) {
+        return channelDAO.findMemberUsersWithNames(channelId);
+    }
+
+    @Override
     public List<Channel> findAll() {
         return channelDAO.findAll();
     }

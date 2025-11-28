@@ -121,6 +121,24 @@ public class ChannelDAO {
         return usernames;
     }
 
+    public List<String> findMemberUsersWithNames(String channelId) {
+        String sql = "SELECT u.user_id, u.username FROM channel_members m JOIN users u ON u.user_id = m.user_id WHERE m.channel_id = ?";
+        List<String> members = new ArrayList<>();
+        try (Connection conn = connectionManager.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, channelId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String userId = rs.getString("user_id");
+                    String username = rs.getString("username");
+                    members.add(userId + ":" + username);
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Error listando miembros con nombres del canal: {}", e.getMessage());
+        }
+        return members;
+    }
+
     public List<Channel> findAll() {
         String sql = "SELECT * FROM channels ORDER BY name";
         List<Channel> list = new ArrayList<>();

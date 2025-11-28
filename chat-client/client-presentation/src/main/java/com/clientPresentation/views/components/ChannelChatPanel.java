@@ -132,8 +132,7 @@ public class ChannelChatPanel extends JPanel {
                     List<MessageDTO> messages = get();
                     chatHistoryArea.removeAll();
                     for (MessageDTO m : messages) {
-                        String displaySender = m.getSenderId().equals(selfUsername) ? ChatConstants.SELF_DISPLAY_NAME
-                                : m.getSenderId();
+                        String displaySender = resolveName(m.getSenderId());
                         MessageDTO displayMessage;
 
                         if (m.getMessageType() == MessageType.TEXT) {
@@ -252,9 +251,7 @@ public class ChannelChatPanel extends JPanel {
     private void append(String sender, String text, byte[] audio) {
         MessageDTO message;
 
-        String displaySender = sender.equals(selfUsername)
-                ? com.clientPresentation.views.constants.ChatConstants.SELF_DISPLAY_NAME
-                : sender;
+        String displaySender = resolveName(sender);
 
         if (text != null) {
             message = new MessageDTO(displaySender, channel.getId().toString(), text);
@@ -302,6 +299,23 @@ public class ChannelChatPanel extends JPanel {
             }
         } catch (IllegalArgumentException ignored) {
         }
+    }
+
+    private String resolveName(String userId) {
+        if (userId.equals(selfUsername)) {
+            return ChatConstants.SELF_DISPLAY_NAME;
+        }
+
+        // Try to get username from cache
+        String nameFromCache = GetChannelMembersClientCommand.getUsernameFromCache(userId);
+        if (nameFromCache != null) {
+            System.out.println("DEBUG: Resolved " + userId + " -> " + nameFromCache + " (from cache)");
+            return nameFromCache;
+        }
+
+        // Fallback to ID if not in cache
+        System.out.println("DEBUG: Could not resolve " + userId + " (not in cache)");
+        return userId;
     }
 
     public void refreshMembers() {
