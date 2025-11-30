@@ -155,7 +155,15 @@ public class PeerServerCallbackConfigurator {
                 logger.error("Error enviando peers a peer entrante {}: {}", peerId, e.getMessage());
             }
 
-            // Request full database sync FROM incoming peer (bidirectional)
+            // BIDIRECTIONAL SYNC: Send our full database TO the incoming peer
+            try {
+                logger.info("Enviando nuestra BD completa al peer entrante {}", peerId);
+                fullSyncManager.sendFullDatabaseToPeer(peerId);
+            } catch (Exception e) {
+                logger.error("Error enviando BD completa a peer entrante {}: {}", peerId, e.getMessage());
+            }
+
+            // Also request full database sync FROM incoming peer
             try {
                 logger.info("Solicitando sincronización completa de BD desde peer entrante {}", peerId);
                 fullSyncManager.requestFullSync(peerId);

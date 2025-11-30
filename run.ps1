@@ -72,7 +72,7 @@ function Run-Server1 {
         Build-Server
     }
     
-    java -Dserver.port=8080 -Dpeer.server.port=9090 -Ddb.port=3309 -jar $jarPath
+    & java "-Dserver.port=8080" "-Dpeer.server.port=9090" "-Ddb.port=3309" -jar $jarPath
 }
 
 function Run-Server2 {
@@ -84,7 +84,7 @@ function Run-Server2 {
         Build-Server
     }
     
-    java -Dserver.port=8081 -Dpeer.server.port=9091 -Ddb.port=3310 -jar $jarPath
+    & java "-Dserver.port=8081" "-Dpeer.server.port=9091" "-Ddb.port=3310" -jar $jarPath
 }
 
 function Run-Client {

@@ -24,6 +24,8 @@ public class DatabaseSynchronizationService {
     private final ChannelRepository channelRepository;
     private final ChannelInviteRepository channelInviteRepository;
     private final MessageDAO messageDAO;
+    
+    private java.util.function.Consumer<Void> onSyncCompleteCallback;
 
     public DatabaseSynchronizationService(UserRepository userRepository,
             ChannelRepository channelRepository,
@@ -32,6 +34,14 @@ public class DatabaseSynchronizationService {
         this.channelRepository = channelRepository;
         this.channelInviteRepository = channelInviteRepository;
         this.messageDAO = new MessageDAO();
+    }
+    
+    /**
+     * Sets callback to be invoked when database sync is complete.
+     * Used to notify UI components to refresh their data.
+     */
+    public void setOnSyncCompleteCallback(java.util.function.Consumer<Void> callback) {
+        this.onSyncCompleteCallback = callback;
     }
 
     public FullDatabaseSyncDTO exportFullDatabase() {
@@ -177,5 +187,15 @@ public class DatabaseSynchronizationService {
 
         logger.info("Importación completada. Nuevos: {} usuarios, {} canales, {} mensajes",
                 usersCount, channelsCount, messagesCount);
+        
+        // Notificar a la UI que la sincronización está completa
+        if (onSyncCompleteCallback != null && (usersCount > 0 || channelsCount > 0 || messagesCount > 0)) {
+            try {
+                onSyncCompleteCallback.accept(null);
+                logger.info("UI notificada de sincronización completa de BD");
+            } catch (Exception e) {
+                logger.warn("Error notificando sincronización a UI: {}", e.getMessage());
+            }
+        }
     }
 }

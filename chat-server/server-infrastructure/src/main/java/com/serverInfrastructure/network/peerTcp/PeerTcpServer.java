@@ -381,6 +381,21 @@ public class PeerTcpServer {
                         if (onPrivateMessageReceived != null) {
                             onPrivateMessageReceived.accept(peerId, message);
                         }
+                    } else if (message.startsWith("P2P_FULL_SYNC_REQUEST")) {
+                        logger.info("(SERVER) Solicitud de full sync recibida de peer {}", peerId);
+                        if (onPrivateMessageReceived != null) {
+                            onPrivateMessageReceived.accept(peerId, message);
+                        }
+                    } else if (message.startsWith("P2P_FULL_SYNC_RESPONSE")) {
+                        logger.info("(SERVER) Respuesta de full sync recibida de peer {}", peerId);
+                        if (onPrivateMessageReceived != null) {
+                            onPrivateMessageReceived.accept(peerId, message);
+                        }
+                    } else if (message.startsWith("P2P_USER_STATUS_UPDATE")) {
+                        logger.info("(SERVER) Actualización de estado de usuario recibida de peer {}", peerId);
+                        if (onPrivateMessageReceived != null) {
+                            onPrivateMessageReceived.accept(peerId, message);
+                        }
                     }
 
                     logger.debug("Mensaje de peer {}: {}", peerId, message);

@@ -34,6 +34,14 @@ public class PeerFullSyncManager {
     public void setPeerMessageSender(BiConsumer<String, String> peerMessageSender) {
         this.peerMessageSender = peerMessageSender;
     }
+    
+    /**
+     * Sets callback to be invoked when database sync is complete.
+     * Used to notify UI components to refresh their data.
+     */
+    public void setOnSyncCompleteCallback(java.util.function.Consumer<Void> callback) {
+        this.dbSyncService.setOnSyncCompleteCallback(callback);
+    }
 
     public void requestFullSync(String peerId) {
         // Check if we recently requested sync from this peer
@@ -54,23 +62,25 @@ public class PeerFullSyncManager {
     }
 
     public void handleFullSyncRequest(String peerId) {
+        sendFullDatabaseToPeer(peerId);
+    }
+
+    /**
+     * Sends the full database to a specific peer (proactive push).
+     * Used both when responding to a sync request and when initiating bidirectional sync.
+     */
+    public void sendFullDatabaseToPeer(String peerId) {
         try {
             FullDatabaseSyncDTO data = dbSyncService.exportFullDatabase();
             String json = objectMapper.writeValueAsString(data);
-            // Dividir en chunks si es necesario, pero por ahora asumimos que cabe o el
-            // transporte lo maneja
-            // El protocolo usa '|' como delimitador, así que debemos escapar o usar otro
-            // mecanismo
-            // Como es JSON, mejor enviarlo como payload crudo si el protocolo lo permite,
-            // o codificarlo en Base64 para evitar conflictos con delimitadores.
             String base64Data = java.util.Base64.getEncoder().encodeToString(json.getBytes());
 
             if (peerMessageSender != null) {
                 peerMessageSender.accept(peerId, "P2P_FULL_SYNC_RESPONSE|" + base64Data);
-                logger.info("Enviada respuesta de sincronización completa a peer {}", peerId);
+                logger.info("Enviada sincronización completa de BD a peer {}", peerId);
             }
         } catch (Exception e) {
-            logger.error("Error procesando solicitud de full sync de {}: {}", peerId, e.getMessage());
+            logger.error("Error enviando BD completa a {}: {}", peerId, e.getMessage());
         }
     }
 

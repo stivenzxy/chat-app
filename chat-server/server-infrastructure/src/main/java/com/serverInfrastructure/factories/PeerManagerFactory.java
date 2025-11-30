@@ -62,7 +62,12 @@ public class PeerManagerFactory {
     }
 
     public static PeerFullSyncManager createPeerFullSyncManager(Consumer<String> broadcaster) {
-        logger.debug("Creando PeerFullSyncManager");
+        return createPeerFullSyncManager(broadcaster, null);
+    }
+    
+    public static PeerFullSyncManager createPeerFullSyncManager(Consumer<String> broadcaster, Consumer<Void> syncCompleteCallback) {
+        logger.debug("Creando PeerFullSyncManager" +
+                (syncCompleteCallback != null ? " con callback de notificación" : ""));
         com.serverInfrastructure.persistence.repository.UserManagementRepository userRepository = new com.serverInfrastructure.persistence.repository.UserManagementRepository();
         com.serverInfrastructure.persistence.repository.ChannelRepositoryImpl channelRepository = new com.serverInfrastructure.persistence.repository.ChannelRepositoryImpl();
         com.serverInfrastructure.persistence.repository.ChannelInviteRepositoryImpl inviteRepository = new com.serverInfrastructure.persistence.repository.ChannelInviteRepositoryImpl();
@@ -73,6 +78,10 @@ public class PeerManagerFactory {
         com.serverInfrastructure.services.sync.PresenceReplicationService presenceService = new com.serverInfrastructure.services.sync.PresenceReplicationService(
                 broadcaster);
 
-        return new PeerFullSyncManager(dbSyncService, presenceService);
+        PeerFullSyncManager manager = new PeerFullSyncManager(dbSyncService, presenceService);
+        if (syncCompleteCallback != null) {
+            manager.setOnSyncCompleteCallback(syncCompleteCallback);
+        }
+        return manager;
     }
 }
