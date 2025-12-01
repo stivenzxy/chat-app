@@ -27,7 +27,7 @@ public class DefaultServiceFactory implements ServiceFactory {
         this.userRepository = new UserManagementRepository();
         this.passwordHasher = new BcryptPasswordHasher();
         this.replicationNotifierProxy = new UserReplicationNotifierProxy();
-        this.logReader = new LogFileReaderAdapter(); // Uses default "server.log"
+        this.logReader = new LogFileReaderAdapter();
     }
 
     public UserReplicationNotifierProxy getReplicationNotifierProxy() {
