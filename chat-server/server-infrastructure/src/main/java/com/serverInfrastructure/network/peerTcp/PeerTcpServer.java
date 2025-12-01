@@ -33,6 +33,7 @@ public class PeerTcpServer {
 
     private BiConsumer<String, String> onUserSyncReceived;
     private Supplier<String> onGetLocalUserSync;
+    private Supplier<String> onGetConnectedUsersSync;
     private BiConsumer<String, String> onPrivateMessageReceived;
     private Consumer<com.serverApplication.dto.ConnectedPeerInfo> onPeerConnected;
     private Consumer<String> onIncomingPeerDisconnected;
@@ -50,6 +51,10 @@ public class PeerTcpServer {
 
     public void setOnGetLocalUserSync(Supplier<String> callback) {
         this.onGetLocalUserSync = callback;
+    }
+    
+    public void setOnGetConnectedUsersSync(Supplier<String> callback) {
+        this.onGetConnectedUsersSync = callback;
     }
 
     public void setOnPrivateMessageReceived(BiConsumer<String, String> callback) {
@@ -71,11 +76,19 @@ public class PeerTcpServer {
     public boolean sendMessageToIncomingPeer(String peerId, String message) {
         PrintWriter writer = incomingPeerWriters.get(peerId);
         if (writer == null) {
+            logger.debug("No hay writer para peer entrante {}, peers disponibles: {}", peerId, incomingPeerWriters.keySet());
             return false;
         }
         try {
             writer.println(message);
-            return !writer.checkError();
+            boolean success = !writer.checkError();
+            if (success) {
+                logger.debug("Mensaje enviado exitosamente a peer entrante {}: {}...", peerId, 
+                    message.substring(0, Math.min(50, message.length())));
+            } else {
+                logger.warn("Error de escritura al enviar mensaje a peer entrante {}", peerId);
+            }
+            return success;
         } catch (Exception e) {
             logger.warn("No se pudo enviar mensaje a peer entrante {}: {}", peerId, e.getMessage());
             return false;
@@ -326,18 +339,30 @@ public class PeerTcpServer {
 
                         if (!hasRespondedToSync && message.contains("action=SYNC_ALL")) {
                             hasRespondedToSync = true;
+                            
+                            // First send connected users (P2P_USER_SYNC)
+                            if (onGetConnectedUsersSync != null) {
+                                try {
+                                    String connectedUsersMessage = onGetConnectedUsersSync.get();
+                                    if (connectedUsersMessage != null && !connectedUsersMessage.trim().isEmpty()) {
+                                        output.println(connectedUsersMessage);
+                                        logger.info("Enviando usuarios conectados a peer {} tras SYNC_ALL", peerId);
+                                    }
+                                } catch (Exception e) {
+                                    logger.error("Error enviando usuarios conectados a {}: {}", peerId, e.getMessage());
+                                }
+                            }
+                            
+                            // Then send full database sync (P2P_DB_SYNC)
                             if (onGetLocalUserSync != null) {
                                 try {
                                     String localUserSyncMessage = onGetLocalUserSync.get();
                                     if (localUserSyncMessage != null && !localUserSyncMessage.trim().isEmpty()) {
                                         output.println(localUserSyncMessage);
-                                        logger.info(
-                                                "Respondiendo con sincronización completa a peer {} tras recibir SYNC_ALL",
-                                                peerId);
+                                        logger.info("Enviando BD completa a peer {} tras SYNC_ALL", peerId);
                                     }
                                 } catch (Exception e) {
-                                    logger.error("Error enviando respuesta de sincronización a {}: {}", peerId,
-                                            e.getMessage());
+                                    logger.error("Error enviando BD a {}: {}", peerId, e.getMessage());
                                 }
                             }
                         }
@@ -378,6 +403,21 @@ public class PeerTcpServer {
                         }
                     } else if (message.startsWith("P2P_REPLICATE_")) {
                         logger.info("(SERVER) Replicación de entidad recibida de peer {}", peerId);
+                        if (onPrivateMessageReceived != null) {
+                            onPrivateMessageReceived.accept(peerId, message);
+                        }
+                    } else if (message.startsWith("P2P_FULL_SYNC_REQUEST")) {
+                        logger.info("(SERVER) Solicitud de full sync recibida de peer {}", peerId);
+                        if (onPrivateMessageReceived != null) {
+                            onPrivateMessageReceived.accept(peerId, message);
+                        }
+                    } else if (message.startsWith("P2P_FULL_SYNC_RESPONSE")) {
+                        logger.info("(SERVER) Respuesta de full sync recibida de peer {}", peerId);
+                        if (onPrivateMessageReceived != null) {
+                            onPrivateMessageReceived.accept(peerId, message);
+                        }
+                    } else if (message.startsWith("P2P_USER_STATUS_UPDATE")) {
+                        logger.info("(SERVER) Actualización de estado de usuario recibida de peer {}", peerId);
                         if (onPrivateMessageReceived != null) {
                             onPrivateMessageReceived.accept(peerId, message);
                         }

@@ -43,9 +43,9 @@ public class PeerTcpServerAdapterFactory {
                 PeerEntityReplicationManager entityReplicationManager = PeerManagerFactory
                                 .createEntityReplicationManager();
 
-                // Create FullSyncManager with broadcaster from connectionManager
+                // Create FullSyncManager with broadcaster from connectionManager and sync callback
                 com.serverInfrastructure.adapters.peer.managers.PeerFullSyncManager fullSyncManager = PeerManagerFactory
-                                .createPeerFullSyncManager(connectionManager::broadcastToPeers);
+                                .createPeerFullSyncManager(connectionManager::broadcastToPeers, userReplicationCallback);
 
                 IncomingConnectionHandler incomingHandler = new IncomingConnectionHandler(
                                 validator, connectionManager, observerNotifier);

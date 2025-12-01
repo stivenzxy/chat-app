@@ -163,12 +163,22 @@ public class PeerConnectionManager {
     }
 
     public boolean sendMessageToPeer(String peerId, String message) {
+        // First try outgoing connections
         PeerTcpClient client = peerClients.get(peerId);
-        if (client == null || !client.isConnected()) {
-            logger.warn("No hay conexión activa con peer {}", peerId);
-            return false;
+        if (client != null && client.isConnected()) {
+            return client.sendMessage(message);
         }
-        return client.sendMessage(message);
+        
+        // Then try incoming connections
+        if (peerServer != null && peerServer.isRunning()) {
+            if (peerServer.sendMessageToIncomingPeer(peerId, message)) {
+                logger.debug("Mensaje enviado a peer entrante {}", peerId);
+                return true;
+            }
+        }
+        
+        logger.warn("No hay conexión activa con peer {} (ni saliente ni entrante)", peerId);
+        return false;
     }
 
     public int broadcastToPeers(String message) {

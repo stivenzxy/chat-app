@@ -305,13 +305,7 @@ public class PeerUserSyncManager {
     }
 
     public void sendFullUserSyncToPeer(String peerId, Consumer<String> sendCallback) {
-        // This method was for user sync only. We might want to keep it or upgrade it.
-        // But for now, let's keep it as is or redirect to full DB sync if needed.
-        // However, this is called by PeerUserReplicationManager which handles batch
-        // user replication.
-        // The requirement is about "discovering a new server".
-        // So generateInitialSyncMessage is the key.
-
+        // Send connected users sync message (P2P_USER_SYNC with SYNC_ALL)
         Map<String, String> localUsersWithPhotos = userRepository.getLocalUsersWithPhotos();
         List<String> localUsers = new ArrayList<>(localUsersWithPhotos.keySet());
         String serverId = getServerIdOrDefault();
@@ -320,7 +314,33 @@ public class PeerUserSyncManager {
         String message = syncInfo.toProtocol();
 
         sendCallback.accept(message);
-        logger.info("Sincronización completa de {} usuario(s) enviada a peer {}", localUsers.size(), peerId);
+        logger.info("Sincronización completa de {} usuario(s) conectados enviada a peer {}", localUsers.size(), peerId);
+    }
+    
+    /**
+     * Generates a P2P_USER_SYNC message with currently connected users.
+     * This is for notifying other servers about which users are ONLINE right now.
+     */
+    public String generateConnectedUsersSyncMessage(int peerPort) {
+        try {
+            String serverId = localServerId;
+            if (serverId == null) {
+                try {
+                    serverId = java.net.InetAddress.getLocalHost().getHostAddress() + ":" + peerPort;
+                } catch (Exception e) {
+                    serverId = "localhost:" + peerPort;
+                }
+            }
+
+            Map<String, String> localUsersWithPhotos = userRepository.getLocalUsersWithPhotos();
+            List<String> localUsers = new ArrayList<>(localUsersWithPhotos.keySet());
+
+            UserSyncInfo syncInfo = UserSyncInfo.createFullSync(serverId, localUsers, localUsersWithPhotos);
+            return syncInfo.toProtocol();
+        } catch (Exception e) {
+            logger.error("Error generando mensaje de usuarios conectados: {}", e.getMessage());
+            return "";
+        }
     }
 
     public String generateInitialSyncMessage(int peerPort) {

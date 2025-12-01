@@ -205,6 +205,21 @@ public class PeerTcpClient {
             if (onPrivateMessageReceived != null) {
                 onPrivateMessageReceived.accept(peerId, message);
             }
+        } else if (message.startsWith("P2P_FULL_SYNC_REQUEST")) {
+            logger.info("(CLIENT) Solicitud de full sync recibida desde {}", peerId);
+            if (onPrivateMessageReceived != null) {
+                onPrivateMessageReceived.accept(peerId, message);
+            }
+        } else if (message.startsWith("P2P_FULL_SYNC_RESPONSE")) {
+            logger.info("(CLIENT) Respuesta de full sync recibida desde {}", peerId);
+            if (onPrivateMessageReceived != null) {
+                onPrivateMessageReceived.accept(peerId, message);
+            }
+        } else if (message.startsWith("P2P_USER_STATUS_UPDATE")) {
+            logger.info("(CLIENT) Actualización de estado de usuario recibida desde {}", peerId);
+            if (onPrivateMessageReceived != null) {
+                onPrivateMessageReceived.accept(peerId, message);
+            }
         } else if (message.startsWith("P2P_DB_SYNC")) {
             logger.info("(CLIENT) Sincronización completa de BD recibida desde {}", peerId);
             if (onUserSyncReceived != null) {
