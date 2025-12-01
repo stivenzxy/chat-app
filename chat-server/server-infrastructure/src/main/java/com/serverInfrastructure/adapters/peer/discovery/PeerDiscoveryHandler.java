@@ -63,6 +63,10 @@ public class PeerDiscoveryHandler {
             }
             
             String peersSection = parts.get(1);
+            // Remove "peers=" prefix if present
+            if (peersSection.startsWith("peers=")) {
+                peersSection = peersSection.substring(6);
+            }
             String[] peerEntries = peersSection.split(",");
             
             for (String entry : peerEntries) {
