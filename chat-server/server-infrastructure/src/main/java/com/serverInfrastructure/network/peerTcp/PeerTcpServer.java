@@ -71,11 +71,19 @@ public class PeerTcpServer {
     public boolean sendMessageToIncomingPeer(String peerId, String message) {
         PrintWriter writer = incomingPeerWriters.get(peerId);
         if (writer == null) {
+            logger.debug("No hay writer para peer entrante {}, peers disponibles: {}", peerId, incomingPeerWriters.keySet());
             return false;
         }
         try {
             writer.println(message);
-            return !writer.checkError();
+            boolean success = !writer.checkError();
+            if (success) {
+                logger.debug("Mensaje enviado exitosamente a peer entrante {}: {}...", peerId, 
+                    message.substring(0, Math.min(50, message.length())));
+            } else {
+                logger.warn("Error de escritura al enviar mensaje a peer entrante {}", peerId);
+            }
+            return success;
         } catch (Exception e) {
             logger.warn("No se pudo enviar mensaje a peer entrante {}: {}", peerId, e.getMessage());
             return false;
