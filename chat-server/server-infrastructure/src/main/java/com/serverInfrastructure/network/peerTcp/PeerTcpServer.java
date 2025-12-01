@@ -33,6 +33,7 @@ public class PeerTcpServer {
 
     private BiConsumer<String, String> onUserSyncReceived;
     private Supplier<String> onGetLocalUserSync;
+    private Supplier<String> onGetConnectedUsersSync;
     private BiConsumer<String, String> onPrivateMessageReceived;
     private Consumer<com.serverApplication.dto.ConnectedPeerInfo> onPeerConnected;
     private Consumer<String> onIncomingPeerDisconnected;
@@ -50,6 +51,10 @@ public class PeerTcpServer {
 
     public void setOnGetLocalUserSync(Supplier<String> callback) {
         this.onGetLocalUserSync = callback;
+    }
+    
+    public void setOnGetConnectedUsersSync(Supplier<String> callback) {
+        this.onGetConnectedUsersSync = callback;
     }
 
     public void setOnPrivateMessageReceived(BiConsumer<String, String> callback) {
@@ -334,18 +339,30 @@ public class PeerTcpServer {
 
                         if (!hasRespondedToSync && message.contains("action=SYNC_ALL")) {
                             hasRespondedToSync = true;
+                            
+                            // First send connected users (P2P_USER_SYNC)
+                            if (onGetConnectedUsersSync != null) {
+                                try {
+                                    String connectedUsersMessage = onGetConnectedUsersSync.get();
+                                    if (connectedUsersMessage != null && !connectedUsersMessage.trim().isEmpty()) {
+                                        output.println(connectedUsersMessage);
+                                        logger.info("Enviando usuarios conectados a peer {} tras SYNC_ALL", peerId);
+                                    }
+                                } catch (Exception e) {
+                                    logger.error("Error enviando usuarios conectados a {}: {}", peerId, e.getMessage());
+                                }
+                            }
+                            
+                            // Then send full database sync (P2P_DB_SYNC)
                             if (onGetLocalUserSync != null) {
                                 try {
                                     String localUserSyncMessage = onGetLocalUserSync.get();
                                     if (localUserSyncMessage != null && !localUserSyncMessage.trim().isEmpty()) {
                                         output.println(localUserSyncMessage);
-                                        logger.info(
-                                                "Respondiendo con sincronización completa a peer {} tras recibir SYNC_ALL",
-                                                peerId);
+                                        logger.info("Enviando BD completa a peer {} tras SYNC_ALL", peerId);
                                     }
                                 } catch (Exception e) {
-                                    logger.error("Error enviando respuesta de sincronización a {}: {}", peerId,
-                                            e.getMessage());
+                                    logger.error("Error enviando BD a {}: {}", peerId, e.getMessage());
                                 }
                             }
                         }

@@ -94,7 +94,11 @@ public class PeerServerCallbackConfigurator {
      * @param peerPort   the port for identity inclusion
      */
     private void configureLocalUserSyncCallback(PeerTcpServer peerServer, int peerPort) {
+        // Full database sync (P2P_DB_SYNC)
         peerServer.setOnGetLocalUserSync(() -> userSyncManager.generateInitialSyncMessage(peerPort));
+        
+        // Connected users sync (P2P_USER_SYNC) - for real-time user list
+        peerServer.setOnGetConnectedUsersSync(() -> userSyncManager.generateConnectedUsersSyncMessage(peerPort));
     }
 
     /**
