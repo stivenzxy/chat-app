@@ -56,21 +56,10 @@ public class HttpRestServer {
         
         MetricsRestController metricsController = new MetricsRestController(metricsManager.getRegistry());
 
-        app.before(ctx -> {
-            ctx.header("Access-Control-Allow-Origin", "*");
-            ctx.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH");
-            ctx.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept, Origin, X-Requested-With");
-            ctx.header("Access-Control-Max-Age", "3600");
-        });
-
-        app.options("/*", ctx -> {
-            ctx.status(204);
-        });
-
         app.get("/api/logs", logsController::getLogs);
         app.get("/api/users", usersController::getUsers);
         app.get("/api/metrics", metricsController::getMetrics);
-        app.get("/api/health", ctx -> ctx.json(new HealthResponse("ok")));
+        app.get("/api/health", ctx -> ctx.json(new HealthResponse("Server is healthy")));
         
         logger.info("HTTP REST routes configured");
     }
