@@ -77,12 +77,12 @@ public class HttpRestServer {
 
     public void start() {
         app.start(port);
-        logger.info("HTTP REST API server started on port {}", port);
+        logger.info("Servidor HTTP inicializado en el puerto: {}", port);
     }
 
     public void stop() {
         app.stop();
-        logger.info("HTTP REST API server stopped");
+        logger.info("Servidor HTTP detenido");
     }
 
     public int getPort() {
