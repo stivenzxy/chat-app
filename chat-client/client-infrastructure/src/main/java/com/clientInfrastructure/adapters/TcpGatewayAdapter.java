@@ -67,7 +67,6 @@ public class TcpGatewayAdapter implements ServerGatewayPort {
             responseQueue.clear();
             tcpClient.sendRequest(requestToSend);
 
-            // Usar timeout más largo para comandos de transcripción
             int timeoutSeconds = getTimeoutForCommand(command);
             String rawResponse = responseQueue.poll(timeoutSeconds, TimeUnit.SECONDS);
 
@@ -82,17 +81,10 @@ public class TcpGatewayAdapter implements ServerGatewayPort {
         }
     }
     
-    /**
-     * Obtiene el timeout apropiado según el tipo de comando
-     * @param command El comando a ejecutar
-     * @return Timeout en segundos
-     */
     private int getTimeoutForCommand(String command) {
-        // Comandos que requieren más tiempo de procesamiento
         if ("TRANSCRIBE_AUDIO".equalsIgnoreCase(command)) {
             return 30;
         }
-        // Timeout por defecto para otros comandos
         return 5;
     }
 

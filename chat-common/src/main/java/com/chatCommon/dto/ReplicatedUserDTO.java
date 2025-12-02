@@ -6,17 +6,13 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
-/**
- * Data Transfer Object for user replication across P2P servers.
- * Contains all necessary data to replicate a user in a remote server's database.
- */
 public class ReplicatedUserDTO {
     
     private final String userId;
     private final String username;
     private final String email;
     private final String passwordHash;
-    private final String photoBase64; // can be empty
+    private final String photoBase64; 
     private final String originServerId;
     
     public ReplicatedUserDTO(
@@ -70,10 +66,6 @@ public class ReplicatedUserDTO {
         return originServerId;
     }
     
-    /**
-     * Converts to protocol message format.
-     * Format: P2P_USER_REPLICATION|userId|username|email|passwordHash|photoBase64|originServerId
-     */
     public String toProtocol() {
         ProtocolParser parser = new ProtocolParser('|', '\\');
         return parser.encode(
@@ -86,10 +78,7 @@ public class ReplicatedUserDTO {
             originServerId
         );
     }
-    
-    /**
-     * Parses from protocol message.
-     */
+
     public static ReplicatedUserDTO fromProtocol(String message) {
         ProtocolParser parser = new ProtocolParser('|', '\\');
         List<String> parts = parser.decode(message);
@@ -99,19 +88,15 @@ public class ReplicatedUserDTO {
         }
         
         return new ReplicatedUserDTO(
-            parts.get(1), // userId
-            parts.get(2), // username
-            parts.get(3), // email
-            parts.get(4), // passwordHash
-            parts.get(5), // photoBase64
-            parts.get(6)  // originServerId
+            parts.get(1), 
+            parts.get(2), 
+            parts.get(3), 
+            parts.get(4), 
+            parts.get(5), 
+            parts.get(6)  
         );
     }
     
-    /**
-     * Creates a batch replication message containing multiple users.
-     * Format: P2P_BATCH_USER_REPLICATION|count|user1Data|user2Data|...
-     */
     public static String toBatchProtocol(List<ReplicatedUserDTO> users, String originServerId) {
         ProtocolParser parser = new ProtocolParser('|', '\\');
         List<String> parts = new ArrayList<>();
@@ -130,9 +115,6 @@ public class ReplicatedUserDTO {
         return parser.encode(parts.toArray(new String[0]));
     }
     
-    /**
-     * Parses batch replication message.
-     */
     public static List<ReplicatedUserDTO> fromBatchProtocol(String message) {
         ProtocolParser parser = new ProtocolParser('|', '\\');
         List<String> parts = parser.decode(message);
@@ -152,11 +134,11 @@ public class ReplicatedUserDTO {
             }
             
             users.add(new ReplicatedUserDTO(
-                parts.get(index++),     // userId
-                parts.get(index++),     // username
-                parts.get(index++),     // email
-                parts.get(index++),     // passwordHash
-                parts.get(index++),     // photoBase64
+                parts.get(index++),
+                parts.get(index++),
+                parts.get(index++),
+                parts.get(index++),
+                parts.get(index++),
                 originServerId
             ));
         }

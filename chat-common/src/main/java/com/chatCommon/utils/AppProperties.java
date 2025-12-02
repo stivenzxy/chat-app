@@ -1,4 +1,3 @@
-// Ubicación: chat-common/src/main/java/com/chatCommon/utils/AppProperties.java
 package com.chatCommon.utils;
 
 import java.util.MissingResourceException;
@@ -8,7 +7,7 @@ import org.slf4j.LoggerFactory;
 
 public class AppProperties {
     private static final Logger logger = LoggerFactory.getLogger(AppProperties.class);
-    private final ResourceBundle resourceBundle; // Debe ser 'final' y no estático
+    private final ResourceBundle resourceBundle;
 
     public AppProperties(String bundleName) {
         ResourceBundle tempRb;
@@ -35,7 +34,6 @@ public class AppProperties {
         }
     }
 
-    // Este método NO debe ser estático
     public int getInt(String key) {
         String envValue = System.getenv(key);
         if (envValue != null && !envValue.isBlank()) {

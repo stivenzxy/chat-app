@@ -39,7 +39,6 @@ public class ConnectionManager {
         }
     }
 
-    /* synchronized blocks instance creation for only Thread at a time  */
     public static ConnectionManager getInstance() {
         if (instance == null) {
             synchronized (ConnectionManager.class) {

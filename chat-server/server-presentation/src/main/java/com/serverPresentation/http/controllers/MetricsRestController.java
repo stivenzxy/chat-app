@@ -10,7 +10,7 @@ public class MetricsRestController {
     public MetricsRestController(PrometheusMeterRegistry registry) {
         this.registry = registry;
     }
-
+    
     public void getMetrics(Context ctx) {
         ctx.contentType("text/plain; version=0.0.4")
            .result(registry.scrape());

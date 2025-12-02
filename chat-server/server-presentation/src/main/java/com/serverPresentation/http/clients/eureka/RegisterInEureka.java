@@ -22,7 +22,6 @@ public class RegisterInEureka {
         this.instanceId = appName + "-" + serverIp + ":" + port;
         this.client = HttpClient.newHttpClient();
         
-        // Registrar automáticamente al instanciar
         register(serverIp, port);
     }
 

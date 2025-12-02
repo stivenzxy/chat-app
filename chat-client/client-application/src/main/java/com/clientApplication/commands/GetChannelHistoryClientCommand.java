@@ -47,8 +47,6 @@ public class GetChannelHistoryClientCommand implements ClientCommand<String, Lis
             return messages;
         }
 
-        // Format:
-        // authorId|messageType|content|audioContent(base64)|timestamp;;nextMessage...
         String[] messageParts = messagesPayload.split(";;");
 
         for (String messagePart : messageParts) {
@@ -59,8 +57,7 @@ public class GetChannelHistoryClientCommand implements ClientCommand<String, Lis
                     String messageType = fields[1];
                     String content = fields[2].replace("\\|", "|").replace("\\;", ";");
                     String audioBase64 = fields[3];
-                    // timestamp in fields[4] - not used in MessageDTO constructor
-
+                    
                     if ("TEXT".equals(messageType)) {
                         messages.add(new MessageDTO(authorId, null, content));
                     } else if ("AUDIO".equals(messageType) && !audioBase64.isEmpty()) {

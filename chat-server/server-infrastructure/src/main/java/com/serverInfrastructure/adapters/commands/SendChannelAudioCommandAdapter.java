@@ -45,7 +45,6 @@ public class SendChannelAudioCommandAdapter implements ProtocolCommandAdapter {
 
     @Override
     public String execute(List<String> parts, ProtocolParser parser, ClientConnection connectionContext) {
-        // SEND_CHANNEL_AUDIO|channelId|audioBase64
         if (parts.size() < 3)
             return parser.encode("ERROR", "Argumentos insuficientes");
 
@@ -82,14 +81,13 @@ public class SendChannelAudioCommandAdapter implements ProtocolCommandAdapter {
 
         String messageId = messageDAO.saveChannelAudioMessage(senderUserId, channelId, audioData);
 
-        // Replicar mensaje de audio a todos los peers
         if (messageId != null && networkAdapter != null) {
             MessageSyncDTO syncDTO = new MessageSyncDTO(
                     messageId,
                     senderUserId,
                     null,
                     channelId,
-                    null, // Content is null for audio
+                    null,
                     "AUDIO",
                     audioData,
                     LocalDateTime.now());
@@ -123,7 +121,6 @@ public class SendChannelAudioCommandAdapter implements ProtocolCommandAdapter {
 
         String forward = parser.encode("RECEIVE_CHANNEL_AUDIO", channelId, senderUsername, audioBase64);
 
-        // Enviar a todos los miembros del canal
         for (String username : memberUsernames) {
             handler.getServer().sendMessageToUser(username, forward, senderUsername + " [AUDIO]");
         }

@@ -36,10 +36,6 @@ public class DatabaseSynchronizationService {
         this.messageDAO = new MessageDAO();
     }
     
-    /**
-     * Sets callback to be invoked when database sync is complete.
-     * Used to notify UI components to refresh their data.
-     */
     public void setOnSyncCompleteCallback(java.util.function.Consumer<Void> callback) {
         this.onSyncCompleteCallback = callback;
     }
@@ -96,7 +92,6 @@ public class DatabaseSynchronizationService {
     public void importFullDatabase(FullDatabaseSyncDTO data) {
         logger.info("Iniciando importación completa de base de datos...");
 
-        // 1. Usuarios
         int usersCount = 0;
         for (UserSyncDTO dto : data.users()) {
             try {
@@ -113,7 +108,6 @@ public class DatabaseSynchronizationService {
             }
         }
 
-        // 2. Canales
         int channelsCount = 0;
         for (ChannelSyncDTO dto : data.channels()) {
             try {
@@ -132,7 +126,6 @@ public class DatabaseSynchronizationService {
             }
         }
 
-        // 3. Miembros de Canales
         for (ChannelMemberSyncDTO dto : data.channelMembers()) {
             try {
                 if (!channelRepository.isMember(dto.channelId(), dto.userId())) {
@@ -143,7 +136,6 @@ public class DatabaseSynchronizationService {
             }
         }
 
-        // 4. Invitaciones
         for (ChannelInviteSyncDTO dto : data.channelInvites()) {
             try {
                 ChannelInvite invite = new ChannelInvite(
@@ -153,19 +145,13 @@ public class DatabaseSynchronizationService {
                         dto.invitedUserId(),
                         ChannelInvite.Status.valueOf(dto.status()),
                         dto.createdAt());
-                // Usamos insertReplicated que usa INSERT IGNORE o similar si el ID ya existe
-                // O verificamos si existe, pero el repo no tiene findById para invites
-                // facilmente expuesto
-                // Asumimos que insertReplicated maneja duplicados (el DAO usa INSERT normal,
-                // podría fallar si existe)
-                // Deberíamos capturar excepción de clave duplicada
+                
                 channelInviteRepository.insertReplicated(invite);
             } catch (Exception e) {
                 logger.debug("Error/duplicado importando invitación {}: {}", dto.inviteId(), e.getMessage());
             }
         }
 
-        // 5. Mensajes
         int messagesCount = 0;
         for (MessageSyncDTO dto : data.messages()) {
             try {
@@ -176,7 +162,6 @@ public class DatabaseSynchronizationService {
             }
         }
 
-        // 6. Transcripciones
         for (AudioTranscriptionSyncDTO dto : data.transcriptions()) {
             try {
                 messageDAO.insertTranscriptionReplicated(dto);
@@ -188,7 +173,6 @@ public class DatabaseSynchronizationService {
         logger.info("Importación completada. Nuevos: {} usuarios, {} canales, {} mensajes",
                 usersCount, channelsCount, messagesCount);
         
-        // Notificar a la UI que la sincronización está completa
         if (onSyncCompleteCallback != null && (usersCount > 0 || channelsCount > 0 || messagesCount > 0)) {
             try {
                 onSyncCompleteCallback.accept(null);

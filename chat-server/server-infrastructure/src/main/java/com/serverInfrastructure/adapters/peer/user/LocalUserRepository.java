@@ -7,17 +7,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-/**
- * Repository abstraction for accessing local user information.
- * Decouples peer components from direct ActiveUserManager dependency.
- */
 public class LocalUserRepository {
     
     private static final Logger logger = LoggerFactory.getLogger(LocalUserRepository.class);
     
-    /**
-     * Gets list of all local usernames.
-     */
     public List<String> getLocalUsernames() {
         try {
             ActiveUserManager userManager = ActiveUserManager.getInstance();
@@ -28,9 +21,6 @@ public class LocalUserRepository {
         }
     }
     
-    /**
-     * Gets local users with their photos in base64 format.
-     */
     public Map<String, String> getLocalUsersWithPhotos() {
         Map<String, String> usersWithPhotos = new HashMap<>();
         try {
@@ -52,10 +42,7 @@ public class LocalUserRepository {
         }
         return usersWithPhotos;
     }
-    
-    /**
-     * Gets photo for a specific user.
-     */
+
     public String getUserPhoto(String username) {
         try {
             ActiveUserManager userManager = ActiveUserManager.getInstance();
@@ -71,9 +58,6 @@ public class LocalUserRepository {
         return "";
     }
     
-    /**
-     * Gets user sessions for a username.
-     */
     public List<User> getUserSessions(String username) {
         try {
             ActiveUserManager userManager = ActiveUserManager.getInstance();
@@ -84,9 +68,6 @@ public class LocalUserRepository {
         }
     }
     
-    /**
-     * Gets user ID from connection ID.
-     */
     public String getUserIdFromConnection(String connectionId) {
         try {
             ActiveUserManager userManager = ActiveUserManager.getInstance();

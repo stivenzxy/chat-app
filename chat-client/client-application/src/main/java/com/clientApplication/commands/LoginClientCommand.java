@@ -30,7 +30,6 @@ public class LoginClientCommand implements ClientCommand<LoginRequest, LoginResp
 
 
             if (success && responseParts.size() >= 5) {
-                // OK|mensaje|id|username|foto
                 String userId = responseParts.get(2);
                 String username = responseParts.get(3);
                 String photoBase64 = responseParts.get(4);

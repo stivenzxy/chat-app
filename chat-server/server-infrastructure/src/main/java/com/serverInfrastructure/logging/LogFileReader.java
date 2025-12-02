@@ -102,11 +102,11 @@ public class LogFileReader {
         
         if (matcher.matches()) {
             try {
-                String timestampStr = matcher.group(1);  // "2025-11-24 --- Timestamp
-                String thread = matcher.group(2);         // "main"
-                String level = matcher.group(3);          // "INFO"
-                String source = matcher.group(4);         // "com.serverPresentation.ServerApplication"
-                String message = matcher.group(5);        // "Server started"
+                String timestampStr = matcher.group(1);  
+                String thread = matcher.group(2);        
+                String level = matcher.group(3);         
+                String source = matcher.group(4);        
+                String message = matcher.group(5);       
                 
                 LocalDateTime timestamp = LocalDateTime.parse(timestampStr, LOGBACK_FORMATTER);
             

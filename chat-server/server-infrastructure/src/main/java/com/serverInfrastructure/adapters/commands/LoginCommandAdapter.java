@@ -49,22 +49,14 @@ public class LoginCommandAdapter implements ProtocolCommandAdapter {
         if (userOptional.isPresent()) {
             User user = userOptional.get();
 
-            // Guardar el connectionId único ANTES de cualquier modificación
             String sessionConnectionId = connectionContext.getId();
-
-            // IMPORTANTE: NO crear un nuevo User con connectionId
-            // Mantener el userId ORIGINAL del usuario de la BD
-            // El ActiveUserManager ahora debe mapear connectionId -> User (con userId
-            // original)
 
             activeUserManager.userLoggedIn(user.getUsername().value(), user, sessionConnectionId);
 
-            // Broadcast user status to peers
             if (networkAdapter != null) {
                 networkAdapter.broadcastUserStatus(user.getUsername().value(), true);
             }
 
-            // (El código para fireClientIdentityUpdated permanece igual)
             if (commandHandler != null && commandHandler.getServer() != null) {
                 try {
                     commandHandler.getServer().getClass()
@@ -74,18 +66,12 @@ public class LoginCommandAdapter implements ProtocolCommandAdapter {
                 }
             }
 
-            // --- INICIO DE LA MODIFICACIÓN ---
             String photoBase64 = "";
             if (user.getPhotoData() != null && user.getPhotoData().length > 0) {
                 photoBase64 = Base64.getEncoder().encodeToString(user.getPhotoData());
             }
 
-            // IMPORTANTE: Devolver el userId ORIGINAL (no el connectionId) para el cliente
-            // El cliente necesita el userId para identificar al usuario en su base de datos
-            // local
             return parser.encode("OK", "Login exitoso", user.getId(), user.getUsername().value(), photoBase64);
-            // --- FIN DE LA MODIFICACIÓN ---
-
         } else {
             return parser.encode("ERROR", "Credenciales inválidas");
         }

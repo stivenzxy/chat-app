@@ -36,15 +36,12 @@ public class GetUsersCommandAdapter implements ProtocolCommandAdapter {
                     .findFirst()
                     .orElse(null);
 
-            // Recolectar usuarios locales
             List<String> allUsersEntries = new ArrayList<>();
             
-            // Obtener lista de usernames locales para filtrado posterior
             java.util.Set<String> localUsernames = activeUserManager.getActiveUsers().values().stream()
                     .map(u -> u.getUsername().value())
                     .collect(java.util.stream.Collectors.toSet());
             
-            // 1. Usuarios locales (con datos completos)
             activeUserManager.getActiveUsers().values().stream()
                     .filter(user -> requesterUsername == null || !user.getUsername().value().equals(requesterUsername))
                     .forEach(u -> {
@@ -52,23 +49,18 @@ public class GetUsersCommandAdapter implements ProtocolCommandAdapter {
                         if (u.getPhotoData() != null && u.getPhotoData().length > 0) {
                             photoBase64 = Base64.getEncoder().encodeToString(u.getPhotoData());
                         }
-                        // Formato: id,username,photo_base64
                         allUsersEntries.add(u.getId() + "," + u.getUsername().value() + "," + photoBase64);
                     });
             
-            // 2. Usuarios remotos de servidores P2P conectados (con prefijo del servidor)
-            // SOLO si NO están conectados localmente
             if (serverNetworkAdapter != null) {
                 Map<String, List<String>> remoteUsers = serverNetworkAdapter.getAllUsersAcrossPeers();
                 for (Map.Entry<String, List<String>> entry : remoteUsers.entrySet()) {
                     String serverId = entry.getKey();
                     List<String> usernames = entry.getValue();
                     
-                    // Crear prefijo legible para el servidor (solo IP sin puerto)
                     String serverPrefix = "Servidor " + serverId.split(":")[0] + " - ";
                     
                     for (String username : usernames) {
-                        // FILTRAR: Solo agregar si NO está conectado localmente
                         if (!localUsernames.contains(username)) {
                             String photoBase64 = serverNetworkAdapter.getRemoteUserPhoto(username);
                             

@@ -286,7 +286,6 @@ public class PeerMessageRoutingManager {
             }
 
             if ("SYSTEM".equals(senderUsername) && content.startsWith("MEMBER_JOINED:")) {
-                // Parse MEMBER_JOINED:username using ProtocolParser
                 List<String> memberJoinedParts = protocolParser.decode(content);
                 if (memberJoinedParts.size() >= 2) {
                     String newMemberUsername = memberJoinedParts.get(1);

@@ -13,7 +13,6 @@ public class GetChannelMembersClientCommand implements ClientCommand<String, Lis
 
     private final ServerGatewayPort gateway;
 
-    // Static cache to store user ID to username mappings
     private static final Map<String, String> userIdToNameCache = new ConcurrentHashMap<>();
 
     public GetChannelMembersClientCommand(ServerGatewayPort gateway) {
@@ -33,7 +32,6 @@ public class GetChannelMembersClientCommand implements ClientCommand<String, Lis
                     return List.of();
                 }
 
-                // Parse ID:Username pairs and extract usernames
                 List<String> usernames = new ArrayList<>();
                 for (String pair : membersPayload.split(",")) {
                     String[] parts = pair.split(":", 2);
@@ -57,12 +55,10 @@ public class GetChannelMembersClientCommand implements ClientCommand<String, Lis
         }
     }
 
-    // Static method to get username from cache
     public static String getUsernameFromCache(String userId) {
         return userIdToNameCache.get(userId);
     }
 
-    // Static method to get the entire cache
     public static Map<String, String> getUserCache() {
         return new ConcurrentHashMap<>(userIdToNameCache);
     }

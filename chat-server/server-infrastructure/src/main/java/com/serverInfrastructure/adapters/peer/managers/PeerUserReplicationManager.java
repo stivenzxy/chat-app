@@ -13,12 +13,6 @@ import java.util.function.Consumer;
 import com.serverDomain.entities.User;
 import java.util.Collections;
 
-/**
- * Manager responsible for coordinating user replication across P2P servers.
- * Handles both sending local users and receiving remote users.
- * 
- * SRP: Manages only user replication coordination between peers
- */
 public class PeerUserReplicationManager {
     
     private static final Logger logger = LoggerFactory.getLogger(PeerUserReplicationManager.class);
@@ -31,9 +25,6 @@ public class PeerUserReplicationManager {
         this.replicationService = new UserReplicationService(userRepository);
     }
     
-    /**
-     * Sets callback to be invoked when users are replicated, to notify UI.
-     */
     public void setOnUserReplicationCallback(Consumer<Void> callback) {
         this.replicationService.setOnUserReplicationCallback(callback);
     }
@@ -45,10 +36,7 @@ public class PeerUserReplicationManager {
     public void setPeerMessageSender(BiConsumer<String, String> sender) {
         this.peerMessageSender = sender;
     }
-    
-    /**
-     * Sends all local users to a newly connected peer for replication.
-     */
+
     public void sendUsersToPeer(String peerId) {
         if (localServerId == null) {
             logger.warn("LocalServerId no configurado, no se pueden replicar usuarios");
@@ -106,10 +94,7 @@ public class PeerUserReplicationManager {
             logger.error("Error difundiendo nuevo usuario: {}", e.getMessage());
         }
     }
-    
-    /**
-     * Handles incoming user replication batch from a remote peer.
-     */
+
     public void handleIncomingUserReplication(String sourcePeerId, String message) {
         try {
             List<ReplicatedUserDTO> remoteUsers = ReplicatedUserDTO.fromBatchProtocol(message);

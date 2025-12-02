@@ -1,13 +1,12 @@
 package com.chatCommon.dto.auth;
 
-import com.chatCommon.dto.UserDTO; // <<< AÑADIR IMPORT
+import com.chatCommon.dto.UserDTO;
 
 public class LoginResponse {
     private final boolean success;
     private final String message;
-    private final UserDTO user; // <<< AÑADIR CAMPO
+    private final UserDTO user;
 
-    // --- INICIO DE MODIFICACIÓN DE CONSTRUCTOR ---
     public LoginResponse(boolean success, String message, UserDTO user) {
         this.success = success;
         this.message = message;

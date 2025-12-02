@@ -61,7 +61,6 @@ public class TcpServerAdapter implements ServerControl, ConnectionListener {
         
         logger.info("Servidor de clientes iniciado en puerto {}", server.getServerPortNumber());
         
-        // Iniciar servidor P2P automáticamente
         if (peerNetworkControl != null && !peerNetworkControl.isPeerServerRunning()) {
             logger.info("Iniciando servidor P2P automáticamente...");
             boolean peerStarted = peerNetworkControl.startPeerServer();
@@ -75,7 +74,6 @@ public class TcpServerAdapter implements ServerControl, ConnectionListener {
 
     @Override
     public void stopServer() {
-        // Detener servidor P2P primero
         if (peerNetworkControl != null && peerNetworkControl.isPeerServerRunning()) {
             logger.info("Deteniendo servidor P2P...");
             peerNetworkControl.stopPeerServer();

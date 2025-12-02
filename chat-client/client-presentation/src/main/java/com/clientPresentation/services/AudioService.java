@@ -66,13 +66,9 @@ public class AudioService {
         byte[] rawAudio = recordStream.toByteArray();
         byte[] normalizedAudio = normalizeAudioVolume(rawAudio);
 
-        // Convertir PCM a WAV con encabezados
         return convertPcmToWav(normalizedAudio);
     }
 
-    /**
-     * Convierte datos PCM crudos a formato WAV con encabezados
-     */
     private byte[] convertPcmToWav(byte[] pcmData) {
         if (pcmData == null || pcmData.length == 0) {
             return pcmData;
@@ -135,7 +131,6 @@ public class AudioService {
         }
         
         try {
-            // Intentar leer como archivo WAV primero
             ByteArrayInputStream byteStream = new ByteArrayInputStream(audioData);
             AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(byteStream);
             AudioFormat format = audioInputStream.getFormat();
@@ -151,16 +146,14 @@ public class AudioService {
             speaker.start();
 
             try {
-                // Reproducir audio en chunks para mejor calidad
                 byte[] buffer = new byte[4096];
                 int bytesRead;
 
                 while ((bytesRead = audioInputStream.read(buffer, 0, buffer.length)) != -1) {
                     speaker.write(buffer, 0, bytesRead);
-                    Thread.sleep(1); // Pequeña pausa para sincronización
+                    Thread.sleep(1);
                 }
 
-                // Esperar a que termine la reproducción
                 speaker.drain();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -170,14 +163,10 @@ public class AudioService {
                 audioInputStream.close();
             }
         } catch (UnsupportedAudioFileException e) {
-            // Si no es un archivo WAV válido, intentar reproducir como PCM crudo
             playRawPcmAudio(audioData);
         }
     }
 
-    /**
-     * Reproduce audio PCM crudo sin encabezados WAV (fallback)
-     */
     private void playRawPcmAudio(byte[] audioData) throws LineUnavailableException, IOException {
         AudioFormat format = getAudioFormat();
         DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);

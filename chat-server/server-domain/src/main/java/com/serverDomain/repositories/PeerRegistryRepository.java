@@ -17,23 +17,9 @@ public interface PeerRegistryRepository {
     void delete(String peerId);
     void deleteAll();
     
-    /**
-     * Counts the total number of registered peers.
-     * @return Total peer count
-     */
     int count();
     
-    /**
-     * Counts the number of active peers.
-     * @return Active peer count
-     */
     int countActive();
     
-    /**
-     * Finds all peers discovered from a specific source peer.
-     * Useful for tracking transitive discovery chains.
-     * @param sourcePeerId The peer ID that shared these peers
-     * @return List of peers discovered from the source
-     */
     List<Peer> findByDiscoveredFrom(String sourcePeerId);
 }

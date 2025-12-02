@@ -10,10 +10,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-/**
- * REST controller for user-related endpoints.
- * Handles HTTP requests for retrieving user information.
- */
 public class UsersRestController {
     private static final Logger logger = LoggerFactory.getLogger(UsersRestController.class);
     private final GetRegisteredUsersService getRegisteredUsersService;
@@ -22,10 +18,6 @@ public class UsersRestController {
         this.getRegisteredUsersService = getRegisteredUsersService;
     }
 
-    /**
-     * GET /api/users
-     * Returns list of all registered users
-     */
     public void getUsers(Context ctx) {
         try {
             List<UserPresentationDTO> presentationDTOs = getRegisteredUsersService.getAllUsersForPresentation();

@@ -24,10 +24,6 @@ public class UserReplicationService {
         this.userRepository = userRepository;
     }
     
-    /**
-     * Sets callback to be invoked when users are successfully replicated.
-     * Used to notify UI components to refresh user lists.
-     */
     public void setOnUserReplicationCallback(Consumer<Void> callback) {
         this.onUserReplicationCallback = callback;
     }
@@ -100,7 +96,6 @@ public class UserReplicationService {
         logger.info("Replicación completada: {} insertados, {} omitidos, {} errores", 
                    inserted, skipped, errors);
         
-        // Notify UI if users were successfully replicated
         if (inserted > 0 && onUserReplicationCallback != null) {
             try {
                 onUserReplicationCallback.accept(null);
