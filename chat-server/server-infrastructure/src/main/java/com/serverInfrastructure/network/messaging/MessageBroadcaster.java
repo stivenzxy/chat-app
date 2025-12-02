@@ -22,7 +22,6 @@ public class MessageBroadcaster {
     }
 
     public boolean sendMessageToUser(String username, String message, String senderInfo) {
-        // Obtener TODAS las conexiones activas del usuario (múltiples sesiones)
         List<ClientConnection> connections = connectionPool.findAllConnectionsByUsername(username);
         
         if (connections.isEmpty()) {
@@ -32,7 +31,6 @@ public class MessageBroadcaster {
         boolean atLeastOneSent = false;
         int successCount = 0;
         
-        // Enviar el mensaje a TODAS las sesiones activas del usuario
         for (ClientConnection connection : connections) {
             try {
                 if (connection.getSocket() != null && !connection.getSocket().isClosed()) {
@@ -47,7 +45,6 @@ public class MessageBroadcaster {
             }
         }
         
-        // Log del resultado
         if (atLeastOneSent) {
             String messageContent = extractMessageContent(message);
             if (senderInfo != null) {
@@ -62,7 +59,6 @@ public class MessageBroadcaster {
         return atLeastOneSent;
     }
     
-    // Nuevo método: enviar a todas las sesiones del usuario EXCEPTO una sesión específica
     public boolean sendMessageToUserExceptSession(String username, String message, String excludeConnectionId, String senderInfo) {
         List<ClientConnection> connections = connectionPool.findAllConnectionsByUsername(username);
         
@@ -73,7 +69,6 @@ public class MessageBroadcaster {
         boolean atLeastOneSent = false;
         int successCount = 0;
         
-        // Enviar solo a las sesiones que NO sean la excluida
         for (ClientConnection connection : connections) {
             if (!connection.getId().equals(excludeConnectionId)) {
                 try {

@@ -111,8 +111,6 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
             }
         });
 
-        // Configure user replication manager - usar misma lógica que
-        // messageRoutingManager
         userReplicationManager.setPeerMessageSender((peerId, message) -> {
             logger.debug("Enviando replicación de usuarios a {}", peerId);
             boolean sentViaOutgoing = connectionManager.sendMessageToPeer(peerId, message);
@@ -131,17 +129,13 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
             }
         });
 
-        // Configure peer replication manager
         peerReplicationManager.setPeerMessageSender(connectionManager::sendMessageToPeer);
         peerReplicationManager.setAutoConnectCallback(this::connectToPeerById);
 
-        // Configure entity replication manager
         entityReplicationManager.setBroadcaster(connectionManager::broadcastToPeers);
 
-        // Configure full sync manager
         fullSyncManager.setPeerMessageSender(connectionManager::sendMessageToPeer);
 
-        // Trigger full sync on peer connection
         observerNotifier.addObserver(new PeerConnectionObserver() {
             @Override
             public void onPeerConnected(ConnectedPeerInfo peerInfo) {
@@ -163,10 +157,6 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
         });
     }
 
-    /**
-     * Helper method to connect to a peer using only its peerId.
-     * Extracts IP and port from peerId and delegates to connectToPeer(ip, port).
-     */
     private void connectToPeerById(String peerId) {
         try {
             String ip = PeerIdParser.extractIp(peerId);
@@ -190,32 +180,26 @@ public class PeerTcpServerAdapter implements PeerNetworkControl {
             return true;
         }
 
-        // Start the server
         if (!lifecycleManager.startServer()) {
             return false;
         }
 
         int peerPort = lifecycleManager.getServerPort();
 
-        // Configure callbacks
         callbackConfigurator.configureServerCallbacks(lifecycleManager.getServer(), peerPort);
 
-        // Establish local server identity
         this.localServerId = identityProvider.resolveLocalServerId(peerPort);
         userSyncManager.setLocalServerId(this.localServerId);
         userReplicationManager.setLocalServerId(this.localServerId);
         peerReplicationManager.setLocalServerId(this.localServerId);
 
-        // Set local port in handlers for self-connection prevention
         outgoingHandler.setLocalServerPort(peerPort);
         discoveryHandler.setLocalServerPort(peerPort);
 
-        // Configure server in connection manager
         connectionManager.setPeerServer(lifecycleManager.getServer());
 
         logger.info("Servidor P2P iniciado exitosamente en puerto {}", peerPort);
 
-        // Attempt reconnection to known peers
         autoReconnectService.reconnectToKnownPeers(
                 this.localServerId,
                 connectionManager::isConnectedToPeer);

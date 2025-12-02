@@ -26,7 +26,7 @@ public class PeerEntityReplicationManager {
     private final ObjectMapper objectMapper;
 
     private BiConsumer<String, String> peerMessageSender;
-    private Runnable broadcastCallback; // Callback to broadcast to all peers
+    private Runnable broadcastCallback;
 
     public PeerEntityReplicationManager() {
         this.channelDAO = new ChannelDAO();
@@ -41,7 +41,7 @@ public class PeerEntityReplicationManager {
     }
 
     public void setBroadcastCallback(Runnable callback) {
-        // This might need to be a Consumer<String> to broadcast a specific message
+        this.broadcastCallback = callback;
     }
 
     public void setBroadcaster(java.util.function.Consumer<String> broadcaster) {

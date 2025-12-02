@@ -19,7 +19,6 @@ public class SendPrivateMessageCommandAdapter implements ProtocolCommandAdapter 
     private final TcpServer server;
     private final MessageDAO messageDAO = new MessageDAO();
     
-    // Callback para enrutamiento P2P (inyectado externamente)
     private java.util.function.BiFunction<String, String, Boolean> peerRoutingCallback;
 
     public SendPrivateMessageCommandAdapter(TcpServer server) {
@@ -37,7 +36,6 @@ public class SendPrivateMessageCommandAdapter implements ProtocolCommandAdapter 
             return parser.encode("ERROR", "Argumentos insuficientes para enviar mensaje.");
         }
 
-        // SEND_PRIVATE_MESSAGE|destinatario_username|contenido_mensaje
         String senderConnectionId = connectionContext.getId();
 
         com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
@@ -61,22 +59,17 @@ public class SendPrivateMessageCommandAdapter implements ProtocolCommandAdapter 
 
         String senderInfo = getSenderInfo(connectionContext);
 
-        // Intentar entrega local primero
         boolean delivered = server.sendMessageToUser(recipientUsername, forwardMessage, senderInfo);
 
-        // Si no está local, intentar enrutar a través de peer
         if (!delivered && peerRoutingCallback != null) {
             logger.info("Usuario {} no está local, intentando enrutamiento P2P...", recipientUsername);
             
-            // Extraer el username real si viene con prefijo "Servidor X - username"
             String actualUsername = recipientUsername;
             if (recipientUsername.contains(" - ")) {
-                // Formato: "Servidor 127.0.0.1 - jesus.perez" -> "jesus.perez"
                 actualUsername = recipientUsername.substring(recipientUsername.lastIndexOf(" - ") + 3);
                 logger.info("Username extraído del prefijo: {} -> {}", recipientUsername, actualUsername);
             }
             
-            // Construir mensaje de enrutamiento: P2P_ROUTE_PRIVATE|senderUsername|recipientUsername|content
             String routeMessage = "P2P_ROUTE_PRIVATE|" + senderUsername + "|" + actualUsername + "|" + content;
             delivered = peerRoutingCallback.apply(actualUsername, routeMessage);
             
@@ -125,10 +118,6 @@ public class SendPrivateMessageCommandAdapter implements ProtocolCommandAdapter 
         }
     }
     
-    /**
-     * Establece el callback para enrutamiento P2P.
-     * Este método será llamado por InfrastructureFactory durante la configuración.
-     */
     public void setPeerRoutingCallback(java.util.function.BiFunction<String, String, Boolean> callback) {
         this.peerRoutingCallback = callback;
         logger.info("Callback de enrutamiento P2P configurado en SendPrivateMessageCommandAdapter");

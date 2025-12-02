@@ -72,18 +72,12 @@ public class RespondInviteCommandAdapter implements ProtocolCommandAdapter {
                 ActiveUserManager aum = ActiveUserManager.getInstance();
 
                 for (String memberUsername : memberUsernames) {
-                    // Verificar si el usuario es local o remoto
                     var userSessions = aum.getUserSessions(memberUsername);
                     boolean isLocalUser = userSessions != null && !userSessions.isEmpty();
 
                     if (isLocalUser) {
-                        // Usuario local: enviar directamente
                         handler.getServer().sendMessageToUser(memberUsername, notification, "SERVER_NOTIFICATION");
                     } else if (networkAdapter != null && networkAdapter.isUserConnected(memberUsername)) {
-                        // Usuario remoto: enrutar a través de P2P
-                        // Formato:
-                        // P2P_CHANNEL_MESSAGE|channelId|senderUsername|content|recipientUsername
-                        // Usamos el mismo formato pero con un contenido especial para notificaciones
                         String routeMessage = parser.encode("P2P_CHANNEL_MESSAGE",
                                 channelId,
                                 "SYSTEM",

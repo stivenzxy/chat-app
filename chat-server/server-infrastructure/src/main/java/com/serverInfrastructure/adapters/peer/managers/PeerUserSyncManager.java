@@ -112,7 +112,6 @@ public class PeerUserSyncManager {
 
             logger.info("Recibida sincronización completa de BD de peer {}. Procesando...", peerId);
 
-            // Sync Users
             if (syncData.users() != null) {
                 for (UserSyncDTO userDTO : syncData.users()) {
                     try {
@@ -138,7 +137,6 @@ public class PeerUserSyncManager {
                 }
             }
 
-            // Sync Channels
             if (syncData.channels() != null) {
                 for (ChannelSyncDTO channelDTO : syncData.channels()) {
                     try {
@@ -157,7 +155,6 @@ public class PeerUserSyncManager {
                 }
             }
 
-            // Sync Channel Members
             if (syncData.channelMembers() != null) {
                 for (ChannelMemberSyncDTO memberDTO : syncData.channelMembers()) {
                     try {
@@ -170,7 +167,6 @@ public class PeerUserSyncManager {
                 }
             }
 
-            // Sync Channel Invites
             if (syncData.channelInvites() != null) {
                 for (ChannelInviteSyncDTO inviteDTO : syncData.channelInvites()) {
                     try {
@@ -183,12 +179,10 @@ public class PeerUserSyncManager {
                                 inviteDTO.createdAt());
                         channelInviteDAO.insertReplicated(invite);
                     } catch (Exception e) {
-                        // Likely duplicate, ignore
                     }
                 }
             }
 
-            // Messages
             if (syncData.messages() != null) {
                 for (MessageSyncDTO messageDTO : syncData.messages()) {
                     try {
@@ -198,7 +192,6 @@ public class PeerUserSyncManager {
                 }
             }
 
-            // Transcriptions
             if (syncData.transcriptions() != null) {
                 for (AudioTranscriptionSyncDTO transDTO : syncData.transcriptions()) {
                     try {
@@ -305,7 +298,6 @@ public class PeerUserSyncManager {
     }
 
     public void sendFullUserSyncToPeer(String peerId, Consumer<String> sendCallback) {
-        // Send connected users sync message (P2P_USER_SYNC with SYNC_ALL)
         Map<String, String> localUsersWithPhotos = userRepository.getLocalUsersWithPhotos();
         List<String> localUsers = new ArrayList<>(localUsersWithPhotos.keySet());
         String serverId = getServerIdOrDefault();
@@ -316,11 +308,7 @@ public class PeerUserSyncManager {
         sendCallback.accept(message);
         logger.info("Sincronización completa de {} usuario(s) conectados enviada a peer {}", localUsers.size(), peerId);
     }
-    
-    /**
-     * Generates a P2P_USER_SYNC message with currently connected users.
-     * This is for notifying other servers about which users are ONLINE right now.
-     */
+
     public String generateConnectedUsersSyncMessage(int peerPort) {
         try {
             String serverId = localServerId;
@@ -354,7 +342,6 @@ public class PeerUserSyncManager {
                 }
             }
 
-            // Collect all data
             List<UserSyncDTO> users = userDAO.selectAll().stream().map(u -> new UserSyncDTO(
                     u.getId(), u.getUsername().value(), u.getEmail().value(), u.getPasswordHash(),
                     u.getPhotoData(), u.getIpAddress(), u.isReplicated(), u.getOriginServerId(),

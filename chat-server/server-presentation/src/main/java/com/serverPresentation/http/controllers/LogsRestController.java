@@ -8,11 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-/**
- * REST controller for server logs endpoint.
- * Handles HTTP requests for retrieving server logs.
- * Supports filtering by level and limiting results.
- */
 public class LogsRestController {
     private static final Logger logger = LoggerFactory.getLogger(LogsRestController.class);
     private final GetServerLogsService getServerLogsService;
@@ -21,13 +16,6 @@ public class LogsRestController {
         this.getServerLogsService = getServerLogsService;
     }
 
-    /**
-     * GET /api/logs
-     * Returns recent server logs
-     * Query params:
-     *  - level: Filter by log level (INFO, DEBUG, ERROR, WARN)
-     *  - limit: Maximum number of logs to return (default: 1000)
-     */
     public void getLogs(Context ctx) {
         try {
             String level = ctx.queryParam("level");

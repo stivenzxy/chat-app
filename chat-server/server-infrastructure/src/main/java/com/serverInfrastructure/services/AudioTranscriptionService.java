@@ -23,12 +23,6 @@ public class AudioTranscriptionService {
     private static final int SAMPLE_RATE = 16000;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    /**
-     * Transcribe audio data to text using Vosk server
-     * 
-     * @param audioData Raw audio data in bytes
-     * @return Transcribed text or null if transcription fails
-     */
     public String transcribeAudio(byte[] audioData) {
         if (audioData == null || audioData.length == 0) {
             logger.warn("AudioTranscriptionService: audioData is null or empty");
@@ -117,9 +111,6 @@ public class AudioTranscriptionService {
         }
     }
 
-    /**
-     * Convert audio to Vosk-compatible format
-     */
     private File convertAudioForVosk(File inputFile) throws Exception {
         AudioInputStream originalStream = AudioSystem.getAudioInputStream(inputFile);
         AudioFormat originalFormat = originalStream.getFormat();
@@ -150,9 +141,6 @@ public class AudioTranscriptionService {
         return tempFile;
     }
 
-    /**
-     * Check if audio format is compatible with Vosk requirements
-     */
     private boolean isFormatCompatible(AudioFormat current, AudioFormat target) {
         return Math.abs(current.getSampleRate() - target.getSampleRate()) < 1 &&
                 current.getChannels() == target.getChannels() &&
@@ -168,7 +156,7 @@ public class AudioTranscriptionService {
                 return Math.max(45, (int) Math.ceil(durationSec * 3.0 + 10));
             }
         } catch (Exception e) {
-            // Use default timeout
+            
         }
         return 60;
     }
@@ -205,7 +193,6 @@ public class AudioTranscriptionService {
                     send("{\"eof\": 1}");
                     eofSent[0] = true;
 
-                    // Wait a bit to allow server to process
                     Thread.sleep(200);
 
                     logger.info("Sent EOF to VOSK server");
@@ -238,8 +225,6 @@ public class AudioTranscriptionService {
                     }
 
                     if (eofSent[0]) {
-                        // If we sent EOF, we expect a final result.
-                        // VOSK sends a text message (can be empty) as response to EOF.
                         if (jsonResponse.has("text")) {
                             String currentResult = result.toString().trim();
                             String finalResult = concatenatePartialResult(currentResult, lastPartialResult[0]);
@@ -282,9 +267,6 @@ public class AudioTranscriptionService {
         }
     }
 
-    /**
-     * Concatenate partial results with confirmed results
-     */
     private String concatenatePartialResult(String confirmedResult, String partialResult) {
         if (confirmedResult.isEmpty()) {
             return partialResult;

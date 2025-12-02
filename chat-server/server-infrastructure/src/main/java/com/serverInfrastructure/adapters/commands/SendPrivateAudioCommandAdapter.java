@@ -15,16 +15,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Adaptador que maneja el comando SEND_PRIVATE_AUDIO de clientes.
- * 
- * Implementa patrón Local-First con fallback P2P:
- * 1. Intenta entrega local (usuario en este servidor)
- * 2. Si falla, usa PeerMessageRouter para enrutar a servidor remoto
- * 
- * Este patrón optimiza el caso común (90% local) y provee robustez
- * evitando condiciones de carrera.
- */
 public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
     private static final Logger logger = LoggerFactory.getLogger(SendPrivateAudioCommandAdapter.class);
 
@@ -32,11 +22,6 @@ public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
     private final MessageDAO messageDAO = new MessageDAO();
     private final AudioTranscriptionService audioTranscriptionService = new AudioTranscriptionService();
 
-    /**
-     * Router para enrutamiento P2P de audios privados.
-     * Se inyecta desde InfrastructureFactory, desacoplando este comando
-     * de la implementación concreta de P2P (Dependency Inversion Principle).
-     */
     private PeerMessageRouter peerRouter;
 
     public SendPrivateAudioCommandAdapter(TcpServer server) {
@@ -54,10 +39,8 @@ public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
             return parser.encode("ERROR", "Argumentos insuficientes para enviar audio.");
         }
 
-        // Formato: SEND_PRIVATE_AUDIO|destinatario_username|audio_en_base64
         String senderConnectionId = connectionContext.getId();
 
-        // Obtener username del usuario que envía el audio
         com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager
                 .getInstance();
         String senderUsername = aum.getAllUserSessions().entrySet().stream()
@@ -80,28 +63,20 @@ public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
 
         String senderInfo = getSenderInfo(connectionContext) + " [AUDIO]";
 
-        // PASO 1: Intentar entrega local primero (patrón Local-First)
-        // Optimiza el caso común (90% usuarios locales) con una sola operación
         boolean delivered = server.sendMessageToUser(recipientUsername, forwardMessage, senderInfo);
 
-        // PASO 2: Si no está local, usar fallback P2P
-        // Garantiza entrega a usuarios en servidores remotos
         if (!delivered && peerRouter != null) {
             logger.info("Usuario {} no está local, intentando enrutamiento P2P de audio...", recipientUsername);
 
-            // Extraer el username real si viene con prefijo "Servidor X - username"
             String actualUsername = recipientUsername;
             if (recipientUsername.contains(" - ")) {
                 actualUsername = recipientUsername.substring(recipientUsername.lastIndexOf(" - ") + 3);
                 logger.info("Username extraído del prefijo: {} -> {}", recipientUsername, actualUsername);
             }
-
-            // Construir mensaje de enrutamiento P2P
-            // Formato: P2P_ROUTE_PRIVATE_AUDIO|senderUsername|recipientUsername|audioBase64
+        
             String routeMessage = "P2P_ROUTE_PRIVATE_AUDIO|" + senderUsername + "|" + actualUsername + "|"
                     + audioBase64;
 
-            // Usar el router P2P inyectado (DIP)
             delivered = peerRouter.routeToPeer(actualUsername, routeMessage);
 
             if (delivered) {
@@ -166,16 +141,6 @@ public class SendPrivateAudioCommandAdapter implements ProtocolCommandAdapter {
         }
     }
 
-    /**
-     * Inyecta el router P2P para enrutamiento de audios privados.
-     * 
-     * Este método será llamado por InfrastructureFactory durante la configuración,
-     * implementando Dependency Injection para desacoplar este comando de la
-     * implementación concreta de P2P.
-     * 
-     * @param router Implementación de PeerMessageRouter que encapsula
-     *               la lógica de enrutamiento P2P
-     */
     public void setPeerMessageRouter(PeerMessageRouter router) {
         this.peerRouter = router;
         logger.info("PeerMessageRouter configurado en SendPrivateAudioCommandAdapter");

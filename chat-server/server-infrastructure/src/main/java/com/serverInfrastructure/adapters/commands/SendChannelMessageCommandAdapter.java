@@ -37,7 +37,6 @@ public class SendChannelMessageCommandAdapter implements ProtocolCommandAdapter 
 
     @Override
     public String execute(List<String> parts, ProtocolParser parser, ClientConnection connectionContext) {
-        // SEND_CHANNEL_MESSAGE|channelId|content
         if (parts.size() < 3)
             return parser.encode("ERROR", "Argumentos insuficientes");
 
@@ -75,7 +74,6 @@ public class SendChannelMessageCommandAdapter implements ProtocolCommandAdapter 
             messageId = messageDAO.saveChannelTextMessage(senderUserId, channelId, content);
         }
 
-        // Replicar mensaje a todos los peers
         if (messageId != null && networkAdapter != null) {
             MessageSyncDTO syncDTO = new MessageSyncDTO(
                     messageId,
@@ -93,19 +91,13 @@ public class SendChannelMessageCommandAdapter implements ProtocolCommandAdapter 
 
         String forward = parser.encode("RECEIVE_CHANNEL_MESSAGE", channelId, senderUsername, content);
 
-        // Enviar a todos los miembros del canal
         for (String username : memberUsernames) {
-            // Verificar si el usuario es local o remoto
             var userSessions = aum.getUserSessions(username);
             boolean isLocalUser = userSessions != null && !userSessions.isEmpty();
 
             if (isLocalUser) {
-                // Usuario local: enviar directamente
                 handler.getServer().sendMessageToUser(username, forward, senderUsername);
             } else if (networkAdapter != null && networkAdapter.isUserConnected(username)) {
-                // Usuario remoto: verificar si está en algún peer y enrutar
-                // Formato:
-                // P2P_CHANNEL_MESSAGE|channelId|senderUsername|content|recipientUsername
                 String routeMessage = parser.encode("P2P_CHANNEL_MESSAGE",
                         channelId,
                         senderUsername,

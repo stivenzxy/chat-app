@@ -27,6 +27,7 @@ public class MetricsManager {
         logger.info("Prometheus metrics registry initialized");
     }
 
+
     private void registerJvmMetrics() {
         new ClassLoaderMetrics().bindTo(prometheusRegistry);
         new JvmMemoryMetrics().bindTo(prometheusRegistry);
@@ -34,29 +35,29 @@ public class MetricsManager {
         new JvmThreadMetrics().bindTo(prometheusRegistry);
         new JvmInfoMetrics().bindTo(prometheusRegistry);
     }
-
+    
     private void registerSystemMetrics() {
         new ProcessorMetrics().bindTo(prometheusRegistry);
         new UptimeMetrics().bindTo(prometheusRegistry);
         new FileDescriptorMetrics().bindTo(prometheusRegistry);
     }
-
+    
     public void registerTcpMetrics(TcpServerAdapter tcpServerAdapter) {
         if (tcpServerAdapter == null) {
             logger.warn("TcpServerAdapter no configurado, no se registrarán métricas de conexiones TCP");
             return;
         }
-
+        
         Gauge.builder("tcp_connections_active", tcpServerAdapter, TcpServerAdapter::getCurrentConnections)
             .description("Número de conexiones TCP activas (clientes conectados)")
             .tag("type", "client")
             .register(prometheusRegistry);
-
+        
         Gauge.builder("tcp_connections_max", tcpServerAdapter, TcpServerAdapter::getMaxConnections)
             .description("Máximo de conexiones TCP permitidas")
             .tag("type", "client")
             .register(prometheusRegistry);
-
+        
         Gauge.builder("tcp_connections_usage_ratio", tcpServerAdapter, adapter -> {
             int max = adapter.getMaxConnections();
             if (max == 0) return 0.0;
@@ -68,7 +69,7 @@ public class MetricsManager {
         
         logger.info("Métricas de conexiones TCP registradas en Prometheus");
     }
-
+    
     public PrometheusMeterRegistry getRegistry() {
         return prometheusRegistry;
     }

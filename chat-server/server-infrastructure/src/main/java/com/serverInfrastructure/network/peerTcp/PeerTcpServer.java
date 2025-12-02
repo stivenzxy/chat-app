@@ -133,7 +133,6 @@ public class PeerTcpServer {
                 acceptorThread.interrupt();
             }
 
-            // Close all incoming connections
             for (String peerId : incomingPeerSockets.keySet()) {
                 disconnectIncomingPeer(peerId);
             }
@@ -248,8 +247,6 @@ public class PeerTcpServer {
                 incomingPeerThreads.put(peerId, Thread.currentThread());
                 logger.info("Conexión P2P entrante almacenada: {}", peerId);
 
-                // Acknowledge and advertise the server's configured P2P listening port
-                // (this.peerPort)
                 output.println(
                         "P2P_SERVER_HANDSHAKE_ACK|myId=" + getLocalIp() + ":" + this.peerPort + "|status=ACCEPTED");
 
@@ -267,18 +264,15 @@ public class PeerTcpServer {
                     }
                 }
 
-                // Registrar peer entrante como conocido SOLO si el puerto coincide con
-                // PEER_SERVER_PORT
                 try {
                     PeerRegistry registry = PeerRegistry.getInstance();
                     if (registry != null) {
-                        registry.addKnownPeer(peerId); // registry will filter invalid ports
+                        registry.addKnownPeer(peerId);
                     }
                 } catch (Exception e) {
                     logger.warn("No se pudo registrar peer entrante {}: {}", peerId, e.getMessage());
                 }
 
-                // Enviar lista de peers conocidos al peer entrante (solo válidos)
                 try {
                     PeerRegistry registry = PeerRegistry.getInstance();
                     java.util.Set<String> peers = registry.getValidPeers();
@@ -291,10 +285,8 @@ public class PeerTcpServer {
                     logger.debug("No se pudo enviar peer list al entrante {}: {}", peerId, e.getMessage());
                 }
 
-                // Notify upper layers about the new incoming peer so they can register it
                 try {
                     if (onPeerConnected != null) {
-                        // create a ConnectedPeerInfo parsing the peerId (format ip:port)
                         String[] parts = peerId.split(":");
                         String ip = parts.length > 0 ? parts[0] : peerSocket.getInetAddress().getHostAddress();
                         int port = 0;
@@ -311,7 +303,6 @@ public class PeerTcpServer {
                     logger.warn("Error notificando peer entrante a capas superiores: {}", e.getMessage());
                 }
 
-                // Trigger replication for incoming peer connection
                 try {
                     if (onIncomingPeerConnected != null) {
                         onIncomingPeerConnected.accept(peerId);
@@ -340,7 +331,6 @@ public class PeerTcpServer {
                         if (!hasRespondedToSync && message.contains("action=SYNC_ALL")) {
                             hasRespondedToSync = true;
                             
-                            // First send connected users (P2P_USER_SYNC)
                             if (onGetConnectedUsersSync != null) {
                                 try {
                                     String connectedUsersMessage = onGetConnectedUsersSync.get();
@@ -353,7 +343,6 @@ public class PeerTcpServer {
                                 }
                             }
                             
-                            // Then send full database sync (P2P_DB_SYNC)
                             if (onGetLocalUserSync != null) {
                                 try {
                                     String localUserSyncMessage = onGetLocalUserSync.get();
@@ -434,7 +423,6 @@ public class PeerTcpServer {
                     incomingPeerThreads.remove(peerId);
                     incomingPeerWriters.remove(peerId);
 
-                    // ¡Notificar que este peer entrante se ha desconectado!
                     if (onIncomingPeerDisconnected != null) {
                         onIncomingPeerDisconnected.accept(peerId);
                     }
@@ -459,12 +447,10 @@ public class PeerTcpServer {
     }
 
     private String extractPeerIdFromHandshake(String message) {
-        // P2P_SERVER_HANDSHAKE|id=IP:PORT o P2P_SERVER_HANDSHAKE|myId=IP:PORT
         try {
             String[] parts = message.split("\\|");
             if (parts.length > 1) {
                 for (int i = 1; i < parts.length; i++) {
-                    // Buscar tanto "id=" como "myId=" para compatibilidad
                     if (parts[i].startsWith("id=")) {
                         return parts[i].substring(3);
                     }

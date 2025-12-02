@@ -11,10 +11,6 @@ import com.serverInfrastructure.network.peerTcp.PeerTcpServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Configures all callbacks for the PeerTcpServer.
- * Centralizes the wiring of server events to appropriate handlers.
- */
 public class PeerServerCallbackConfigurator {
 
     private static final Logger logger = LoggerFactory.getLogger(PeerServerCallbackConfigurator.class);
@@ -45,12 +41,6 @@ public class PeerServerCallbackConfigurator {
         this.fullSyncManager = fullSyncManager;
     }
 
-    /**
-     * Configures all callbacks for the given PeerTcpServer.
-     * 
-     * @param peerServer the server to configure
-     * @param peerPort   the port on which the server is listening
-     */
     public void configureServerCallbacks(PeerTcpServer peerServer, int peerPort) {
         if (peerServer == null) {
             logger.warn("PeerTcpServer es nulo, no se pueden configurar callbacks");
@@ -66,11 +56,6 @@ public class PeerServerCallbackConfigurator {
         logger.info("Callbacks del servidor P2P configurados exitosamente");
     }
 
-    /**
-     * Configures the user synchronization callback.
-     * 
-     * @param peerServer the server to configure
-     */
     private void configureUserSyncCallback(PeerTcpServer peerServer) {
         peerServer.setOnUserSyncReceived((peerId, message) -> {
             logger.debug("Procesando sincronización de usuarios de peer entrante {}", peerId);
@@ -78,34 +63,16 @@ public class PeerServerCallbackConfigurator {
         });
     }
 
-    /**
-     * Configures the peer connection callback for incoming connections.
-     * 
-     * @param peerServer the server to configure
-     */
     private void configurePeerConnectionCallback(PeerTcpServer peerServer) {
         peerServer.setOnPeerConnected(incomingHandler::registerIncomingPeer);
     }
 
-    /**
-     * Configures the callback to provide local user sync data.
-     * 
-     * @param peerServer the server to configure
-     * @param peerPort   the port for identity inclusion
-     */
     private void configureLocalUserSyncCallback(PeerTcpServer peerServer, int peerPort) {
-        // Full database sync (P2P_DB_SYNC)
         peerServer.setOnGetLocalUserSync(() -> userSyncManager.generateInitialSyncMessage(peerPort));
         
-        // Connected users sync (P2P_USER_SYNC) - for real-time user list
         peerServer.setOnGetConnectedUsersSync(() -> userSyncManager.generateConnectedUsersSyncMessage(peerPort));
     }
 
-    /**
-     * Configures the callback for routed private messages.
-     * 
-     * @param peerServer the server to configure
-     */
     private void configurePrivateMessageCallback(PeerTcpServer peerServer) {
         peerServer.setOnPrivateMessageReceived((peerId, message) -> {
             if (message.startsWith("P2P_BATCH_USER_REPLICATION")) {
@@ -134,16 +101,10 @@ public class PeerServerCallbackConfigurator {
         });
     }
 
-    /**
-     * Configures the callback to send replication data to incoming peers.
-     * 
-     * @param peerServer the server to configure
-     */
     private void configureIncomingPeerReplicationCallback(PeerTcpServer peerServer) {
         peerServer.setOnIncomingPeerConnected(peerId -> {
             logger.info("Enviando replicación a peer entrante {}", peerId);
 
-            // Send users replication
             try {
                 userReplicationManager.sendUsersToPeer(peerId);
                 logger.debug("Usuarios enviados a peer entrante {}", peerId);
@@ -151,7 +112,6 @@ public class PeerServerCallbackConfigurator {
                 logger.error("Error enviando usuarios a peer entrante {}: {}", peerId, e.getMessage());
             }
 
-            // Send peers replication
             try {
                 peerReplicationManager.sendPeersToPeer(peerId);
                 logger.debug("Peers enviados a peer entrante {}", peerId);
@@ -159,7 +119,6 @@ public class PeerServerCallbackConfigurator {
                 logger.error("Error enviando peers a peer entrante {}: {}", peerId, e.getMessage());
             }
 
-            // BIDIRECTIONAL SYNC: Send our full database TO the incoming peer
             try {
                 logger.info("Enviando nuestra BD completa al peer entrante {}", peerId);
                 fullSyncManager.sendFullDatabaseToPeer(peerId);
@@ -167,7 +126,6 @@ public class PeerServerCallbackConfigurator {
                 logger.error("Error enviando BD completa a peer entrante {}: {}", peerId, e.getMessage());
             }
 
-            // Also request full database sync FROM incoming peer
             try {
                 logger.info("Solicitando sincronización completa de BD desde peer entrante {}", peerId);
                 fullSyncManager.requestFullSync(peerId);

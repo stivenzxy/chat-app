@@ -163,13 +163,11 @@ public class PeerConnectionManager {
     }
 
     public boolean sendMessageToPeer(String peerId, String message) {
-        // First try outgoing connections
         PeerTcpClient client = peerClients.get(peerId);
         if (client != null && client.isConnected()) {
             return client.sendMessage(message);
         }
         
-        // Then try incoming connections
         if (peerServer != null && peerServer.isRunning()) {
             if (peerServer.sendMessageToIncomingPeer(peerId, message)) {
                 logger.debug("Mensaje enviado a peer entrante {}", peerId);

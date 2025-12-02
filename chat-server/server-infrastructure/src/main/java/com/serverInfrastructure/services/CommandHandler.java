@@ -58,7 +58,6 @@ public class CommandHandler {
         try {
             String connectionId = connection.getId();
             
-            // Buscar el username asociado a este connectionId
             ActiveUserManager aum = ActiveUserManager.getInstance();
             String username = aum.getAllUserSessions().entrySet().stream()
                 .filter(entry -> entry.getValue().stream()

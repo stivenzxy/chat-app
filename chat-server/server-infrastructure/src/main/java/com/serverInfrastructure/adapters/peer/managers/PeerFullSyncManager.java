@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PeerFullSyncManager {
     private static final Logger logger = LoggerFactory.getLogger(PeerFullSyncManager.class);
-    private static final long SYNC_REQUEST_COOLDOWN_MS = 5000; // 5 seconds cooldown
+    private static final long SYNC_REQUEST_COOLDOWN_MS = 5000;
 
     private final DatabaseSynchronizationService dbSyncService;
     private final PresenceReplicationService presenceService;
@@ -34,17 +34,12 @@ public class PeerFullSyncManager {
     public void setPeerMessageSender(BiConsumer<String, String> peerMessageSender) {
         this.peerMessageSender = peerMessageSender;
     }
-    
-    /**
-     * Sets callback to be invoked when database sync is complete.
-     * Used to notify UI components to refresh their data.
-     */
+
     public void setOnSyncCompleteCallback(java.util.function.Consumer<Void> callback) {
         this.dbSyncService.setOnSyncCompleteCallback(callback);
     }
 
     public void requestFullSync(String peerId) {
-        // Check if we recently requested sync from this peer
         Long lastRequestTime = lastSyncRequestTime.get(peerId);
         long currentTime = System.currentTimeMillis();
 
@@ -65,10 +60,6 @@ public class PeerFullSyncManager {
         sendFullDatabaseToPeer(peerId);
     }
 
-    /**
-     * Sends the full database to a specific peer (proactive push).
-     * Used both when responding to a sync request and when initiating bidirectional sync.
-     */
     public void sendFullDatabaseToPeer(String peerId) {
         try {
             FullDatabaseSyncDTO data = dbSyncService.exportFullDatabase();
@@ -86,7 +77,6 @@ public class PeerFullSyncManager {
 
     public void handleFullSyncResponse(String peerId, String message) {
         try {
-            // P2P_FULL_SYNC_RESPONSE|base64Data
             String[] parts = message.split("\\|", 2);
             if (parts.length < 2)
                 return;
@@ -104,7 +94,6 @@ public class PeerFullSyncManager {
     }
 
     public void handleUserStatusUpdate(String peerId, String message) {
-        // P2P_USER_STATUS_UPDATE|username|isOnline
         String[] parts = message.split("\\|");
         if (parts.length < 3)
             return;

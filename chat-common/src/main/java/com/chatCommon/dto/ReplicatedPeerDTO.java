@@ -5,14 +5,6 @@ import com.chatCommon.protocol.ProtocolParser;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Data Transfer Object for peer discovery replication across P2P servers.
- * Enables transitive peer discovery where peers share their known peers.
- * 
- * Example: ServerA connects to ServerB
- *          ServerB shares its known peers (ServerC, ServerD)
- *          ServerA automatically connects to ServerC and ServerD
- */
 public class ReplicatedPeerDTO {
     
     private final String peerId;
@@ -43,10 +35,6 @@ public class ReplicatedPeerDTO {
         return isActive;
     }
     
-    /**
-     * Converts to protocol message format.
-     * Format: P2P_PEER_DISCOVERY|peerId|ipAddress|port|isActive
-     */
     public String toProtocol() {
         ProtocolParser parser = new ProtocolParser('|', '\\');
         return parser.encode(
@@ -58,9 +46,6 @@ public class ReplicatedPeerDTO {
         );
     }
     
-    /**
-     * Parses from protocol message.
-     */
     public static ReplicatedPeerDTO fromProtocol(String message) {
         ProtocolParser parser = new ProtocolParser('|', '\\');
         List<String> parts = parser.decode(message);
@@ -70,17 +55,13 @@ public class ReplicatedPeerDTO {
         }
         
         return new ReplicatedPeerDTO(
-            parts.get(1), // peerId
-            parts.get(2), // ipAddress
-            Integer.parseInt(parts.get(3)), // port
-            Boolean.parseBoolean(parts.get(4)) // isActive
+            parts.get(1), 
+            parts.get(2), 
+            Integer.parseInt(parts.get(3)), 
+            Boolean.parseBoolean(parts.get(4))
         );
     }
-    
-    /**
-     * Creates a batch peer discovery message containing multiple peers.
-     * Format: P2P_BATCH_PEER_DISCOVERY|count|sourcePeerId|peer1Data|peer2Data|...
-     */
+
     public static String toBatchProtocol(List<ReplicatedPeerDTO> peers, String sourcePeerId) {
         ProtocolParser parser = new ProtocolParser('|', '\\');
         List<String> parts = new ArrayList<>();
@@ -120,25 +101,22 @@ public class ReplicatedPeerDTO {
             }
             
             peers.add(new ReplicatedPeerDTO(
-                parts.get(index++),     // peerId
-                parts.get(index++),     // ipAddress
-                Integer.parseInt(parts.get(index++)), // port
-                Boolean.parseBoolean(parts.get(index++)) // isActive
+                parts.get(index++),
+                parts.get(index++),
+                Integer.parseInt(parts.get(index++)),
+                Boolean.parseBoolean(parts.get(index++)) 
             ));
         }
         
         return peers;
     }
     
-    /**
-     * Extracts source peer ID from batch message without full parsing.
-     */
     public static String extractSourcePeerId(String batchMessage) {
         ProtocolParser parser = new ProtocolParser('|', '\\');
         List<String> parts = parser.decode(batchMessage);
         
         if (parts.size() >= 3) {
-            return parts.get(2); // sourcePeerId is at index 2
+            return parts.get(2);
         }
         return null;
     }

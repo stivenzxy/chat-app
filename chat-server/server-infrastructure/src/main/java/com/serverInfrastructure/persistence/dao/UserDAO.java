@@ -99,9 +99,6 @@ public class UserDAO {
         return Optional.empty();
     }
     
-    /**
-     * Inserts a replicated user from a remote server.
-     */
     public void insertReplicated(User user) {
         String sql = "INSERT INTO users (user_id, username, password_hash, email, photo_data, ip_address, " +
                     "is_replicated, origin_server_id, last_sync_at, created_at) " +
@@ -130,9 +127,6 @@ public class UserDAO {
         }
     }
     
-    /**
-     * Updates the last_sync_at timestamp for all replicated users from a specific server.
-     */
     public void updateReplicatedTimestamp(String originServerId) {
         String sql = "UPDATE users SET last_sync_at = ? WHERE is_replicated = TRUE AND origin_server_id = ?";
         try (Connection conn = connectionManager.getConnection();
@@ -161,7 +155,6 @@ public class UserDAO {
                     rs.getTimestamp("created_at").toLocalDateTime()
             );
             
-            // Map replication fields if they exist
             try {
                 user.setReplicated(rs.getBoolean("is_replicated"));
                 user.setOriginServerId(rs.getString("origin_server_id"));
@@ -170,7 +163,6 @@ public class UserDAO {
                     user.setLastSyncAt(lastSync);
                 }
             } catch (SQLException e) {
-                // Columns might not exist in older schema, ignore
             }
             
             return user;

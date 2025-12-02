@@ -77,7 +77,6 @@ public class ConnectionPool {
                 .orElse(null);
     }
     
-    // Método legacy (compatibilidad hacia atrás) - retorna solo una conexión
     @Deprecated
     public synchronized ClientConnection findConnectionByUsername(String username) {
         com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
@@ -88,7 +87,6 @@ public class ConnectionPool {
         return null;
     }
     
-    // Nuevo método: retorna TODAS las conexiones activas de un usuario
     public synchronized List<ClientConnection> findAllConnectionsByUsername(String username) {
         com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
         List<com.serverDomain.entities.User> userSessions = aum.getUserSessions(username);

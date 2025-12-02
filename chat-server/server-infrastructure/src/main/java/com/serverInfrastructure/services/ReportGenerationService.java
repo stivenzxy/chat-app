@@ -5,7 +5,7 @@ import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
-import com.itextpdf.layout.properties.UnitValue; // Corregido el import si había algún error
+import com.itextpdf.layout.properties.UnitValue;
 import com.serverApplication.dto.UserPresentationDTO;
 import com.serverDomain.entities.Channel;
 import com.serverDomain.entities.User;
@@ -36,7 +36,6 @@ public class ReportGenerationService {
         void generate(String path) throws Exception;
     }
 
-    // --- Informe 1: Usuarios Registrados ---
     public void generateRegisteredUsersReport(String path) throws Exception {
         List<User> users = userRepository.findAll();
         List<UserPresentationDTO> userDTOs = UserListMapper.toDTOList(users);
@@ -62,7 +61,6 @@ public class ReportGenerationService {
         }
     }
 
-    // --- Informe 2: Canales y Miembros ---
     public void generateChannelsReport(String path) throws Exception {
         List<Channel> channels = channelRepository.findAll();
 
@@ -92,7 +90,6 @@ public class ReportGenerationService {
         }
     }
 
-    // --- Informe 3: Usuarios Conectados ---
     public void generateConnectedUsersReport(String path) throws Exception {
         Map<String, User> activeUsers = ActiveUserManager.getInstance().getActiveUsers();
 
@@ -115,7 +112,6 @@ public class ReportGenerationService {
         }
     }
 
-    // --- Informe 4: Transcripciones de Audio ---
     public void generateTranscriptionsReport(String path) throws Exception {
         MessageDAO messageDAO = new MessageDAO();
         Map<String, String> transcriptions = messageDAO.getAllTranscriptions();
@@ -155,7 +151,6 @@ public class ReportGenerationService {
         }
     }
 
-    // --- Informe 5: Logs del Servidor ---
     public void generateLogsReport(String path) throws Exception {
         String logFilePath = "server.log";
 
@@ -177,7 +172,6 @@ public class ReportGenerationService {
     }
 
 
-    // --- Métodos de ayuda ---
     private void addTitle(Document document, String titleText) {
         Paragraph title = new Paragraph(titleText)
                 .setFontSize(18)

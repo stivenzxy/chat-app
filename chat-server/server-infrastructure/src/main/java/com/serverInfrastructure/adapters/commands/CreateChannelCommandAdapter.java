@@ -30,10 +30,8 @@ public class CreateChannelCommandAdapter implements ProtocolCommandAdapter {
 
     @Override
     public String execute(List<String> parts, ProtocolParser parser, ClientConnection connectionContext) {
-        // CREATE_CHANNEL|name|visibility(PUBLIC|PRIVATE)
         if (parts.size() < 3) return parser.encode("ERROR", "Argumentos insuficientes");
         
-        // Obtener el userId REAL del usuario desde el connectionId
         String connectionId = connectionContext.getId();
         com.serverInfrastructure.observers.ActiveUserManager aum = com.serverInfrastructure.observers.ActiveUserManager.getInstance();
         

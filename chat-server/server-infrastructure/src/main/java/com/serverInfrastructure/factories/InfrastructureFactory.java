@@ -86,9 +86,6 @@ public class InfrastructureFactory {
         handler.registerCommand(
                 new com.serverInfrastructure.adapters.commands.GetChannelHistoryCommandAdapter(channelRepository));
 
-        // Note: TranscribeAudioCommandAdapter is registered in createTcpServer() where
-        // server instance is available
-
         return handler;
     }
 
@@ -146,8 +143,6 @@ public class InfrastructureFactory {
 
         handler.registerCommand(sendAudioAdapter);
 
-        // TranscribeAudioCommandAdapter needs the server instance, so it's registered
-        // here
         TranscribeAudioCommandAdapter transcribeAudioAdapter = new TranscribeAudioCommandAdapter(server);
         handler.registerCommand(transcribeAudioAdapter);
 
@@ -167,10 +162,6 @@ public class InfrastructureFactory {
         return getOrCreateServerNetworkAdapter();
     }
 
-    /**
-     * Sets callback to be invoked when users are replicated from other peers.
-     * Must be called before createServerNetworkAdapter().
-     */
     public void setUserReplicationCallback(Consumer<Void> callback) {
         if (serverNetworkAdapter != null) {
             throw new IllegalStateException("Cannot set callback after ServerNetworkAdapter is created");

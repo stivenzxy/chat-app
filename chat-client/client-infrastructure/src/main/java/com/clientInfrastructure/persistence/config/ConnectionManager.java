@@ -30,7 +30,6 @@ public class ConnectionManager {
 
         try {
             Class.forName(driver);
-            // initDatabase() no se llama aquí, se llama después de configurar el usuario.
         } catch (ClassNotFoundException e) {
             logger.error("Error al cargar el driver de H2: {}", e.getMessage());
         }

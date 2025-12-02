@@ -41,17 +41,14 @@ public class GetChannelHistoryCommandAdapter implements ProtocolCommandAdapter {
                 return parser.encode("ERROR", "Usuario no autenticado");
             }
 
-            // Verify user is member of the channel
             boolean isMember = channelRepository.isMember(channelId, requesterId);
 
             if (!isMember) {
                 return parser.encode("ERROR", "No eres miembro de este canal");
             }
 
-            // Get messages from database
             List<MessageSyncDTO> messages = messageDAO.getChannelMessages(channelId);
 
-            // Serialize messages
             String messagesPayload = serializeMessages(messages);
             return parser.encode("OK", messagesPayload);
 
@@ -61,8 +58,6 @@ public class GetChannelHistoryCommandAdapter implements ProtocolCommandAdapter {
     }
 
     private String serializeMessages(List<MessageSyncDTO> messages) {
-        // Format:
-        // authorId|messageType|content|audioContent(base64)|timestamp;;nextMessage...
         return messages.stream()
                 .map(msg -> {
                     String audioBase64 = msg.audioContent() != null

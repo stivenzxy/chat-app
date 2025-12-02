@@ -11,12 +11,6 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-/**
- * Manager responsible for coordinating peer discovery replication across P2P servers.
- * Implements transitive peer discovery where peers share their known peers.
- * 
- * SRP: Manages only peer replication coordination between P2P servers
- */
 public class PeerPeerReplicationManager {
     
     private static final Logger logger = LoggerFactory.getLogger(PeerPeerReplicationManager.class);
@@ -37,18 +31,11 @@ public class PeerPeerReplicationManager {
     public void setPeerMessageSender(BiConsumer<String, String> sender) {
         this.peerMessageSender = sender;
     }
-    
-    /**
-     * Sets callback for auto-connecting to newly discovered peers.
-     * This enables transitive peer discovery.
-     */
+
     public void setAutoConnectCallback(Consumer<String> callback) {
         this.autoConnectCallback = callback;
     }
-    
-    /**
-     * Sends all known active peers to a newly connected peer for transitive discovery.
-     */
+
     public void sendPeersToPeer(String targetPeerId) {
         if (localServerId == null) {
             logger.warn("LocalServerId no configurado, no se pueden replicar peers");
@@ -78,10 +65,6 @@ public class PeerPeerReplicationManager {
         }
     }
     
-    /**
-     * Handles incoming peer discovery batch from a remote peer.
-     * Implements transitive discovery by storing and auto-connecting to new peers.
-     */
     public void handleIncomingPeerReplication(String sourcePeerId, String message) {
         try {
             List<ReplicatedPeerDTO> remotePeers = ReplicatedPeerDTO.fromBatchProtocol(message);
@@ -89,7 +72,6 @@ public class PeerPeerReplicationManager {
             logger.info("Recibidos {} peers para descubrimiento desde {}", 
                        remotePeers.size(), sourcePeerId);
             
-            // Filter out self-references to prevent registering own server as discovered peer
             List<ReplicatedPeerDTO> filteredPeers = new ArrayList<>();
             for (ReplicatedPeerDTO peer : remotePeers) {
                 if (peer.getPeerId().equals(localServerId)) {
@@ -111,10 +93,8 @@ public class PeerPeerReplicationManager {
             logger.info("Descubrimiento desde {}: {} nuevos, {} actualizados, {} errores",
                        sourcePeerId, result.getInserted(), result.getSkipped(), result.getErrors());
             
-            // Auto-connect to newly discovered peers (transitive discovery)
             if (result.getInserted() > 0 && autoConnectCallback != null) {
                 for (ReplicatedPeerDTO peer : remotePeers) {
-                    // Only auto-connect to new peers (not updated ones)
                     if (peer.isActive() && !peer.getPeerId().equals(localServerId)) {
                         logger.info("Iniciando auto-conexión a peer descubierto transitivamente: {}", 
                                    peer.getPeerId());
@@ -129,16 +109,10 @@ public class PeerPeerReplicationManager {
         }
     }
     
-    /**
-     * Marks a peer as active when it successfully connects.
-     */
     public void markPeerActive(String peerId) {
         replicationService.markPeerActive(peerId);
     }
-    
-    /**
-     * Marks a peer as inactive when it disconnects.
-     */
+
     public void markPeerInactive(String peerId) {
         replicationService.markPeerInactive(peerId);
     }

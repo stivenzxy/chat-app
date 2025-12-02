@@ -42,7 +42,6 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
 
     @Override
     public String execute(List<String> parts, ProtocolParser parser, ClientConnection connectionContext) {
-        // INVITE_TO_CHANNEL|channelId|invitedUsername
         if (parts.size() < 3)
             return parser.encode("ERROR", "Argumentos insuficientes");
 
@@ -67,12 +66,10 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
             return parser.encode("ERROR", "Usuario que invita no está en línea");
         }
 
-        // Verificar si el usuario invitado está conectado (local o remoto)
         boolean isUserConnected = false;
         if (networkAdapter != null) {
             isUserConnected = networkAdapter.isUserConnected(invitedUsername);
         } else {
-            // Fallback: solo verificar usuarios locales
             var invitedUserSessions = aum.getUserSessions(invitedUsername);
             isUserConnected = invitedUserSessions != null && !invitedUserSessions.isEmpty();
         }
@@ -81,36 +78,28 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
             return parser.encode("ERROR", "Usuario invitado no está en línea");
         }
 
-        // Verificar si es usuario local o remoto
         var invitedUserSessions = aum.getUserSessions(invitedUsername);
         boolean isLocalUser = invitedUserSessions != null && !invitedUserSessions.isEmpty();
 
         String invitedUserId;
         String actualInvitedUsername = invitedUsername;
 
-        // Si el nombre tiene prefijo (ej. "Servidor X - usuario"), extraemos el nombre
-        // real
         if (invitedUsername.contains(" - ") && invitedUsername.startsWith("Servidor ")) {
             actualInvitedUsername = invitedUsername.split(" - ", 2)[1];
         }
 
         if (isLocalUser) {
-            // Usuario local: obtener su userId real
             invitedUserId = aum.getUserIdFromConnection(invitedUserSessions.get(0).getId());
             if (invitedUserId == null) {
                 return parser.encode("ERROR", "No se pudo obtener ID del usuario invitado");
             }
         } else {
-            // Usuario remoto: intentar buscar en la base de datos local (incluyendo
-            // replicados)
             Optional<User> userOpt = userDAO
                     .findByUsername(new com.serverDomain.valueObjects.Username(actualInvitedUsername));
 
             if (userOpt.isPresent()) {
                 invitedUserId = userOpt.get().getId();
             } else {
-                // Si no existe en DB local, usamos un ID temporal (fallará el guardado en DB
-                // por FK, pero permitirá enrutamiento)
                 invitedUserId = "remote:" + actualInvitedUsername;
             }
         }
@@ -127,17 +116,13 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
                 ChannelInvite.Status.PENDING, LocalDateTime.now());
         ChannelInvite saved = inviteRepository.save(invite);
 
-        // Replicar invitación a todos los peers
         if (networkAdapter != null && saved.getId() != null) {
             networkAdapter.broadcastChannelInvite(saved);
         }
 
         String inviteId = saved.getId();
         if (inviteId == null) {
-            // Si falló el guardado (ej. usuario remoto no existe en DB local),
-            // generamos un ID temporal para permitir que la invitación viaje via P2P
             inviteId = java.util.UUID.randomUUID().toString();
-            // No podemos replicar si no se guardó
         }
 
         var channelOpt = channelRepository.findById(channelId);
@@ -145,27 +130,23 @@ public class InviteToChannelCommandAdapter implements ProtocolCommandAdapter {
         String visibility = channelOpt.map(c -> c.getVisibility().name()).orElse("PUBLIC");
 
         String forward = parser.encode("INVITE_RECEIVED",
-                inviteId, // Usar inviteId (puede ser el guardado o el temporal)
+                inviteId,
                 channelId,
                 channelName,
                 visibility,
                 inviterUsername);
 
         if (isLocalUser) {
-            // Usuario local: enviar directamente
             handler.getServer().sendMessageToUser(invitedUsername, forward, inviterUsername);
         } else if (networkAdapter != null) {
-            // Usuario remoto: enrutar a través de P2P
-            // Formato:
-            // P2P_CHANNEL_INVITE|inviteId|channelId|channelName|visibility|inviterUsername|invitedUsername
-
+            
             String routeMessage = parser.encode("P2P_CHANNEL_INVITE",
-                    inviteId, // Usar el ID generado (puede ser temporal)
+                    inviteId,
                     channelId,
                     channelName,
                     visibility,
                     inviterUsername,
-                    actualInvitedUsername); // Usar nombre sin prefijo para enrutamiento
+                    actualInvitedUsername);
 
             boolean routed = networkAdapter.routeChannelInviteToPeer(actualInvitedUsername, routeMessage);
             if (!routed) {

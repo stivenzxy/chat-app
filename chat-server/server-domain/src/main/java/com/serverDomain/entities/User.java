@@ -19,7 +19,6 @@ public class User {
     private String ipAddress;
     private LocalDateTime createdAt;
     
-    // P2P Replication fields
     private boolean isReplicated;
     private String originServerId;
     private Timestamp lastSyncAt;
@@ -37,10 +36,7 @@ public class User {
         this.originServerId = null;
         this.lastSyncAt = null;
     }
-    
-    /**
-     * Constructor for replicated users (for UserReplicationService).
-     */
+
     public User(String id, String username, String email, String passwordHash) {
         this.id = id;
         this.username = new Username(username);
